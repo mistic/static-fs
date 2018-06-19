@@ -1,0 +1,13 @@
+.editorconfig
+.npmignore
+yarn.lock
+
+*.js.map
+*.ts
+*.tgz
+*.tar
+
+test/
+dist/test/
+lib/
+!dist/lib/
