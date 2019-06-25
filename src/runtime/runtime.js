@@ -105,9 +105,9 @@ function padEnd(str, targetLength, padString = ' ') {
   }
 }
 
-export function list(staticModule) {
+export function list(staticModule, projRelRoot) {
   const svs = new StaticFilesystem();
-  svs.load(staticModule);
+  svs.load(staticModule, projRelRoot);
   const dir = [];
   const files = {};
   for (const each of svs.entries) {
@@ -134,7 +134,17 @@ function existsInFs(svs, filePath) {
   return false;
 }
 
-export function load(staticModule) {
+function existsFdInFs(svs, fd) {
+  const pathForFD = svs.getPathForFD(fd);
+
+  if (!pathForFD) {
+    return false;
+  }
+
+  return existsInFs(svs, pathForFD);
+}
+
+export function load(staticModule, projRelRoot) {
   if (!(global.static_fs_runtime_loader)) {
     global.static_fs_runtime_loader = {};
     const svs = new StaticFilesystem();
@@ -149,7 +159,43 @@ export function load(staticModule) {
     const fsRP = fs.realpath;
     const fsRD = fs.readdir;
     const fsS = fs.stat;
+    const fsO = fs.open;
+    const fsC = fs.close;
+    const fsCRS = fs.createReadStream;
+    const fsFs = fs.fstat;
     const undo_fs = patchFilesystem({
+      close: (fd, callback) => {
+        if (existsFdInFs(svs, fd)) {
+          return svs.close(fd, callback);
+        }
+
+        return fsC(fd, callback);
+      },
+      createReadStream: (path, options) => {
+        if (existsInFs(svs, path)) {
+          return svs.createReadStream(path, options);
+        }
+
+        return fsCRS(path, options);
+      },
+      fstat: (fd, options, callback) => {
+        const sanitizedCallback = typeof callback === 'function' ? callback : options;
+
+        if (existsFdInFs(svs, fd)) {
+          return svs.fstat(fd, sanitizedCallback);
+        }
+
+        return fsFs(fd, options, callback);
+      },
+      open: (path, flags, mode, callback) => {
+        const sanitizedCallback = typeof callback === 'function' ? callback : (typeof mode === 'function' ? mode : flags);
+
+        if (existsInFs(svs, path)) {
+          return svs.open(path, sanitizedCallback);
+        }
+
+        return fsO(path, flags, mode, callback);
+      },
       readFileSync: (path, options) => {
         if (existsInFs(svs, path)) {
           return svs.readFileSync(path, options);
@@ -285,7 +331,7 @@ export function load(staticModule) {
       return execSync(command, options);
     }
   }
-  global.static_fs_runtime_loader.staticfilesystem.load(staticModule);
+  global.static_fs_runtime_loader.staticfilesystem.load(staticModule, projRelRoot);
 }
 
 export function unload(staticModule) {

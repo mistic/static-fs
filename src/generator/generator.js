@@ -4,10 +4,11 @@ import { copyFile, isFile, mkdir, readFile, writeFile } from '../common';
 
 // Creates a static-fs runtime file in the target
 const createStaticFsRuntimeFile = async (outDir) => {
-  const sourceFile = require.resolve(`dist/runtime`);
-  await copyFile(sourceFile, resolve(outDir, 'static_fs_runtime.js'));
+  const sourceFile = require.resolve(`../runtime`);
+  const outFile = resolve(outDir, 'static_fs_runtime.js');
+  await copyFile(sourceFile, outFile);
 
-  return sourceFile;
+  return outFile;
 };
 
 // Patches target node app entry points in order
@@ -26,7 +27,7 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
       fsPath = `\${__dirname }/${fsPath}`;
       const projectRelativeRootDir = `\${__dirname }/${relative(dirname(entryPoint), projectRootDir)}`;
       let content = await readFile(entryPoint, { encoding: 'utf8' });
-      const patchLine = `require('${loaderPath}').load(require.resolve(\`${fsPath}\`, \`${projectRelativeRootDir}\`));\n`;
+      const patchLine = `require('${loaderPath}')\n.load(require.resolve(\`${fsPath}\`), \`${projectRelativeRootDir}\`);\n`;
       let prefix = '';
       if (content.indexOf(patchLine) === -1) {
         const rx = /^#!.*$/gm.exec(content.toString());
@@ -37,7 +38,7 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
         }
         // strip existing loader
         content = content.replace(/^require.*static_fs_runtime.js.*$/gm, '');
-        content = content.replace(/\/\/ load static-fs volume file: .*$/gm, '');
+        content = content.replace(/\/\/ load static-fs volume file:: .*$/gm, '');
         content = content.trim();
         content = `${prefix}// load static-fs volume file:: ${fsPath}\n${patchLine}\n${content}`;
 
@@ -56,7 +57,7 @@ const addFolderToStaticFsVolume = async (projectRootDir, outputDir, staticVolume
   }
 
   await mkdir(outputDir);
-  await sfs.write(staticVolumeName);
+  await sfs.write(resolve(outputDir, staticVolumeName));
 };
 
 export const generateStaticFsVolume = async (projectRootDir, outputDir, staticVolumeName, foldersToAdd, appEntryPointsToPatch) => {

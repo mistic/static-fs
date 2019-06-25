@@ -29,7 +29,7 @@ export function patchFilesystem(volume, original = fs) {
 
   // iterate over the filesystem and patch members
   for (const member of Object.getOwnPropertyNames(original)) {
-    if (typeof volume[member] !== typeof original[member] && !volume[member]) {
+    if (typeof volume[member] !== typeof original[member] || !volume[member]) {
       continue;
     }
     switch (metadata[member]) {

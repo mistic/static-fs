@@ -3,10 +3,12 @@ import { constants } from 'os';
 
 import { unixifyPath, select, selectMany, first } from '../common';
 import { ReadableStaticVolume } from './volume';
+import { ReadStream } from './streams';
 
 export class StaticFilesystem {
   constructor() {
     this.volumes = [];
+    this.fds = {};
   }
 
   NewError(code, method, filepath) {
@@ -102,6 +104,31 @@ export class StaticFilesystem {
     );
   }
 
+  read(fd, buffer, offset, length, position, callback){
+    if (fd.type !== 'static_fs_file_descriptor')  {
+
+      process.nextTick(() => {
+        callback(this.NewError(constants.errno.EBADF, "read", fd));
+      });
+      return;
+    }
+
+    const sfsFd = this.fds[fd.id];
+    if (!sfsFd) {
+      process.nextTick(() => {
+        callback(this.NewError(constants.errno.EEXIST, "read", fd));
+      });
+      return;
+    }
+
+    const filePath = sfsFd.filePath;
+    first(
+      this.volumes,
+      (volume) => !!volume.read(filePath, buffer, offset, length, position, callback),
+      () => { throw this.NewError(constants.errno.ENOENT, "read", fd)}
+    );
+  }
+
   realpathSync(filepath) {
     const targetPath = unixifyPath(filepath);
     return first(this.volumes, (volume) => volume.index[targetPath] ? targetPath : undefined, () => { throw this.NewError(constants.errno.ENOENT, "realpathSync", filepath) });
@@ -120,6 +147,20 @@ export class StaticFilesystem {
       },
       () => { throw this.NewError(constants.errno.ENOENT, "realpath", filepath) }
     );
+  }
+
+  volumeForFilepathSync(filepath) {
+    const targetPath = unixifyPath(filepath);
+
+    try {
+      return first(
+        this.volumes,
+        (volume) => volume.index[targetPath].isDirectory() ? undefined : volume,
+        () => { throw this.NewError(constants.errno.ENOENT, "volumeForFilepathSync", filepath) }
+      );
+    } catch {
+      return undefined;
+    }
   }
 
   statSync(filepath) {
@@ -164,5 +205,88 @@ export class StaticFilesystem {
       },
       () => { throw this.NewError(constants.errno.ENOENT, "readdir", filepath) }
     );
+  }
+
+  getPathForFD(fd) {
+    if (!fd || !fd.type || fd.type !== 'static_fs_file_descriptor')  {
+      return null;
+    }
+
+    const sfsFd = this.fds[fd.id];
+    if (!sfsFd) {
+      return null;
+    }
+
+    return sfsFd.filePath;
+  }
+
+  open(path, callback) {
+    const volumeForPath = this.volumeForFilepathSync(path);
+
+    if (!volumeForPath) {
+      process.nextTick(() => {
+        callback(this.NewError(constants.errno.ENOENT, "open", path));
+      });
+      return;
+    }
+
+    const fdIdentifier = `${volumeForPath.sourcePath}#${path}`;
+    this.fds[fdIdentifier] = {
+      type: 'static_fs_file_descriptor',
+      id: fdIdentifier,
+      volumeSourcePath: volumeForPath.sourcePath,
+      filePath: path
+    };
+
+    process.nextTick(() => {
+      callback(undefined, this.fds[fdIdentifier]);
+    });
+  }
+
+  close(fd, callback) {
+    if (fd.type !== 'static_fs_file_descriptor')  {
+
+      process.nextTick(() => {
+        callback(this.NewError(constants.errno.EBADF, "close", fd));
+      });
+      return;
+    }
+
+    const sfsFd = this.fds[fd.id];
+    if (!sfsFd) {
+      process.nextTick(() => {
+        callback(this.NewError(constants.errno.EEXIST, "close", fd));
+      });
+      return;
+    }
+
+    delete this.fds[fd.id];
+    process.nextTick(() => {
+      callback();
+    });
+  }
+
+  fstat(fd, callback){
+    if (fd.type !== 'static_fs_file_descriptor')  {
+
+      process.nextTick(() => {
+        callback(this.NewError(constants.errno.EBADF, "fstat", fd));
+      });
+      return;
+    }
+
+    const sfsFd = this.fds[fd.id];
+    if (!sfsFd) {
+      process.nextTick(() => {
+        callback(this.NewError(constants.errno.EEXIST, "fstat", fd));
+      });
+      return;
+    }
+
+    this.stat(sfsFd.filePath, callback);
+  }
+
+  createReadStream(path, options) {
+    return new ReadStream(this, path, options);
   }
 }
