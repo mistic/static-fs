@@ -17,7 +17,9 @@ const path = require('path');
       },
       output: {
         path: path.resolve(__dirname, '../dist'),
-        filename: 'runtime/index.js'
+        filename: 'runtime/index.js',
+        library: '',
+        libraryTarget: 'commonjs'
       },
       optimization: {
         minimize: false,

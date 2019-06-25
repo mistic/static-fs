@@ -101,12 +101,18 @@ export class WritableStaticVolume {
       const ss = await stat(sourcePath);
       if (ss.isDirectory()) {
         all.push(this.getFileNames(sourcePath, targetPath));
-      } else {
-        // it's a file. capture the details.
-        this.index[targetPath] = {
-          size: ss.size,
-          getBuffer: () => readFile(sourcePath)
-        }
+        continue;
+      }
+
+      const isNativeModuleFile = file.includes('.node');
+      if (isNativeModuleFile) {
+        continue;
+      }
+
+      // it's a file. capture the details.
+      this.index[targetPath] = {
+        size: ss.size,
+        getBuffer: () => readFile(sourcePath)
       }
     }
     // wait for children to finish

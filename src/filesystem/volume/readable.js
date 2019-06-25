@@ -1,6 +1,8 @@
-import { dirname, basename} from 'path';
-import fs from 'fs';
+import * as filesystem from 'fs';
+import { dirname, basename, resolve } from 'path';
 import { INTSIZE, unixifyPath } from '../../common';
+
+const fs = { ...filesystem };
 
 export class ReadableStaticVolume {
   constructor(sourcePath, realFsRoot) {
@@ -17,6 +19,7 @@ export class ReadableStaticVolume {
     this.intBuffer = Buffer.alloc(INTSIZE);
     this.index = {};
     this.statData = {};
+    this.filesBeingRead = {};
   }
 
   load() {
@@ -61,9 +64,10 @@ export class ReadableStaticVolume {
       }
       this.readBuffer(this.buf, nameSz);
       const name = this.buf.toString('utf8', 0, nameSz);
+      const mountedName = this._resolveMountedPath(name);
 
       // add entry for file into index
-      this.index[name] = Object.assign(
+      this.index[mountedName] = Object.assign(
         {},
         this.statData,
         {
@@ -76,10 +80,10 @@ export class ReadableStaticVolume {
       );
 
       // ensure parent path has a directory entry
-      this.addParentFolders(name);
+      this.addParentFolders(mountedName);
 
       // build our directories index
-      this.updateDirectoriesIndex(name);
+      this.updateDirectoriesIndex(mountedName);
 
       dataOffset += dataSz;
     } while (true)
@@ -101,7 +105,7 @@ export class ReadableStaticVolume {
 
   addParentFolders(name) {
     const parent = dirname(name);
-    if (parent && !this.index[parent]) {
+    if (parent && !this.index[parent] && parent.includes(this.realFsRoot)) {
       this.index[parent] = Object.assign(
         {},
         this.statData,
@@ -113,7 +117,7 @@ export class ReadableStaticVolume {
   }
 
   updateDirectoriesIndex(name) {
-    if (!this.index[name] || unixifyPath(name) === '/') {
+    if (!this.index[name] || this.realFsRoot === this.index[name] || unixifyPath(name) === '/') {
       return;
     }
 
@@ -136,5 +140,85 @@ export class ReadableStaticVolume {
     }
 
     this.updateDirectoriesIndex(parent);
+  }
+
+  _resolveMountedPath(unmountedPath) {
+    if (unmountedPath.includes(this.realFsRoot)) {
+      return unmountedPath;
+    }
+
+    return unixifyPath(resolve(this.realFsRoot, unmountedPath));
+  }
+
+  readFileSync(filepath, options) {
+    const item = this.index[filepath];
+
+    if (item && item.isFile()) {
+      const encoding = options ?
+        typeof options === 'string' ? options :
+          typeof options === 'object' ? options.encoding || 'utf8' : 'utf8' : 'utf8';
+
+      // re-alloc if necessary
+      if (this.buf.length < item.size) {
+        this.buf = Buffer.alloc(item.size);
+      }
+
+      // read the content and return a string
+      fs.readSync(this.fd, this.buf, 0, item.size, item.ino);
+      return this.buf.toString(encoding, 0, item.size);
+    }
+    return undefined;
+  }
+
+  _deleteReadFileFromCache(filepath, length, position) {
+    const cachedBuffer = this.filesBeingRead[filepath].buffer;
+
+    if (position >= cachedBuffer.length || position + length >= cachedBuffer.length) {
+      this.filesBeingRead[filepath].consumers -= 1;
+    }
+
+    if (this.filesBeingRead[filepath].consumers <= 0) {
+      delete this.filesBeingRead[filepath];
+    }
+  }
+
+  _readFromCache(filepath, buffer, offset, length, position, callback) {
+    const cachedBuffer = this.filesBeingRead[filepath].buffer;
+
+    if (position >= cachedBuffer.length) {
+      this._deleteReadFileFromCache(filepath, length, position);
+      callback(null, 0, buffer);
+      return;
+    }
+
+    const copiedBytes = cachedBuffer.copy(buffer, offset, position, Math.min(position + length, cachedBuffer.length));
+    this._deleteReadFileFromCache(filepath, length, position);
+    callback(null, copiedBytes, buffer);
+  }
+
+  read(filepath, buffer, offset, length, position, callback) {
+    const item = this.index[filepath];
+
+    if (item && item.isFile()) {
+      // read the content and return a string
+      if (this.filesBeingRead[filepath]) {
+        this.filesBeingRead[filepath].consumers += 1;
+        this._readFromCache(filepath, buffer, offset, length, position, callback);
+      } else {
+        const cachedFile = this.filesBeingRead[filepath] = {
+          buffer: Buffer.alloc(item.size),
+          consumers: 1
+        };
+
+        fs.read(this.fd, cachedFile.buffer, 0, item.size, item.ino, (err) => {
+          if (err) {
+            callback(err);
+          }
+          this._readFromCache(filepath, buffer, offset, length, position, callback);
+        });
+      }
+    } else {
+      callback(new Error());
+    }
   }
 }

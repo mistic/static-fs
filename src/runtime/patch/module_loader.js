@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
+import { resolve, isAbsolute } from 'path'
 
 import { isWindows, unixifyPath, isWindowsPath } from '../../common';
-import { resolve, isAbsolute } from 'path'
 
 
 const makeLong = (require('path'))._makeLong || resolve;
@@ -134,8 +134,28 @@ export function patchModuleLoader(volume, enablePathNormalization = false, enabl
   Module._originalFindPath = Module._findPath;
 
   Module._findPath = (request, paths, isMain) => {
-    const result = Module._alternateFindPath(request, paths, isMain);
-    return (!result && Module._fallback) ? Module._originalFindPath(request, paths, isMain) : result;
+    let result = Module._alternateFindPath(request, paths, isMain);
+
+    if (!Module._fallback || result) {
+      return result;
+    }
+
+    // NOTE: we have a special use case when Module._fallback is on
+    // and we have a findPath call with a relative file request where
+    // the given path is inside the static fs and the relative file
+    // request in the real fs (for example in the native modules).
+    const isWindows = process.platform === 'win32';
+    const isRelative = request.startsWith('./') ||
+      request.startsWith('../') ||
+      (isWindows && request.startsWith('.\\') ||
+        request.startsWith('..\\'));
+
+    if (isRelative && paths.length === 1) {
+      const resolvedRequest = resolve(paths[0], request);
+      result = Module._originalFindPath(resolvedRequest, paths, isMain)
+    }
+
+    return !result ? Module._originalFindPath(request, paths, isMain) : result;
   };
 
   Module._alternateFindPath = (request, paths, isMain) => {
