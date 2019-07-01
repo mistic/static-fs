@@ -105,9 +105,9 @@ function padEnd(str, targetLength, padString = ' ') {
   }
 }
 
-export function list(staticModule, projRelRoot) {
+export function list(staticModule) {
   const svs = new StaticFilesystem();
-  svs.load(staticModule, projRelRoot);
+  svs.load(staticModule);
   const dir = [];
   const files = {};
   for (const each of svs.entries) {
@@ -144,7 +144,7 @@ function existsFdInFs(svs, fd) {
   return existsInFs(svs, pathForFD);
 }
 
-export function load(staticModule, projRelRoot) {
+export function load(staticModule) {
   if (!(global.static_fs_runtime_loader)) {
     global.static_fs_runtime_loader = {};
     const svs = new StaticFilesystem();
@@ -331,7 +331,7 @@ export function load(staticModule, projRelRoot) {
       return execSync(command, options);
     }
   }
-  global.static_fs_runtime_loader.staticfilesystem.load(staticModule, projRelRoot);
+  global.static_fs_runtime_loader.staticfilesystem.load(staticModule);
 }
 
 export function unload(staticModule) {

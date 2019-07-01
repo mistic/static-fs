@@ -5,9 +5,9 @@ import { INTSIZE, unixifyPath } from '../../common';
 const fs = { ...filesystem };
 
 export class ReadableStaticVolume {
-  constructor(sourcePath, realFsRoot) {
+  constructor(sourcePath) {
     this.sourcePath = sourcePath;
-    this.realFsRoot = realFsRoot;
+    this.moutingRoot = resolve(dirname(this.sourcePath), '../');
     this.reset()
   }
 
@@ -20,6 +20,7 @@ export class ReadableStaticVolume {
     this.index = {};
     this.statData = {};
     this.filesBeingRead = {};
+    this.pathVolumeIndex = {};
   }
 
   load() {
@@ -79,6 +80,10 @@ export class ReadableStaticVolume {
         }
       );
 
+      // this creates an index (every_path) -> (sourcePath)
+      // it also needs to assign inside addParentFolders
+      this.pathVolumeIndex[mountedName] = this.sourcePath;
+
       // ensure parent path has a directory entry
       this.addParentFolders(mountedName);
 
@@ -86,7 +91,9 @@ export class ReadableStaticVolume {
       this.updateDirectoriesIndex(mountedName);
 
       dataOffset += dataSz;
-    } while (true)
+    } while (true);
+
+    return this.pathVolumeIndex;
   }
 
   readBuffer(buffer, length) {
@@ -105,19 +112,21 @@ export class ReadableStaticVolume {
 
   addParentFolders(name) {
     const parent = dirname(name);
-    if (parent && !this.index[parent] && parent.includes(this.realFsRoot)) {
+    if (parent && !this.index[parent] && parent.includes(this.moutingRoot)) {
       this.index[parent] = Object.assign(
         {},
         this.statData,
         { isDirectory: () => true }
       );
 
+      this.pathVolumeIndex[parent] = this.sourcePath;
+
       return this.addParentFolders(parent);
     }
   }
 
   updateDirectoriesIndex(name) {
-    if (!this.index[name] || this.realFsRoot === this.index[name] || unixifyPath(name) === '/') {
+    if (!this.index[name] || this.moutingRoot === this.index[name] || unixifyPath(name) === '/') {
       return;
     }
 
@@ -143,11 +152,11 @@ export class ReadableStaticVolume {
   }
 
   _resolveMountedPath(unmountedPath) {
-    if (unmountedPath.includes(this.realFsRoot)) {
+    if (unmountedPath.includes(this.moutingRoot)) {
       return unmountedPath;
     }
 
-    return unixifyPath(resolve(this.realFsRoot, unmountedPath));
+    return unixifyPath(resolve(this.moutingRoot, unmountedPath));
   }
 
   readFileSync(filepath, options) {
@@ -167,6 +176,7 @@ export class ReadableStaticVolume {
       fs.readSync(this.fd, this.buf, 0, item.size, item.ino);
       return this.buf.toString(encoding, 0, item.size);
     }
+
     return undefined;
   }
 

@@ -1,7 +1,7 @@
 import { resolve } from 'path';
 import { constants } from 'os';
 
-import { unixifyPath, select, selectMany, first } from '../common';
+import { unixifyPath } from '../common';
 import { ReadableStaticVolume } from './volume';
 import { ReadStream } from './streams';
 
@@ -9,6 +9,7 @@ export class StaticFilesystem {
   constructor() {
     this.volumes = [];
     this.fds = {};
+    this.pathVolumeMap = {};
   }
 
   NewError(code, method, filepath) {
@@ -42,66 +43,74 @@ export class StaticFilesystem {
     }
   }
 
-  get hashes() {
-    return select(this.volumes, (p, c, i, a) => c.hash);
-  }
-
-  load(sourcePath, projectRelRoot) {
+  load(sourcePath) {
     sourcePath = resolve(sourcePath);
-    for (let i = 0; i < this.volumes.length; i++) {
-      if (this.volumes[i].sourcePath === sourcePath) {
-        // already loaded?
-        return this;
-      }
+
+    if (this.volumes[sourcePath]) {
+      // already loaded?
+      return this;
     }
-    const volume = new ReadableStaticVolume(sourcePath, resolve(projectRelRoot));
-    volume.load();
-    this.volumes.push(volume);
+
+    const volume = new ReadableStaticVolume(sourcePath);
+    const pathVolumeIndex = volume.load();
+
+    this.pathVolumeMap = {
+      ...this.pathVolumeMap,
+      ...pathVolumeIndex
+    };
+
+    this.volumes[volume.sourcePath] = volume;
     return this;
   }
 
   get loadedVolumes(){
-    return select(this.volumes, (p, c) => c.sourcePath);
+    return Object.keys(this.volumes);
   }
 
   unload(sourcePath) {
     sourcePath = resolve(sourcePath);
 
-    for (let i = 0; i < this.volumes.length; i++) {
-      if (this.volumes[i].sourcePath === sourcePath) {
-        this.volumes[i].shutdown();
-        this.volumes.splice(i, 1);
-      }
+    if (!this.volumes[sourcePath]) {
+      return this;
     }
+
+    const volumeToUnload = this.volumes[sourcePath];
+    if (volumeToUnload.sourcePath !== sourcePath) {
+      return this;
+    }
+
+    volumeToUnload.shutdown();
+
     return this;
   }
 
   get entries() {
-    return selectMany(this.volumes, (p, c) => Object.keys(c.index));
+    return Object.keys(this.pathVolumeMap);
   }
 
   readFileSync(filepath, options) {
     const targetPath = unixifyPath(filepath);
-    return first(
-      this.volumes,
-      (volume) => volume.readFileSync(targetPath, options),
-      () => { throw this.NewError(constants.errno.ENOENT, "readFileSync", filepath) }
-    );
+    const volume = this.volumeForFilepathSync(targetPath);
+
+    if (!volume) {
+      throw this.NewError(constants.errno.ENOENT, 'readFileSync', filepath);
+    }
+
+    return volume.readFileSync(targetPath, options);
   }
 
   readFile(filepath, options, callback){
     const targetPath = unixifyPath(filepath);
-    first(
-      this.volumes,
-      (volume) => {
-        const foundFile = volume.readFileSync(targetPath, options);
-        process.nextTick(() => {
-          callback(undefined, foundFile);
-        });
-        return foundFile;
-      },
-      () => { throw this.NewError(constants.errno.ENOENT, "readFile", filepath)}
-    );
+    const volume = this.volumeForFilepathSync(targetPath);
+
+    if (!volume) {
+      throw this.NewError(constants.errno.ENOENT, 'readFile', filepath);
+    }
+
+    const foundFile = volume.readFileSync(targetPath, options);
+    process.nextTick(() => {
+      callback(undefined, foundFile);
+    });
   }
 
   read(fd, buffer, offset, length, position, callback){
@@ -122,89 +131,105 @@ export class StaticFilesystem {
     }
 
     const filePath = sfsFd.filePath;
-    first(
-      this.volumes,
-      (volume) => !!volume.read(filePath, buffer, offset, length, position, callback),
-      () => { throw this.NewError(constants.errno.ENOENT, "read", fd)}
-    );
+    const targetPath = unixifyPath(filePath);
+    const volume = this.volumeForFilepathSync(targetPath);
+
+    if (!volume) {
+      throw this.NewError(constants.errno.ENOENT, 'read', fd);
+    }
+
+    volume.read(targetPath, buffer, offset, length, position, callback);
   }
 
   realpathSync(filepath) {
     const targetPath = unixifyPath(filepath);
-    return first(this.volumes, (volume) => volume.index[targetPath] ? targetPath : undefined, () => { throw this.NewError(constants.errno.ENOENT, "realpathSync", filepath) });
+    const volume = this.volumeForFilepathSync(targetPath);
+
+    if (!volume) {
+      throw this.NewError(constants.errno.ENOENT, 'realpathSync', filepath);
+    }
+
+    return volume.index[targetPath] ? targetPath : undefined;
   }
 
   realpath(filepath, callback) {
     const targetPath = unixifyPath(filepath);
-    first(
-      this.volumes,
-      (volume) => {
-        const foundPath = volume.index[targetPath] ? targetPath : undefined;
-        process.nextTick(() => {
-          callback(undefined, foundPath);
-        });
-        return foundPath;
-      },
-      () => { throw this.NewError(constants.errno.ENOENT, "realpath", filepath) }
-    );
+    const volume = this.volumeForFilepathSync(targetPath);
+
+    if (!volume) {
+      this.NewError(constants.errno.ENOENT, 'realpath', filepath);
+    }
+
+    const foundPath = volume.index[targetPath] ? targetPath : undefined;
+    process.nextTick(() => {
+      callback(undefined, foundPath);
+    });
   }
 
   volumeForFilepathSync(filepath) {
     const targetPath = unixifyPath(filepath);
+    const volumePathForFilePath = this.pathVolumeMap[targetPath];
 
-    try {
-      return first(
-        this.volumes,
-        (volume) => volume.index[targetPath].isDirectory() ? undefined : volume,
-        () => { throw this.NewError(constants.errno.ENOENT, "volumeForFilepathSync", filepath) }
-      );
-    } catch {
+    if (!volumePathForFilePath) {
       return undefined;
     }
+
+    const volumeForFilePath = this.volumes[volumePathForFilePath];
+
+    if (!volumeForFilePath) {
+      return undefined;
+    }
+
+    return volumeForFilePath;
   }
 
   statSync(filepath) {
     const targetPath = unixifyPath(filepath);
-    return first(this.volumes, (volume) => volume.index[targetPath], () => { throw this.NewError(constants.errno.ENOENT, "statSync", filepath) });
+    const volume = this.volumeForFilepathSync(targetPath);
+
+    if (!volume) {
+      this.NewError(constants.errno.ENOENT, 'statSync', filepath);
+    }
+
+    return volume.index[targetPath];
   }
 
   stat(filepath, callback) {
     const targetPath = unixifyPath(filepath);
-    first(
-      this.volumes,
-      (volume) => {
-        const foundStat = volume.index[targetPath];
-        process.nextTick(() => {
-          callback(undefined, foundStat);
-        });
-        return foundStat;
-        },
-      () => { throw this.NewError(constants.errno.ENOENT, "stat", filepath) }
-      );
+    const volume = this.volumeForFilepathSync(targetPath);
+
+    if (!volume) {
+      this.NewError(constants.errno.ENOENT, 'stat', filepath);
+    }
+
+    const foundStat = volume.index[targetPath];
+    process.nextTick(() => {
+      callback(undefined, foundStat);
+    });
   }
 
   readdirSync(filepath) {
     const targetPath = unixifyPath(filepath);
-    return first(
-      this.volumes,
-      (volume) => Object.keys(volume.directoriesIndex[targetPath]) || [],
-      () => { throw this.NewError(constants.errno.ENOENT, "readdirSync", filepath) }
-    );
+    const volume = this.volumeForFilepathSync(targetPath);
+
+    if (!volume) {
+      this.NewError(constants.errno.ENOENT, 'readdirSync', filepath);
+    }
+
+    return Object.keys(volume.directoriesIndex[targetPath]) || [];
   }
 
   readdir(filepath, callback) {
     const targetPath = unixifyPath(filepath);
-    first(
-      this.volumes,
-      (volume) => {
-        const foundDir = volume.directoriesIndex[targetPath];
-        process.nextTick(() => {
-          callback(undefined, Object.keys(volume.directoriesIndex[targetPath]));
-        });
-        return foundDir;
-      },
-      () => { throw this.NewError(constants.errno.ENOENT, "readdir", filepath) }
-    );
+    const volume = this.volumeForFilepathSync(targetPath);
+
+    if (!volume) {
+      this.NewError(constants.errno.ENOENT, 'readdir', filepath);
+    }
+
+    process.nextTick(() => {
+      callback(undefined, Object.keys(volume.directoriesIndex[targetPath]) || []);
+    });
   }
 
   getPathForFD(fd) {
@@ -221,20 +246,21 @@ export class StaticFilesystem {
   }
 
   open(path, callback) {
-    const volumeForPath = this.volumeForFilepathSync(path);
+    const targetPath = unixifyPath(path);
+    const volume = this.volumeForFilepathSync(targetPath);
 
-    if (!volumeForPath) {
+    if (!volume) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.ENOENT, "open", path));
+        callback(this.NewError(constants.errno.ENOENT, 'open', path));
       });
       return;
     }
 
-    const fdIdentifier = `${volumeForPath.sourcePath}#${path}`;
+    const fdIdentifier = `${volume.sourcePath}#${targetPath}`;
     this.fds[fdIdentifier] = {
       type: 'static_fs_file_descriptor',
       id: fdIdentifier,
-      volumeSourcePath: volumeForPath.sourcePath,
+      volumeSourcePath: volume.sourcePath,
       filePath: path
     };
 
@@ -247,7 +273,7 @@ export class StaticFilesystem {
     if (fd.type !== 'static_fs_file_descriptor')  {
 
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EBADF, "close", fd));
+        callback(this.NewError(constants.errno.EBADF, 'close', fd));
       });
       return;
     }
@@ -255,7 +281,7 @@ export class StaticFilesystem {
     const sfsFd = this.fds[fd.id];
     if (!sfsFd) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EEXIST, "close", fd));
+        callback(this.NewError(constants.errno.EEXIST, 'close', fd));
       });
       return;
     }
@@ -270,7 +296,7 @@ export class StaticFilesystem {
     if (fd.type !== 'static_fs_file_descriptor')  {
 
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EBADF, "fstat", fd));
+        callback(this.NewError(constants.errno.EBADF, 'fstat', fd));
       });
       return;
     }
@@ -278,7 +304,7 @@ export class StaticFilesystem {
     const sfsFd = this.fds[fd.id];
     if (!sfsFd) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EEXIST, "fstat", fd));
+        callback(this.NewError(constants.errno.EEXIST, 'fstat', fd));
       });
       return;
     }
