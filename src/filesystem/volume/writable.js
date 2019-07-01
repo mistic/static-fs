@@ -1,9 +1,10 @@
-import { relative } from 'path';
-import { readdir, stat, open, close, write, readFile, INTSIZE, calculateHash } from '../../common';
+import { relative, resolve, dirname } from 'path';
+import { readdir, stat, open, close, write, readFile, INTSIZE, calculateHash, mkdir } from '../../common';
 
 export class WritableStaticVolume {
-  constructor(realFsRoot) {
-    this.realFsRoot = realFsRoot;
+  constructor(mountingRoot) {
+    this.mountingRoot = mountingRoot;
+    this.outputFile = resolve(this.mountingRoot, 'static_fs/static_fs_volume.sfsv');
     this.reset();
   }
 
@@ -15,15 +16,15 @@ export class WritableStaticVolume {
   }
 
   async addFolder(sourceFolder) {
-    if (this.realFsRoot === sourceFolder) {
-      throw new Error('You cannot add the root of the project to the static filesystem');
+    if (this.mountingRoot === sourceFolder) {
+      throw new Error('You cannot add the mounting root of the project to the static filesystem');
     }
 
-    if (!sourceFolder.includes(this.realFsRoot)) {
-      throw new Error(`All the files to include into the static filesystem should come from inside the root of the project ${this.realFsRoot}`);
+    if (!sourceFolder.includes(this.mountingRoot)) {
+      throw new Error(`All the files to include into the static filesystem should has mountingRoot has parent: ${this.mountingRoot}`);
     }
 
-    const calculatedTargetFolder = relative(this.realFsRoot, sourceFolder);
+    const calculatedTargetFolder = relative(this.mountingRoot, sourceFolder);
     await this.getFileNames(sourceFolder, calculatedTargetFolder);
   }
 
@@ -53,10 +54,11 @@ export class WritableStaticVolume {
     return write(fd, this.intBuffer, 0, INTSIZE, position);
   }
 
-  async write(outputPath, hash = calculateHash(this.index)) {
-    this.hash = hash;
+  async write() {
+    await mkdir(dirname(this.outputFile));
+    this.hash = calculateHash(this.index);
     let dataOffset = this.headerLength;
-    const fd = await open(outputPath, 'w');
+    const fd = await open(this.outputFile, 'w');
     let headerPosition = await this.writeInt(fd, dataOffset);
 
     headerPosition += await this.writeInt(fd, this.hashBuffer.byteLength);
@@ -85,7 +87,7 @@ export class WritableStaticVolume {
     }
 
     await close(fd);
-    return hash;
+    return this.hash;
   }
 
   async getFileNames(sourceFolder, targetFolder) {

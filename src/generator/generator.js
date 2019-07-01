@@ -1,6 +1,6 @@
 import { dirname, relative, resolve } from 'path';
 import { WritableStaticVolume } from '../filesystem'
-import { copyFile, isFile, mkdir, readFile, writeFile } from '../common';
+import { copyFile, isFile, readFile, writeFile } from '../common';
 
 // Creates a static-fs runtime file in the target
 const createStaticFsRuntimeFile = async (outDir) => {
@@ -14,7 +14,7 @@ const createStaticFsRuntimeFile = async (outDir) => {
 // Patches target node app entry points in order
 // to make the server code able to read files
 // from the static fs
-const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolumeFile, projectRootDir) => {
+const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolumeFile) => {
   for (const entryPoint of entryPoints) {
     const isEntryPointAFile = await isFile(entryPoint);
 
@@ -25,9 +25,9 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
       }
       let fsPath = relative(dirname(entryPoint), staticFsVolumeFile).replace(/\\/g, '/');
       fsPath = `\${__dirname }/${fsPath}`;
-      const projectRelativeRootDir = `\${__dirname }/${relative(dirname(entryPoint), projectRootDir)}`;
+
       let content = await readFile(entryPoint, { encoding: 'utf8' });
-      const patchLine = `require('${loaderPath}')\n.load(require.resolve(\`${fsPath}\`), \`${projectRelativeRootDir}\`);\n`;
+      const patchLine = `require('${loaderPath}')\n.load(require.resolve(\`${fsPath}\`));\n`;
       let prefix = '';
       if (content.indexOf(patchLine) === -1) {
         const rx = /^#!.*$/gm.exec(content.toString());
@@ -38,9 +38,9 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
         }
         // strip existing loader
         content = content.replace(/^require.*static_fs_runtime.js.*$/gm, '');
-        content = content.replace(/\/\/ load static-fs volume file:: .*$/gm, '');
+        content = content.replace(/\/\/ load static_fs_volume: .*$/gm, '');
         content = content.trim();
-        content = `${prefix}// load static-fs volume file:: ${fsPath}\n${patchLine}\n${content}`;
+        content = `${prefix}// load static_fs_volume: ${fsPath}\n${patchLine}\n${content}`;
 
         await writeFile(entryPoint, content);
       }
@@ -49,24 +49,26 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
 };
 
 // adds file to the static filesystem volume
-const addFolderToStaticFsVolume = async (projectRootDir, outputDir, staticVolumeName, foldersToAdd) => {
-  const sfs = new WritableStaticVolume(projectRootDir);
+const addFolderToStaticFsVolume = async (mountRootDir, foldersToAdd) => {
+  const sfs = new WritableStaticVolume(mountRootDir);
 
   for (const folderToAdd of foldersToAdd) {
     await sfs.addFolder(folderToAdd);
   }
 
-  await mkdir(outputDir);
-  await sfs.write(resolve(outputDir, staticVolumeName));
+  await sfs.write();
 };
 
-export const generateStaticFsVolume = async (projectRootDir, outputDir, staticVolumeName, foldersToAdd, appEntryPointsToPatch) => {
-  const sanitizedProjectRootDir = resolve(projectRootDir);
-  const sanitizedOutputDir = resolve(sanitizedProjectRootDir, outputDir);
+export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntryPointsToPatch) => {
+  const sanitizedMountRootDir = resolve(mountRootDir);
+  const sanitizedOutputDir = resolve(sanitizedMountRootDir, 'static_fs');
   const sanitizedFoldersToAdd = foldersToAdd.map(p => resolve(p));
   const sanitizedAppEntryPointsToPatch = appEntryPointsToPatch.map(p => resolve(p));
 
-  await addFolderToStaticFsVolume(sanitizedProjectRootDir, sanitizedOutputDir, staticVolumeName, sanitizedFoldersToAdd);
+  await addFolderToStaticFsVolume(sanitizedMountRootDir, sanitizedFoldersToAdd);
   const staticFSRuntimeFile  = await createStaticFsRuntimeFile(sanitizedOutputDir);
-  await patchEntryPoints(sanitizedAppEntryPointsToPatch, staticFSRuntimeFile, resolve(sanitizedOutputDir, staticVolumeName), sanitizedProjectRootDir);
+  await patchEntryPoints(sanitizedAppEntryPointsToPatch, staticFSRuntimeFile, resolve(sanitizedOutputDir, 'static_fs_volume.sfsv'), sanitizedMountRootDir);
+
+
+  // TODO: Return the list of the files bundled into the static_fs
 };
