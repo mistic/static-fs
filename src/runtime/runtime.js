@@ -1,26 +1,37 @@
 import * as fs from 'fs'
+import * as child_process from 'child_process';
 import { patchModuleLoader } from './patch/module_loader';
 import { StaticFilesystem } from '../filesystem';
 import { patchFilesystem } from './patch/filesystem';
 import { select } from '../common';
-import * as child_process from 'child_process';
 const Module = require('module');
 
-if (require.main === module) {
+if (isRunningAsEntry()) {
   // this is for "fork mode" where we are forking a child process.
   // the first parameter should be this file.
   // the following parameter should be the static module file.
-  const startpath = fs.realpathSync(module.filename);
+  const currentRuntimePath = process.env.STATIC_FS_MAIN_RUNTIME_PATH || module.filename;
+  let startPath = null;
+
+  try {
+    startPath = fs.realpathSync(currentRuntimePath);
+  } catch {}
+
+  if (!startPath) {
+    console.log('Cannot resolve the current static fs runtime file path');
+    process.exit(1);
+  }
+
   for (let i = 0; i < process.argv.length; i++) {
-    if (fs.realpathSync(process.argv[i]) === startpath) {
+    if (fs.realpathSync(process.argv[i]) === startPath) {
       process.argv.splice(i, 1);
-      while (i < process.argv.length && process.argv[i].startsWith("--load-module=")) {
-        const staticModule = process.argv[i].split("=")[1];
+      while (i < process.argv.length && process.argv[i].startsWith('load-static-fs-volume=')) {
+        const staticModule = process.argv[i].split('=')[1];
         process.argv.splice(i, 1);
         load(staticModule);
       }
       if (process.argv.length < 2) {
-        console.log("Missing module name to start.");
+        console.log('Missing the module name to start.');
         process.exit(1);
       }
       // load the main module as if it were the real deal
@@ -38,6 +49,10 @@ const possibilities = [
   process.execPath,
   process.argv[0]
 ];
+
+function isRunningAsEntry() {
+  return require.main === module || process && process.env && process.env.STATIC_FS_ENV;
+}
 
 function isNode(path) {
   return possibilities.indexOf(path) > -1;
@@ -68,7 +83,7 @@ function startsWithNode(command) {
 }
 
 function getInsertedArgs(loadedVolumes) {
-  return select(loadedVolumes, (p, c) => `--load-module=${c}`);
+  return select(loadedVolumes, (p, c) => `--load-static-fs-volume=${c}`);
 }
 
 function getInsertedArgString(loadedVolumes) {
@@ -87,21 +102,6 @@ function padStart(str, targetLength, padString = ' ') {
       padString += padString.repeat(targetLength / padString.length); //append to original to ensure we are longer than needed
     }
     return padString.slice(0, targetLength) + String(str);
-  }
-}
-
-function padEnd(str, targetLength, padString = ' ') {
-  targetLength = targetLength >> 0; //floor if number or convert non-number to 0;
-  padString = String(padString || ' ');
-  if (str.length > targetLength) {
-    return String(str);
-  }
-  else {
-    targetLength = targetLength - str.length;
-    if (targetLength > padString.length) {
-      padString += padString.repeat(targetLength / padString.length); //append to original to ensure we are longer than needed
-    }
-    return String(str) + padString.slice(0, targetLength);
   }
 }
 
@@ -145,8 +145,8 @@ function existsFdInFs(svs, fd) {
 }
 
 export function load(staticModule) {
-  if (!(global.static_fs_runtime_loader)) {
-    global.static_fs_runtime_loader = {};
+  if (!(global.__STATIC_FS_RUNTIME)) {
+    global.__STATIC_FS_RUNTIME = {};
     const svs = new StaticFilesystem();
 
     // first patch the require 
@@ -267,8 +267,8 @@ export function load(staticModule) {
       // native modules should be solved patching the native loader
       // support all node versions up to node 8
     });
-    global.static_fs_runtime_loader.undo = () => { undo_fs(); undo_loader(); };
-    global.static_fs_runtime_loader.staticfilesystem = svs;
+    global.__STATIC_FS_RUNTIME.undo = () => { undo_fs(); undo_loader(); };
+    global.__STATIC_FS_RUNTIME.staticfilesystem = svs;
 
     // hot-patch process.exit so that when it's called we shutdown the patcher early
     // can't just use the event because it's not early enough
@@ -278,7 +278,7 @@ export function load(staticModule) {
       svs.shutdown();
 
       // remove the patching
-      global.static_fs_runtime_loader.undo();
+      global.__STATIC_FS_RUNTIME.undo();
 
       // keep going
       return process_exit(n);
@@ -293,50 +293,65 @@ export function load(staticModule) {
 
     // hot-patch fork so we can make child processes work too.
     child_process.fork = (modulePath, args, options) => {
-      if (args && existsInFs(svs, modulePath)) {
-        return fork(__filename, [...getInsertedArgs(svs.loadedVolumes), modulePath, ...Array.isArray(args) ? args : [args]], options)
+      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
+      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
+      if (args && staticFsEnv) {
+        return fork(process.env.STATIC_FS_MAIN_RUNTIME_PATH, [...getInsertedArgs(svs.loadedVolumes), modulePath, ...Array.isArray(args) ? args : [args]], { ...options, env: staticFsEnv })
       } else {
-        return fork(__filename, args, options);
+        return fork(modulePath, args, options);
       }
     };
 
     // hot-patch spawn so we can patch if you're actually calling node.
     child_process.spawn = (command, args, options) => {
-      if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && existsInFs(svs, args[0])) {
-        return spawn(command, [__filename, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], options);
+      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
+      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
+      if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && staticFsEnv) {
+        return spawn(command, [process.env.STATIC_FS_MAIN_RUNTIME_PATH, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], { ...options, env: staticFsEnv });
       }
       return spawn(command, args, options);
     };
 
     child_process.spawnSync = (command, args, options) => {
-      if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && existsInFs(svs, args[0])) {
-        return spawnSync(command, [__filename, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], options);
+      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
+      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
+      if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && staticFsEnv) {
+        return spawnSync(command, [process.env.STATIC_FS_MAIN_RUNTIME_PATH, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], { ...options, env: staticFsEnv });
       }
       return spawnSync(command, args, options);
     };
 
     child_process.exec = (command, options, callback) => {
+      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
+      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
       const pos = startsWithNode(command);
-      if (pos > -1) {
-        return exec(`${command.substring(0, pos)} "${__filename}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, options, callback);
+      if (pos > -1 && staticFsEnv) {
+        return exec(`${command.substring(0, pos)} "${process.env.STATIC_FS_MAIN_RUNTIME_PATH}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, { ...options, env: staticFsEnv }, callback);
       }
       return exec(command, options, callback);
     };
 
     child_process.execSync = (command, options) => {
+      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
+      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
       const pos = startsWithNode(command);
-      if (pos > -1) {
-        return execSync(`${command.substring(0, pos)} "${__filename}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, options);
+      if (pos > -1 && staticFsEnv) {
+        return execSync(`${command.substring(0, pos)} "${process.env.STATIC_FS_MAIN_RUNTIME_PATH}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, { ...options, env: staticFsEnv });
       }
       return execSync(command, options);
     }
   }
-  global.static_fs_runtime_loader.staticfilesystem.load(staticModule);
+  global.__STATIC_FS_RUNTIME.staticfilesystem.load(staticModule);
+
+  if (!process.env.STATIC_FS_MAIN_RUNTIME_PATH && !process.env.STATIC_FS_ENV) {
+    process.env.STATIC_FS_ENV = true;
+    process.env.STATIC_FS_MAIN_RUNTIME_PATH = global.__STATIC_FS_RUNTIME.staticfilesystem.volumes[staticModule].runtimePath;
+  }
 }
 
 export function unload(staticModule) {
-  if (global.static_fs_runtime_loader.undo) {
-    const svs = global.static_fs_runtime_loader.staticfilesystem;
+  if (global.__STATIC_FS_RUNTIME.undo) {
+    const svs = global.__STATIC_FS_RUNTIME.staticfilesystem;
     svs.unload(staticModule);
   }
 }

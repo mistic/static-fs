@@ -7,7 +7,7 @@ import { ReadStream } from './streams';
 
 export class StaticFilesystem {
   constructor() {
-    this.volumes = [];
+    this.volumes = {};
     this.fds = {};
     this.pathVolumeMap = {};
   }
