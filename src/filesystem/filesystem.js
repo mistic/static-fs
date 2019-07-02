@@ -38,7 +38,7 @@ export class StaticFilesystem {
   }
 
   shutdown() {
-    for (const volume of this.volumes) {
+    for (const volume of Object.values(this.volumes)) {
       volume.shutdown();
     }
   }

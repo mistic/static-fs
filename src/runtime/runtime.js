@@ -13,6 +13,12 @@ if (isRunningAsEntry()) {
   const currentRuntimePath = process.env.STATIC_FS_MAIN_RUNTIME_PATH || module.filename;
   let startPath = null;
 
+  // Remove parent env vars
+  // In case the load succeeds they will
+  // be added again in the end of the load
+  delete process.env.STATIC_FS_ENV;
+  delete process.env.STATIC_FS_MAIN_RUNTIME_PATH;
+
   try {
     startPath = fs.realpathSync(currentRuntimePath);
   } catch {}
@@ -25,7 +31,7 @@ if (isRunningAsEntry()) {
   for (let i = 0; i < process.argv.length; i++) {
     if (fs.realpathSync(process.argv[i]) === startPath) {
       process.argv.splice(i, 1);
-      while (i < process.argv.length && process.argv[i].startsWith('load-static-fs-volume=')) {
+      while (i < process.argv.length && process.argv[i].startsWith('--load-static-fs-volume=')) {
         const staticModule = process.argv[i].split('=')[1];
         process.argv.splice(i, 1);
         load(staticModule);
@@ -293,10 +299,9 @@ export function load(staticModule) {
 
     // hot-patch fork so we can make child processes work too.
     child_process.fork = (modulePath, args, options) => {
-      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
-      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
-      if (args && staticFsEnv) {
-        return fork(process.env.STATIC_FS_MAIN_RUNTIME_PATH, [...getInsertedArgs(svs.loadedVolumes), modulePath, ...Array.isArray(args) ? args : [args]], { ...options, env: staticFsEnv })
+      const optsEnv = Object.assign(process.env, (options.env || {}));
+      if (args && optsEnv.STATIC_FS_ENV) {
+        return fork(process.env.STATIC_FS_MAIN_RUNTIME_PATH, [...getInsertedArgs(svs.loadedVolumes), modulePath, ...Array.isArray(args) ? args : [args]], { ...options, env: optsEnv })
       } else {
         return fork(modulePath, args, options);
       }
@@ -304,46 +309,42 @@ export function load(staticModule) {
 
     // hot-patch spawn so we can patch if you're actually calling node.
     child_process.spawn = (command, args, options) => {
-      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
-      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
-      if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && staticFsEnv) {
-        return spawn(command, [process.env.STATIC_FS_MAIN_RUNTIME_PATH, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], { ...options, env: staticFsEnv });
+      const optsEnv = Object.assign(process.env, (options.env || {}));
+      if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
+        return spawn(command, [process.env.STATIC_FS_MAIN_RUNTIME_PATH, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], { ...options, env: optsEnv });
       }
       return spawn(command, args, options);
     };
 
     child_process.spawnSync = (command, args, options) => {
-      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
-      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
-      if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && staticFsEnv) {
-        return spawnSync(command, [process.env.STATIC_FS_MAIN_RUNTIME_PATH, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], { ...options, env: staticFsEnv });
+      const optsEnv = Object.assign(process.env, (options.env || {}));
+      if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
+        return spawnSync(command, [process.env.STATIC_FS_MAIN_RUNTIME_PATH, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], { ...options, env: optsEnv });
       }
       return spawnSync(command, args, options);
     };
 
     child_process.exec = (command, options, callback) => {
-      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
-      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
+      const optsEnv = Object.assign(process.env, (options.env || {}));
       const pos = startsWithNode(command);
-      if (pos > -1 && staticFsEnv) {
-        return exec(`${command.substring(0, pos)} "${process.env.STATIC_FS_MAIN_RUNTIME_PATH}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, { ...options, env: staticFsEnv }, callback);
+      if (pos > -1 && optsEnv.STATIC_FS_ENV) {
+        return exec(`${command.substring(0, pos)} "${process.env.STATIC_FS_MAIN_RUNTIME_PATH}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, { ...options, env: optsEnv }, callback);
       }
       return exec(command, options, callback);
     };
 
     child_process.execSync = (command, options) => {
-      const optsEnv = Object.assign({}, { STATIC_FS_ENV: true }, (options.env || {}));
-      const staticFsEnv = optsEnv.STATIC_FS_ENV || process.env.STATIC_FS_ENV;
+      const optsEnv = Object.assign(process.env, (options.env || {}));
       const pos = startsWithNode(command);
-      if (pos > -1 && staticFsEnv) {
-        return execSync(`${command.substring(0, pos)} "${process.env.STATIC_FS_MAIN_RUNTIME_PATH}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, { ...options, env: staticFsEnv });
+      if (pos > -1 && optsEnv.STATIC_FS_ENV) {
+        return execSync(`${command.substring(0, pos)} "${process.env.STATIC_FS_MAIN_RUNTIME_PATH}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, { ...options, env: optsEnv });
       }
       return execSync(command, options);
     }
   }
   global.__STATIC_FS_RUNTIME.staticfilesystem.load(staticModule);
 
-  if (!process.env.STATIC_FS_MAIN_RUNTIME_PATH && !process.env.STATIC_FS_ENV) {
+  if (!process.env.STATIC_FS_MAIN_RUNTIME_PATH || !process.env.STATIC_FS_ENV) {
     process.env.STATIC_FS_ENV = true;
     process.env.STATIC_FS_MAIN_RUNTIME_PATH = global.__STATIC_FS_RUNTIME.staticfilesystem.volumes[staticModule].runtimePath;
   }
