@@ -8,6 +8,7 @@ export class ReadableStaticVolume {
   constructor(sourcePath) {
     this.sourcePath = sourcePath;
     this.moutingRoot = resolve(dirname(this.sourcePath), '../');
+    this.runtimePath = resolve(dirname(this.sourcePath), 'static_fs_runtime.js');
     this.reset()
   }
 
