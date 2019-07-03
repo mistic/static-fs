@@ -71,6 +71,6 @@ export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntr
   const filesAddedToVolume = await addFolderToStaticFsVolume(sanitizedMountRootDir, sanitizedFoldersToAdd);
   const staticFSRuntimeFile  = await createStaticFsRuntimeFile(sanitizedOutputDir);
   await patchEntryPoints(sanitizedAppEntryPointsToPatch, staticFSRuntimeFile, resolve(sanitizedOutputDir, 'static_fs_volume.sfsv'), sanitizedMountRootDir);
-
+  
   return filesAddedToVolume;
 };
