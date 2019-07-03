@@ -3,7 +3,7 @@ import * as child_process from 'child_process';
 import { patchModuleLoader } from './patch/module_loader';
 import { StaticFilesystem } from '../filesystem';
 import { patchFilesystem } from './patch/filesystem';
-import { select } from '../common';
+
 const Module = require('module');
 
 if (isRunningAsEntry()) {
@@ -31,7 +31,7 @@ if (isRunningAsEntry()) {
   for (let i = 0; i < process.argv.length; i++) {
     if (fs.realpathSync(process.argv[i]) === startPath) {
       process.argv.splice(i, 1);
-      while (i < process.argv.length && process.argv[i].startsWith('--load-static-fs-volume=')) {
+      while (i < process.argv.length && process.argv[i].startsWith('--static-fs-volumes=')) {
         const staticModule = process.argv[i].split('=')[1];
         process.argv.splice(i, 1);
         load(staticModule);
@@ -88,12 +88,56 @@ function startsWithNode(command) {
   return -1;
 }
 
-function getInsertedArgs(loadedVolumes) {
-  return select(loadedVolumes, (p, c) => `--load-static-fs-volume=${c}`);
-}
+// Build the args order for the child_process functions
+// The order is always the same:
+// 1 - first add the arguments starting with -- or -
+// 2 - add the main static fs runtime path
+// 3 - add the static-fs-volumes flag
+// 4 - add the main entry
+// 5 - add the rest of the args
+//
+// However for fork the order is different as fork don't accept
+// node args starting by -- or - unless we set the options.execArgs
+// So for fork (when mainStaticFsRuntimePath === null) the order is
+//
+// 1 - add the static-fs-volumes flag
+// 2 - add the main entry
+// 3 - add the rest of the args
+function buildStaticFsArgs(args, mainStaticFsRuntimePath, staticFsVolumesPaths, mainEntry = null) {
+  const sanitizedArgs = Array.isArray(args) ? args : typeof args === 'string' ? args.split(' ') : [];
+  const builtArgs = [];
+  let toAddMetaArgs = true;
 
-function getInsertedArgString(loadedVolumes) {
-  return `${getInsertedArgs(loadedVolumes).map((a) => `\"${a}\"`).join(' ')}`;
+  sanitizedArgs.forEach(arg => {
+    if (!arg) {
+      return;
+    }
+
+    if ((typeof arg === 'string' && arg.startsWith('-') && mainStaticFsRuntimePath) || !toAddMetaArgs) {
+      builtArgs.push(arg);
+      return;
+    }
+
+    toAddMetaArgs = false;
+
+    if (mainStaticFsRuntimePath) {
+      builtArgs.push(mainStaticFsRuntimePath);
+    }
+
+    builtArgs.push(`--static-fs-volumes=${staticFsVolumesPaths.join(',')}`);
+
+    if (mainEntry) {
+      builtArgs.push(mainEntry);
+    }
+
+    builtArgs.push(arg);
+  });
+
+  if (!builtArgs.length) {
+    throw new Error('Something went wrong building the static fs args for the child_process functions');
+  }
+
+  return builtArgs;
 }
 
 function padStart(str, targetLength, padString = ' ') {
@@ -300,8 +344,11 @@ export function load(staticModule) {
     // hot-patch fork so we can make child processes work too.
     child_process.fork = (modulePath, args, options) => {
       const optsEnv = Object.assign(process.env, (options.env || {}));
+      // Note: the mainStaticFsRuntimePath is null because fork is a special case of spawn
+      // that would get added as the first argument
+      const builtArgs = buildStaticFsArgs(args, null, svs.loadedVolumes, modulePath);
       if (args && optsEnv.STATIC_FS_ENV) {
-        return fork(process.env.STATIC_FS_MAIN_RUNTIME_PATH, [...getInsertedArgs(svs.loadedVolumes), modulePath, ...Array.isArray(args) ? args : [args]], { ...options, env: optsEnv })
+        return fork(process.env.STATIC_FS_MAIN_RUNTIME_PATH, builtArgs, { ...options, env: optsEnv })
       } else {
         return fork(modulePath, args, options);
       }
@@ -310,16 +357,20 @@ export function load(staticModule) {
     // hot-patch spawn so we can patch if you're actually calling node.
     child_process.spawn = (command, args, options) => {
       const optsEnv = Object.assign(process.env, (options.env || {}));
+      // Note: the mainEntry is null because that would be automatically
+      // add in the new process as the first real argument of the new process
+      const builtArgs = buildStaticFsArgs(args, process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes);
       if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
-        return spawn(command, [process.env.STATIC_FS_MAIN_RUNTIME_PATH, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], { ...options, env: optsEnv });
+        return spawn(command, builtArgs, { ...options, env: optsEnv });
       }
       return spawn(command, args, options);
     };
 
     child_process.spawnSync = (command, args, options) => {
       const optsEnv = Object.assign(process.env, (options.env || {}));
+      const builtArgs = buildStaticFsArgs(args, process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes);
       if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
-        return spawnSync(command, [process.env.STATIC_FS_MAIN_RUNTIME_PATH, ...getInsertedArgs(svs.loadedVolumes), ...Array.isArray(args) ? args : [args]], { ...options, env: optsEnv });
+        return spawnSync(command, builtArgs, { ...options, env: optsEnv });
       }
       return spawnSync(command, args, options);
     };
@@ -328,7 +379,8 @@ export function load(staticModule) {
       const optsEnv = Object.assign(process.env, (options.env || {}));
       const pos = startsWithNode(command);
       if (pos > -1 && optsEnv.STATIC_FS_ENV) {
-        return exec(`${command.substring(0, pos)} "${process.env.STATIC_FS_MAIN_RUNTIME_PATH}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, { ...options, env: optsEnv }, callback);
+        const builtArgs = buildStaticFsArgs(command.substring(pos), process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes).join(' ');
+        return exec(`${command.substring(0, pos)} ${builtArgs}`, { ...options, env: optsEnv }, callback);
       }
       return exec(command, options, callback);
     };
@@ -337,7 +389,8 @@ export function load(staticModule) {
       const optsEnv = Object.assign(process.env, (options.env || {}));
       const pos = startsWithNode(command);
       if (pos > -1 && optsEnv.STATIC_FS_ENV) {
-        return execSync(`${command.substring(0, pos)} "${process.env.STATIC_FS_MAIN_RUNTIME_PATH}" ${getInsertedArgString(svs.loadedVolumes)} ${command.substring(pos)}`, { ...options, env: optsEnv });
+        const builtArgs = buildStaticFsArgs(command.substring(pos), process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes).join(' ');
+        return execSync(`${command.substring(0, pos)} ${builtArgs}`, { ...options, env: optsEnv });
       }
       return execSync(command, options);
     }
