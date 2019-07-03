@@ -57,6 +57,9 @@ const addFolderToStaticFsVolume = async (mountRootDir, foldersToAdd) => {
   }
 
   await sfs.write();
+
+  // returning all the files added to that created volume
+  return Object.keys(sfs.index);
 };
 
 export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntryPointsToPatch) => {
@@ -65,10 +68,9 @@ export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntr
   const sanitizedFoldersToAdd = foldersToAdd.map(p => resolve(p));
   const sanitizedAppEntryPointsToPatch = appEntryPointsToPatch.map(p => resolve(p));
 
-  await addFolderToStaticFsVolume(sanitizedMountRootDir, sanitizedFoldersToAdd);
+  const filesAddedToVolume = await addFolderToStaticFsVolume(sanitizedMountRootDir, sanitizedFoldersToAdd);
   const staticFSRuntimeFile  = await createStaticFsRuntimeFile(sanitizedOutputDir);
   await patchEntryPoints(sanitizedAppEntryPointsToPatch, staticFSRuntimeFile, resolve(sanitizedOutputDir, 'static_fs_volume.sfsv'), sanitizedMountRootDir);
-
-
-  // TODO: Return the list of the files bundled into the static_fs
+  
+  return filesAddedToVolume;
 };
