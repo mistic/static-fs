@@ -4,9 +4,9 @@
   "description": "A static filesystem to bundle and read files using NodeJS",
   "main": "dist/index.js",
   "scripts": {
-    "test": "yarn run build  && mocha dist/test --timeout 200000",
+    "test": "jest --config test/config/jest.js",
     "build": "node scripts/build",
-    "prepare": "yarn run build",
+    "prepublishOnly": "yarn run build",
     "clean": "shx rm -rf dist"
   },
   "repository": {
@@ -30,13 +30,15 @@
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.5",
     "@babel/preset-env": "^7.4.5",
+    "core-js": "2",
     "execa": "^1.0.0",
+    "jest": "^24.8.0",
     "shx": "^0.3.2",
     "webpack": "^4.34.0",
     "webpack-node-externals": "^1.7.2"
   },
   "engines": {
-    "node": "10.15.2",
+    "node": "^10.15.2",
     "yarn": "^1.10.1"
   }
 }
