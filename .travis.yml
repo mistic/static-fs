@@ -1,6 +1,3 @@
-branches:
-  only:
-    - rewrite
 os:
   - windows
   - linux
