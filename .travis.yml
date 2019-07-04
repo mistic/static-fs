@@ -1,8 +1,5 @@
 language: node_js
 
-node_js:
-  - "10.15.2"
-
 os:
   - windows
   - linux
@@ -21,6 +18,9 @@ matrix:
 
     - name: "linux build"
       os: linux
+
+    # Supported node_js version
+    - node_js: "10.15.2"
 
 cache: yarn
 
