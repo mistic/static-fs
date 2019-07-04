@@ -1,13 +1,29 @@
+language: node_js
+
+node_js:
+  - "10.15.2"
+
 os:
   - windows
   - linux
   - osx
-language: node_js
-node_js:
-  - "10.15.2"
-env:
-  - YARN_GPG=no
+
+matrix:
+  fast_finish: true
+  include:
+    - name: "windows build"
+      os: windows
+      cache: false # windows cache uploads are slow
+      env: YARN_GPG=no # starts gpg-agent that never exits
+
+    - name: "macOS build"
+      os: osx
+
+    - name: "linux build"
+      os: linux
+
+cache: yarn
+
 before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.10.1
   - export PATH="$HOME/.yarn/bin:$PATH"
-cache: yarn
