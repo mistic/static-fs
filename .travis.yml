@@ -1,10 +1,5 @@
 language: node_js
 
-os:
-  - windows
-  - linux
-  - osx
-
 matrix:
   fast_finish: true
   include:
