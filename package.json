@@ -7,7 +7,7 @@
     "test": "jest --config test/config/jest.js",
     "build": "node scripts/build",
     "prepublishOnly": "yarn run build",
-    "clean": "shx rm -rf dist"
+    "clean": "rimraf dist"
   },
   "repository": {
     "type": "git",
@@ -33,7 +33,7 @@
     "core-js": "2",
     "execa": "^1.0.0",
     "jest": "^24.8.0",
-    "shx": "^0.3.2",
+    "rimraf": "^2.6.3",
     "webpack": "^4.34.0",
     "webpack-node-externals": "^1.7.2"
   },
