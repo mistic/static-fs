@@ -1,6 +1,6 @@
 # static-fs : WIP
 
-[![Build Status](https://travis-ci.org/mistic/static-fs.svg?branch=master)](https://travis-ci.org/mistic/static-fs)
+[![Build Status](https://travis-ci.com/mistic/static-fs.svg?branch=master)](https://travis-ci.com/mistic/static-fs)
 
 This is a work in progress
 
