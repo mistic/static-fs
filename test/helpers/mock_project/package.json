@@ -1,0 +1,28 @@
+{
+  "name": "mock-project",
+  "version": "1.0.0",
+  "description": "A mock project to test the static-fs",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mistic/static-fs.git"
+  },
+  "author": "Tiago Costa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mistic/static-fs/issues"
+  },
+  "homepage": "https://github.com/mistic/static-fs#readme",
+  "dependencies": {
+    "execa": "2.0.2",
+    "lodash": "4.17.11",
+    "spellchecker": "3.6.1"
+  },
+  "devDependencies": {
+    "static-fs": "../../../"
+  },
+  "engines": {
+    "node": "^10.15.2",
+    "yarn": "^1.10.1"
+  }
+}
