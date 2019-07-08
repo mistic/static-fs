@@ -34,7 +34,7 @@
     "execa": "^1.0.0",
     "jest": "^24.8.0",
     "rimraf": "^2.6.3",
-    "webpack": "^4.34.0",
+    "webpack": "^4.35.3",
     "webpack-node-externals": "^1.7.2"
   },
   "engines": {
