@@ -4,7 +4,7 @@
   "description": "A static filesystem to bundle and read files using NodeJS",
   "main": "dist/index.js",
   "scripts": {
-    "test": "jest --config test/config/jest.js",
+    "test": "jest --config test/jest/config.js",
     "build": "node scripts/build",
     "prepublishOnly": "yarn run build",
     "clean": "rimraf dist"
@@ -31,6 +31,7 @@
     "@babel/core": "^7.4.5",
     "@babel/preset-env": "^7.4.5",
     "core-js": "2",
+    "cpy": "^7.3.0",
     "execa": "^1.0.0",
     "jest": "^24.8.0",
     "rimraf": "^2.6.3",
