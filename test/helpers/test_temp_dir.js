@@ -2,24 +2,20 @@ const cpy = require('cpy');
 const { mkdtemp } = require('fs');
 const os = require('os');
 const { join, resolve } = require('path');
-const rimraf = require('rimraf');
+const del = require('del');
 const { promisify } = require('util');
 
 const mkdtempAsync = promisify(mkdtemp);
 
-const created_test_temp_dirs = {};
-
 async function createTestTempDir() {
   try {
     const createdTempTestDir = await mkdtempAsync(join(os.tmpdir(), 'static-fs-test-'));
-
     // copy mock_project into it
-    await cpy('./mock_project', createdTempTestDir, {
-      parents: true,
-      cwd: resolve('test/helpers')
+    await cpy('./**/*', createdTempTestDir, {
+      cwd: resolve('test/helpers/mock_project'),
+      parents: true
     });
 
-    created_test_temp_dirs[createdTempTestDir] = true;
     return createdTempTestDir;
   } catch (error) {
     console.error(error);
@@ -27,11 +23,8 @@ async function createTestTempDir() {
   }
 }
 
-function removeTestTempDirs() {
-  Object.keys(created_test_temp_dirs).forEach(dir => {
-    rimraf.sync(dir);
-    delete created_test_temp_dirs[dir];
-  });
+async function removeTestTempDirs() {
+  await del(join(os.tmpdir(), 'static-fs-test-*'), { force: true });
 }
 
 module.exports = {
