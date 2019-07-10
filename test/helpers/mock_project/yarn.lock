@@ -7,9 +7,16 @@ mock_child_process_module@../../fixtures/node_modules/mock_child_process_module:
 
 mock_native_module@../../fixtures/node_modules/mock_native_module:
   version "1.0.0"
+  dependencies:
+    nan "^2.14.0"
 
 mock_simple_module@../../fixtures/node_modules/mock_simple_module:
   version "1.0.0"
+
+nan@^2.14.0:
+  version "2.14.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.0.tgz#7818f722027b2459a86f0295d434d1fc2336c52c"
+  integrity sha512-INOFj37C7k3AfaNTtX8RhsTw7qRy7eLET14cROi9+5HAVbbHuIWUHEauBv5qT4Av2tWasiTY1Jw6puUNqRJXQg==
 
 static-fs@../../../:
   version "0.0.1"
