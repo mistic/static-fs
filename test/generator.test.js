@@ -40,8 +40,4 @@ describe('Static Fs Generator', () => {
   test('if the entry points were patched', async () => {
 
   });
-
-  test('propose test fail to test ci', async () => {
-    expect(true).toBe(false);
-  });
 });
