@@ -62,6 +62,7 @@ const addFolderToStaticFsVolume = async (mountRootDir, foldersToAdd) => {
   return Object.keys(sfs.index);
 };
 
+// TODO: provide a way to exclude an additional list of files. Maybe a last optional parameter resulting from a glob
 export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntryPointsToPatch) => {
   const sanitizedMountRootDir = resolve(mountRootDir);
   const sanitizedOutputDir = resolve(sanitizedMountRootDir, 'static_fs');
