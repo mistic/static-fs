@@ -1,31 +1,28 @@
 import { resolve } from 'path';
-import { createTestTempDir, getDirContent, getStaticFsPackage } from './helpers';
+import { getDirContent, getStaticFsPackage } from './helpers';
 
-let staticFs = null,
-  testTempDir = null,
-  folderToAdd = null,
-  mountRoot = null,
-  entryPoint = null,
+const testTempDir = global.__mock_project_path,
+  staticFs = getStaticFsPackage(testTempDir),
+  folderToAdd = resolve(testTempDir, 'node_modules'),
+  mountRoot = testTempDir,
+  entryPoint = require.resolve(testTempDir),
   filesAddedToStaticFs = [];
 
 describe('Static Fs Generator', () => {
   beforeAll(async () => {
-    testTempDir = await createTestTempDir();
-    staticFs =  getStaticFsPackage(testTempDir);
-
-    folderToAdd = resolve(testTempDir, 'node_modules');
-    mountRoot = testTempDir;
-    entryPoint = require.resolve(testTempDir);
-
     // generate the static fs
-    filesAddedToStaticFs = await staticFs.generateStaticFsVolume(
-      mountRoot,
-      [
-        folderToAdd
-      ],
-      [
-        entryPoint
-      ]
+    filesAddedToStaticFs.push(
+      ...(
+        await staticFs.generateStaticFsVolume(
+          mountRoot,
+          [
+            folderToAdd
+          ],
+          [
+            entryPoint
+          ]
+        )
+      )
     );
   });
 
