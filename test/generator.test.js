@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { getDirContent, getStaticFsPackage } from './helpers';
 
@@ -27,7 +28,17 @@ describe('Static Fs Generator', () => {
   });
 
   test('create a valid static fs into the mounting root', async () => {
+    const baseSFSFolder = resolve(mountRoot, 'static_fs');
+    const existsBaseSFSFolder = existsSync(baseSFSFolder);
+    const sfsBaseFolderFiles = getDirContent(baseSFSFolder);
+    const expectedFilesOnBaseSFSFolder = [
+      resolve(baseSFSFolder, 'static_fs_volume.sfsv'),
+      resolve(baseSFSFolder, 'static_fs_runtime.js')
+    ];
 
+    expect(existsBaseSFSFolder).toBeTruthy();
+    expect(sfsBaseFolderFiles.length).toBe(2);
+    expect(sfsBaseFolderFiles).toEqual(expect.arrayContaining(expectedFilesOnBaseSFSFolder));
   });
 
   test('static fs bundle for the expected files (= all except .node)', async () => {
@@ -38,6 +49,8 @@ describe('Static Fs Generator', () => {
   });
 
   test('if the entry points were patched', async () => {
+    const entryPointContent = readFileSync(entryPoint, { encoding: 'utf8' }).toString();
 
+    expect(entryPointContent.includes('// load static_fs_volume:')).toBeTruthy();
   });
 });
