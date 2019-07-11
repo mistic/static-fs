@@ -29,9 +29,10 @@ export function patchFilesystem(volume, original = fs) {
 
   // iterate over the filesystem and patch members
   for (const member of Object.getOwnPropertyNames(original)) {
-    if (typeof volume[member] !== typeof original[member] || !volume[member]) {
+    if (!volume[member] || typeof volume[member] !== typeof original[member]) {
       continue;
     }
+
     switch (metadata[member]) {
       case MemberType.Constructor:
         // bind as a constructor

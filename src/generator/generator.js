@@ -59,7 +59,8 @@ const addFolderToStaticFsVolume = async (mountRootDir, foldersToAdd) => {
   await sfs.write();
 
   // returning all the files added to that created volume
-  return Object.keys(sfs.index);
+  // TODO: We should also return folders added to the static-fs without any .node file
+  return Object.keys(sfs.index).map(filePath => resolve(sfs.mountingRoot, filePath));
 };
 
 // TODO: provide a way to exclude an additional list of files. Maybe a last optional parameter resulting from a glob

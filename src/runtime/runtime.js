@@ -108,8 +108,13 @@ function buildStaticFsArgs(args, mainStaticFsRuntimePath, staticFsVolumesPaths, 
   const builtArgs = [];
   let toAddMetaArgs = true;
 
-  sanitizedArgs.forEach(arg => {
-    if (!arg) {
+  const iterableArgs = [...sanitizedArgs];
+
+  do {
+    const wasArrayEmptyBeforeArg = iterableArgs.length === 0;
+    const arg = iterableArgs.shift();
+
+    if (!arg && !wasArrayEmptyBeforeArg) {
       return;
     }
 
@@ -131,7 +136,8 @@ function buildStaticFsArgs(args, mainStaticFsRuntimePath, staticFsVolumesPaths, 
     }
 
     builtArgs.push(arg);
-  });
+
+  } while (iterableArgs.length > 0);
 
   if (!builtArgs.length) {
     throw new Error('Something went wrong building the static fs args for the child_process functions');
@@ -343,12 +349,14 @@ export function load(staticModule) {
 
     // hot-patch fork so we can make child processes work too.
     child_process.fork = (modulePath, args, options) => {
-      const optsEnv = Object.assign(process.env, (options.env || {}));
+      const sanitizedOptions = (args && typeof args === 'object' && args.constructor === Object) ? args : (options || {});
+      const sanitizedArgs = Array.isArray(args) ? args : [];
+      const optsEnv = Object.assign(process.env, (sanitizedOptions.env || {}));
       // Note: the mainStaticFsRuntimePath is null because fork is a special case of spawn
       // that would get added as the first argument
-      const builtArgs = buildStaticFsArgs(args, null, svs.loadedVolumes, modulePath);
+      const builtArgs = buildStaticFsArgs(sanitizedArgs, null, svs.loadedVolumes, modulePath);
       if (args && optsEnv.STATIC_FS_ENV) {
-        return fork(process.env.STATIC_FS_MAIN_RUNTIME_PATH, builtArgs, { ...options, env: optsEnv })
+        return fork(process.env.STATIC_FS_MAIN_RUNTIME_PATH, builtArgs, { ...sanitizedOptions, env: optsEnv })
       } else {
         return fork(modulePath, args, options);
       }
@@ -356,41 +364,45 @@ export function load(staticModule) {
 
     // hot-patch spawn so we can patch if you're actually calling node.
     child_process.spawn = (command, args, options) => {
-      const optsEnv = Object.assign(process.env, (options.env || {}));
+      const sanitizedOptions = (args && typeof args === 'object' && args.constructor === Object) ? args : (options || {});
+      const optsEnv = Object.assign(process.env, (sanitizedOptions.env || {}));
       // Note: the mainEntry is null because that would be automatically
       // add in the new process as the first real argument of the new process
       const builtArgs = buildStaticFsArgs(args, process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes);
       if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
-        return spawn(command, builtArgs, { ...options, env: optsEnv });
+        return spawn(command, builtArgs, { ...sanitizedOptions, env: optsEnv });
       }
       return spawn(command, args, options);
     };
 
     child_process.spawnSync = (command, args, options) => {
-      const optsEnv = Object.assign(process.env, (options.env || {}));
+      const sanitizedOptions = (args && typeof args === 'object' && args.constructor === Object) ? args : (options || {});
+      const optsEnv = Object.assign(process.env, (sanitizedOptions.env || {}));
       const builtArgs = buildStaticFsArgs(args, process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes);
       if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
-        return spawnSync(command, builtArgs, { ...options, env: optsEnv });
+        return spawnSync(command, builtArgs, { ...sanitizedOptions, env: optsEnv });
       }
       return spawnSync(command, args, options);
     };
 
     child_process.exec = (command, options, callback) => {
-      const optsEnv = Object.assign(process.env, (options.env || {}));
+      const sanitizedOptions = (options && typeof options === 'object') ? options : {};
+      const optsEnv = Object.assign(process.env, (sanitizedOptions.env || {}));
       const pos = startsWithNode(command);
       if (pos > -1 && optsEnv.STATIC_FS_ENV) {
         const builtArgs = buildStaticFsArgs(command.substring(pos), process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes).join(' ');
-        return exec(`${command.substring(0, pos)} ${builtArgs}`, { ...options, env: optsEnv }, callback);
+        return exec(`${command.substring(0, pos)} ${builtArgs}`, { ...sanitizedOptions, env: optsEnv }, callback);
       }
       return exec(command, options, callback);
     };
 
     child_process.execSync = (command, options) => {
-      const optsEnv = Object.assign(process.env, (options.env || {}));
+      const sanitizedOptions = (options && typeof options === 'object') ? options : {};
+      const optsEnv = Object.assign(process.env, (sanitizedOptions.env || {}));
       const pos = startsWithNode(command);
       if (pos > -1 && optsEnv.STATIC_FS_ENV) {
         const builtArgs = buildStaticFsArgs(command.substring(pos), process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes).join(' ');
-        return execSync(`${command.substring(0, pos)} ${builtArgs}`, { ...options, env: optsEnv });
+        return execSync(`${command.substring(0, pos)} ${builtArgs}`, { ...sanitizedOptions, env: optsEnv });
       }
       return execSync(command, options);
     }

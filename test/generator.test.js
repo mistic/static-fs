@@ -1,3 +1,4 @@
+import del from 'del';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { getDirContent, getStaticFsPackage } from './helpers';
@@ -25,6 +26,10 @@ describe('Static Fs Generator', () => {
         )
       )
     );
+  });
+
+  afterAll(async () => {
+    await del(filesAddedToStaticFs, { force: true });
   });
 
   test('create a valid static fs into the mounting root', async () => {
