@@ -15,7 +15,7 @@
   "homepage": "https://github.com/mistic/static-fs#readme",
   "dependencies": {
     "execa": "2.0.2",
-    "lodash": "4.17.11",
+    "lodash": "4.17.13",
     "spellchecker": "3.6.1"
   },
   "devDependencies": {
