@@ -1,4 +1,5 @@
 import execa from 'execa';
+import { dirname } from 'path';
 
 export async function runTestCaseInIsolatedEnv(mockProject, testCaseName) {
   if (!mockProject[testCaseName]) {
@@ -7,5 +8,5 @@ export async function runTestCaseInIsolatedEnv(mockProject, testCaseName) {
     throw error;
   }
 
-  return await execa('node', [mockProject[testCaseName]]);
+  return await execa('node', [mockProject[testCaseName]], { cwd: dirname(mockProject[testCaseName]) });
 }

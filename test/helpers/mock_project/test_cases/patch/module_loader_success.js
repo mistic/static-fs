@@ -1,11 +1,11 @@
 'use strict';
 
-const resolve = require('path').resolve;
+const posixPath = require('path').posix;
 const { patchModuleLoader } = require('static-fs/dist/runtime');
 
 const mockFs = {
   readFileSync: (path) => {
-    if (path === `${resolve(__dirname, 'static_fs_mock', 'patched', 'path', 'file.js')}`) {
+    if (path === `${posixPath.resolve('./static_fs_mock/patched/path/file.js')}`) {
       return 'module.exports = 1';
     }
     throw new Error();
@@ -14,7 +14,7 @@ const mockFs = {
     return path;
   },
   statSync: (path) => {
-    if (path === __dirname) {
+    if (path === posixPath.resolve('.')) {
       return {
         isFile: () => false,
         isDirectory: () => true,
@@ -26,7 +26,7 @@ const mockFs = {
       }
     }
 
-    if (path === `${resolve(__dirname, 'static_fs_mock', 'patched', 'path', 'file.js')}`) {
+    if (path === `${posixPath.resolve('./static_fs_mock/patched/path/file.js')}`) {
       return {
         isFile: () => true,
         isDirectory: () => false,
