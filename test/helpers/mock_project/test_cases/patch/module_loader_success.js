@@ -41,7 +41,7 @@ const mockFs = {
   }
 };
 
-patchModuleLoader(mockFs, true);
-
+const undo_module_loader_patch = patchModuleLoader(mockFs, true);
 const staticFsPatchedPathFileExport = require('./static_fs_mock/patched/path/file');
 console.log(staticFsPatchedPathFileExport);
+undo_module_loader_patch();

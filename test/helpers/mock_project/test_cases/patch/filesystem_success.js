@@ -12,7 +12,7 @@ const mockFs = {
   }
 };
 
-patchFilesystem(mockFs);
-
+const undo_filesystem_patch = patchFilesystem(mockFs);
 const staticFsPatchedPathFileExport = fs.readFileSync('./static_fs_mock/patched/path/file.js');
 console.log(staticFsPatchedPathFileExport);
+undo_filesystem_patch();
