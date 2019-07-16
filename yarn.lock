@@ -2108,6 +2108,13 @@ end-of-stream@^1.0.0, end-of-stream@^1.1.0:
   dependencies:
     once "^1.4.0"
 
+enhanced-resolve-jest@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/enhanced-resolve-jest/-/enhanced-resolve-jest-1.0.1.tgz#27b0335ee579fca23fcc699963b6350767236136"
+  integrity sha512-Fpc+fMBWMAi/Gcs8K1Oy/SmLl4MTcZWzcfRWSSOI/TodYR8Zdh2W4ohtqrjhjWKiqBNdf9XNoz71nyWVBeJHXg==
+  dependencies:
+    enhanced-resolve "^4.1.0"
+
 enhanced-resolve@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/enhanced-resolve/-/enhanced-resolve-4.1.0.tgz#41c7e0bfdfe74ac1ffe1e57ad6a5c6c9f3742a7f"

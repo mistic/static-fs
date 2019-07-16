@@ -23,7 +23,6 @@ const metadata = {
 };
 
 export function patchFilesystem(volume, original = fs) {
-
   // create a backup before modification
   const backup = { ...original };
 
@@ -40,8 +39,7 @@ export function patchFilesystem(volume, original = fs) {
         break;
 
       case MemberType.Property:
-        // overwrite property
-        original[member] = volume[member];
+        // skip overwrite property
         break;
 
       default:
@@ -52,5 +50,5 @@ export function patchFilesystem(volume, original = fs) {
   }
 
   // return a delegate to undo those changes.
-  return () => patchFilesystem(fs, backup);
+  return () => patchFilesystem(backup, original);
 }

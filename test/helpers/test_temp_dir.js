@@ -1,5 +1,5 @@
 const cpy = require('cpy');
-const { mkdtemp } = require('fs');
+const { mkdtemp, realpathSync } = require('fs');
 const os = require('os');
 const { join, resolve } = require('path');
 const del = require('del');
@@ -9,7 +9,7 @@ const mkdtempAsync = promisify(mkdtemp);
 
 async function createTestTempDir() {
   try {
-    const createdTempTestDir = await mkdtempAsync(join(os.tmpdir(), 'static-fs-test-'));
+    const createdTempTestDir = await mkdtempAsync(join(realpathSync(os.tmpdir()), 'static-fs-test-'));
     // copy mock_project into it
     await cpy('./**/*', createdTempTestDir, {
       cwd: resolve('test/helpers/mock_project'),

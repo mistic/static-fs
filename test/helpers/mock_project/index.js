@@ -1,13 +1,11 @@
 'use strict';
 
-const mock_child_process_module = require('mock_child_process_module');
-const mock_native_module = require('mock_native_module');
-const mock_simple_module = require('mock_simple_module');
-
-(async () => {
-  await mock_child_process_module.run();
-  await mock_native_module.run();
-  await mock_simple_module.run();
-
-  console.log('mock_project has run');
-})();
+module.exports = {
+  'full_app_usage': require.resolve('./test_cases/full_app_usage'),
+  'patch_filesystem_failure': require.resolve('./test_cases/patch/filesystem_failure'),
+  'patch_filesystem_failure_after_undo': require.resolve('./test_cases/patch/filesystem_failure_after_undo'),
+  'patch_filesystem_success': require.resolve('./test_cases/patch/filesystem_success'),
+  'patch_module_loader_failure': require.resolve('./test_cases/patch/module_loader_failure'),
+  'patch_module_loader_failure_after_undo': require.resolve('./test_cases/patch/module_loader_failure_after_undo'),
+  'patch_module_loader_success': require.resolve('./test_cases/patch/module_loader_success')
+};

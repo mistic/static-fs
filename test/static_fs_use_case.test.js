@@ -1,13 +1,12 @@
-import execa from 'execa';
+import { runTestCaseInIsolatedEnv } from './helpers';
 
-const testTempDir = global.__mock_project_path,
-  entryPoint = require.resolve(testTempDir);
+const mockProject = require(global.__mock_project_path);
 let mockProjectStdout = null,
   mockProjectStderr = null;
 
 describe('Static Fs Use Case', () => {
   beforeAll(async () => {
-    const mockProjectProcess = await execa('node', [entryPoint]);
+    const mockProjectProcess = await runTestCaseInIsolatedEnv(mockProject, 'full_app_usage');
     mockProjectStdout = mockProjectProcess.stdout;
     mockProjectStderr = mockProjectProcess.stderr;
   });

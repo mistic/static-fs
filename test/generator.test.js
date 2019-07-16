@@ -29,7 +29,8 @@ describe('Static Fs Generator', () => {
   });
 
   afterAll(async () => {
-    await del(filesAddedToStaticFs, { force: true });
+    const filesOnStaticFsExceptStaticFs = filesAddedToStaticFs.filter(filePath => !filePath.includes('static-fs'));
+    await del(filesOnStaticFsExceptStaticFs, { force: true });
   });
 
   test('create a valid static fs into the mounting root', async () => {
