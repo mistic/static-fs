@@ -1,6 +1,6 @@
 import del from 'del';
 import { existsSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import { resolve, sep } from 'path';
 import { getDirContent, getStaticFsPackage } from './helpers';
 
 const testTempDir = global.__mock_project_path,
@@ -29,7 +29,7 @@ describe('Static Fs Generator', () => {
   });
 
   afterAll(async () => {
-    const filesOnStaticFsExceptStaticFs = filesAddedToStaticFs.filter(filePath => !filePath.includes('static-fs'));
+    const filesOnStaticFsExceptStaticFs = filesAddedToStaticFs.filter(filePath => !filePath.includes(`node_modules${sep}static-fs`));
     await del(filesOnStaticFsExceptStaticFs, { force: true });
   });
 
