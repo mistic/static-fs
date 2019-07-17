@@ -4,7 +4,7 @@
   "description": "A static filesystem to bundle and read files using NodeJS",
   "main": "dist/index.js",
   "scripts": {
-    "test": "jest --config test/jest/config.js --maxWorkers=75%",
+    "test": "jest --config test/jest/config.js --maxWorkers=4",
     "build": "node scripts/build",
     "prepublishOnly": "yarn run build",
     "clean": "rimraf dist"
