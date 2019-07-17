@@ -7,7 +7,7 @@ const testTempDir = global.__mock_project_path,
   staticFs = getStaticFsPackage(testTempDir),
   folderToAdd = resolve(testTempDir, 'node_modules'),
   mountRoot = testTempDir,
-  entryPoint = require.resolve(testTempDir),
+  entryPoint = resolve(testTempDir, 'test_cases/full_app_usage.js'),
   filesAddedToStaticFs = [];
 
 describe('Static Fs Generator', () => {
