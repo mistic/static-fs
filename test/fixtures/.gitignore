@@ -1,0 +1,2 @@
+# include mocked node_modules from fixture node_modules
+!/node_modules

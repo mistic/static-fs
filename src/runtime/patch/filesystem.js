@@ -23,15 +23,15 @@ const metadata = {
 };
 
 export function patchFilesystem(volume, original = fs) {
-
   // create a backup before modification
   const backup = { ...original };
 
   // iterate over the filesystem and patch members
   for (const member of Object.getOwnPropertyNames(original)) {
-    if (typeof volume[member] !== typeof original[member] || !volume[member]) {
+    if (!volume[member] || typeof volume[member] !== typeof original[member]) {
       continue;
     }
+
     switch (metadata[member]) {
       case MemberType.Constructor:
         // bind as a constructor
@@ -39,8 +39,7 @@ export function patchFilesystem(volume, original = fs) {
         break;
 
       case MemberType.Property:
-        // overwrite property
-        original[member] = volume[member];
+        // skip overwrite property
         break;
 
       default:
@@ -51,5 +50,5 @@ export function patchFilesystem(volume, original = fs) {
   }
 
   // return a delegate to undo those changes.
-  return () => patchFilesystem(fs, backup);
+  return () => patchFilesystem(backup, original);
 }

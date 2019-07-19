@@ -1,13 +1,10 @@
+.idea
+.babelrc
 .editorconfig
+.gitignore
 .npmignore
+.travis.yml
 yarn.lock
 
-*.js.map
-*.ts
-*.tgz
-*.tar
-
 test/
-dist/test/
-lib/
-!dist/lib/
+src/
