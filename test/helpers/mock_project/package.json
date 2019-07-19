@@ -12,13 +12,11 @@
   "bugs": {
     "url": "https://github.com/mistic/static-fs/issues"
   },
-  "homepage": "https://github.com/mistic/static-fs#readme",
+  "homepage": "https://github.com/mistic/static-fs",
   "dependencies": {
-    "execa": "2.0.2",
-    "lodash": "4.17.11",
-    "spellchecker": "3.6.1"
-  },
-  "devDependencies": {
+    "mock_child_process_module": "../../fixtures/node_modules/mock_child_process_module",
+    "mock_native_module": "../../fixtures/node_modules/mock_native_module",
+    "mock_simple_module": "../../fixtures/node_modules/mock_simple_module",
     "static-fs": "../../../"
   },
   "engines": {
