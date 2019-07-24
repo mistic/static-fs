@@ -1,5 +1,12 @@
 language: node_js
 
+# it will only build master and version branches
+# prs against master and commits on those prs will still be built
+branches:
+  only:
+    - master
+    - /v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$/
+
 matrix:
   fast_finish: true
   include:
