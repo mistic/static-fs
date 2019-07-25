@@ -1,15 +1,15 @@
 import { Readable } from 'stream';
 import util from 'util';
 
-const ERR_STR_OPTS = typeOfOptions => `Expected options to be either an object or a string, but got ${typeOfOptions} instead`;
+const ERR_STR_OPTS = (typeOfOptions) =>
+  `Expected options to be either an object or a string, but got ${typeOfOptions} instead`;
 
 function assertEncoding(encoding) {
   if (encoding && !Buffer.isEncoding(encoding)) throw new Error(`ERR_INVALID_OPT_VALUE_ENCODING ${encoding}`);
 }
 
 function getOptions(options, defaultOptions) {
-  if (options === null || options === undefined ||
-    typeof options === 'function') {
+  if (options === null || options === undefined || typeof options === 'function') {
     return defaultOptions;
   }
 
@@ -21,15 +21,13 @@ function getOptions(options, defaultOptions) {
     throw new ERR_STR_OPTS(typeof options);
   }
 
-  if (options.encoding !== 'buffer')
-    assertEncoding(options.encoding);
+  if (options.encoding !== 'buffer') assertEncoding(options.encoding);
   return options;
 }
 
 function copyObject(source) {
   const target = {};
-  for (const key in source)
-    target[key] = source[key];
+  for (const key in source) target[key] = source[key];
   return target;
 }
 
@@ -44,23 +42,19 @@ let pool;
 const poolFragments = [];
 
 function allocNewPool(poolSize) {
-  if (poolFragments.length > 0)
-    pool = poolFragments.pop();
-  else
-    pool = Buffer.allocUnsafe(poolSize);
+  if (poolFragments.length > 0) pool = poolFragments.pop();
+  else pool = Buffer.allocUnsafe(poolSize);
   pool.used = 0;
 }
 
 export function ReadStream(sfs, path, options) {
-  if (!(this instanceof ReadStream))
-    return new ReadStream(sfs, path, options);
+  if (!(this instanceof ReadStream)) return new ReadStream(sfs, path, options);
 
   this._sfs = sfs;
 
   // a little bit bigger buffer and water marks by default
   options = copyObject(getOptions(options, {}));
-  if (options.highWaterMark === undefined)
-    options.highWaterMark = 64 * 1024;
+  if (options.highWaterMark === undefined) options.highWaterMark = 64 * 1024;
 
   // for backwards compat do not emit close on destroy.
   options.emitClose = false;
@@ -96,13 +90,10 @@ export function ReadStream(sfs, path, options) {
     this.pos = this.start;
   }
 
-  if (typeof this.end !== 'number')
-    this.end = Infinity;
-  else if (Number.isNaN(this.end))
-    throw new TypeError('"end" option must be a Number');
+  if (typeof this.end !== 'number') this.end = Infinity;
+  else if (Number.isNaN(this.end)) throw new TypeError('"end" option must be a Number');
 
-  if (!this.fd || !this.fd.type || this.fd.type !== 'static_fs_file_descriptor')
-    this.open();
+  if (!this.fd || !this.fd.type || this.fd.type !== 'static_fs_file_descriptor') this.open();
 
   this.on('end', function() {
     if (this.autoClose) {
@@ -137,8 +128,7 @@ ReadStream.prototype._read = function(n) {
     });
   }
 
-  if (this.destroyed)
-    return;
+  if (this.destroyed) return;
 
   if (!pool || pool.length - pool.used < kMinPoolSpace) {
     // discard the old pool.
@@ -152,15 +142,12 @@ ReadStream.prototype._read = function(n) {
   let toRead = Math.min(pool.length - pool.used, n);
   const start = pool.used;
 
-  if (this.pos !== undefined)
-    toRead = Math.min(this.end - this.pos + 1, toRead);
-  else
-    toRead = Math.min(this.end - this.bytesRead + 1, toRead);
+  if (this.pos !== undefined) toRead = Math.min(this.end - this.pos + 1, toRead);
+  else toRead = Math.min(this.end - this.bytesRead + 1, toRead);
 
   // already read everything we were supposed to read!
   // treat as EOF.
-  if (toRead <= 0)
-    return this.push(null);
+  if (toRead <= 0) return this.push(null);
 
   // the actual read.
   this._sfs.read(this.fd, pool, pool.used, toRead, this.pos, (er, bytesRead) => {
@@ -174,8 +161,7 @@ ReadStream.prototype._read = function(n) {
       // Now that we know how much data we have actually read, re-wind the
       // 'used' field if we can, and otherwise allow the remainder of our
       // reservation to be used as a new pool later.
-      if (start + toRead === thisPool.used && thisPool === pool)
-        thisPool.used += bytesRead - toRead;
+      if (start + toRead === thisPool.used && thisPool === pool) thisPool.used += bytesRead - toRead;
       else if (toRead - bytesRead > kMinPoolSpace)
         poolFragments.push(thisPool.slice(start + bytesRead, start + toRead));
 
@@ -189,8 +175,7 @@ ReadStream.prototype._read = function(n) {
   });
 
   // move the pool positions, and internal position for reading.
-  if (this.pos !== undefined)
-    this.pos += toRead;
+  if (this.pos !== undefined) this.pos += toRead;
   pool.used += toRead;
 };
 
@@ -209,8 +194,7 @@ function closeFsStream(stream, cb, err) {
     er = er || err;
     cb(er);
     stream.closed = true;
-    if (!er)
-      stream.emit('close');
+    if (!er) stream.emit('close');
   });
 }
 
@@ -219,6 +203,8 @@ ReadStream.prototype.close = function(cb) {
 };
 
 Object.defineProperty(ReadStream.prototype, 'pending', {
-  get() { return this.fd === null; },
-  configurable: true
+  get() {
+    return this.fd === null;
+  },
+  configurable: true,
 });

@@ -9,7 +9,7 @@ export class ReadableStaticVolume {
     this.sourcePath = sourcePath;
     this.moutingRoot = resolve(dirname(this.sourcePath), '../');
     this.runtimePath = resolve(dirname(this.sourcePath), 'static_fs_runtime.js');
-    this.reset()
+    this.reset();
   }
 
   reset() {
@@ -39,7 +39,7 @@ export class ReadableStaticVolume {
       isFile: () => false,
       isFIFO: () => false,
       isSocket: () => false,
-      size: 0
+      size: 0,
     };
 
     // read the index
@@ -69,17 +69,13 @@ export class ReadableStaticVolume {
       const mountedName = this._resolveMountedPath(name);
 
       // add entry for file into index
-      this.index[mountedName] = Object.assign(
-        {},
-        this.statData,
-        {
-          ino: dataOffset, // the location in the static fs
-          size: dataSz,    // the size of the file
-          blocks: 1,       // one block
-          blksize: dataSz, // of file size size.
-          isFile: () => true, // it's a file!
-        }
-      );
+      this.index[mountedName] = Object.assign({}, this.statData, {
+        ino: dataOffset, // the location in the static fs
+        size: dataSz, // the size of the file
+        blocks: 1, // one block
+        blksize: dataSz, // of file size size.
+        isFile: () => true, // it's a file!
+      });
 
       // this creates an index (every_path) -> (sourcePath)
       // it also needs to assign inside addParentFolders
@@ -114,11 +110,7 @@ export class ReadableStaticVolume {
   addParentFolders(name) {
     const parent = dirname(name);
     if (parent && !this.index[parent] && parent.includes(this.moutingRoot)) {
-      this.index[parent] = Object.assign(
-        {},
-        this.statData,
-        { isDirectory: () => true }
-      );
+      this.index[parent] = Object.assign({}, this.statData, { isDirectory: () => true });
 
       this.pathVolumeIndex[parent] = this.sourcePath;
 
@@ -164,9 +156,13 @@ export class ReadableStaticVolume {
     const item = this.index[filepath];
 
     if (item && item.isFile()) {
-      const encoding = options ?
-        typeof options === 'string' ? options :
-          typeof options === 'object' ? options.encoding || 'utf8' : 'utf8' : 'utf8';
+      const encoding = options
+        ? typeof options === 'string'
+          ? options
+          : typeof options === 'object'
+          ? options.encoding || 'utf8'
+          : 'utf8'
+        : 'utf8';
 
       // re-alloc if necessary
       if (this.buf.length < item.size) {
@@ -216,10 +212,10 @@ export class ReadableStaticVolume {
         this.filesBeingRead[filepath].consumers += 1;
         this._readFromCache(filepath, buffer, offset, length, position, callback);
       } else {
-        const cachedFile = this.filesBeingRead[filepath] = {
+        const cachedFile = (this.filesBeingRead[filepath] = {
           buffer: Buffer.alloc(item.size),
-          consumers: 1
-        };
+          consumers: 1,
+        });
 
         fs.read(this.fd, cachedFile.buffer, 0, item.size, item.ino, (err) => {
           if (err) {
