@@ -8,7 +8,7 @@
     "build": "node scripts/build",
     "clean": "rimraf dist",
     "cm": "git-cz",
-    "lint": "",
+    "lint": "echo true",
     "prepublishOnly": "yarn run build",
     "test": "jest --config test/jest/config.js"
   },
