@@ -1,13 +1,16 @@
 {
   "name": "static-fs",
   "version": "0.0.1",
-  "description": "A static filesystem to bundle and read files using NodeJS",
+  "description": "A static filesystem to bundle files and read them using NodeJS",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "scripts": {
-    "test": "jest --config test/jest/config.js",
     "build": "node scripts/build",
+    "clean": "rimraf dist",
+    "cm": "git-cz",
+    "lint": "",
     "prepublishOnly": "yarn run build",
-    "clean": "rimraf dist"
+    "test": "jest --config test/jest/config.js"
   },
   "repository": {
     "type": "git",
@@ -30,10 +33,16 @@
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.5",
     "@babel/preset-env": "^7.4.5",
+    "@commitlint/cli": "^8.1.0",
+    "@commitlint/config-conventional": "^8.1.0",
+    "@commitlint/travis-cli": "^8.1.0",
+    "commitizen": "^4.0.3",
     "core-js": "2",
     "cpy": "^7.3.0",
+    "cz-conventional-changelog": "3.0.2",
     "del": "^5.0.0",
     "execa": "^1.0.0",
+    "husky": "^3.0.1",
     "jest": "^24.8.0",
     "rimraf": "^2.6.3",
     "webpack": "^4.34.0",
@@ -42,5 +51,10 @@
   "engines": {
     "node": "^10.15.2",
     "yarn": "^1.10.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }

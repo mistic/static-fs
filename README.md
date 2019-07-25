@@ -1,6 +1,8 @@
 # static-fs
 
 [![Build Status](https://travis-ci.com/mistic/static-fs.svg?branch=master)](https://travis-ci.com/mistic/static-fs)
+[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+
 
 A static filesystem to bundle multiple files into one that are lately
 able to be read by Node.js through `require` or the [fs module](https://nodejs.org/api/fs.html).
@@ -139,7 +141,7 @@ Let us know if you found other unknown limitations [opening an issue](https://gi
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/mistic/static-fs/blob/master/CONTRIBUTING.md).
+If you wanna contribute please read [CONTRIBUTING.md](https://github.com/mistic/static-fs/blob/master/CONTRIBUTING.md).
 
 ## License
 

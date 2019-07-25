@@ -1,20 +1,57 @@
-# Contributing
+# Contributing to static-fs
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change. 
+First of all thanks for showing interest in contributing to this project.
+If in the end of this document you still have some doubt, please be free to 
+open an issue. 
 
 Please note we have a code of conduct, please follow it in all your interactions with the project.
 
+## Setup project locally
+
+### Node
+You need the engines declared version for node installed on your machine 
+in order to setup that project.
+It is possible to check the required version in the [package.json](https://github.com/mistic/static-fs/blob/master/package.json) 
+
+If you're using a node version manager tool such like [nvm](https://github.com/nvm-sh/nvm) you 
+can just run: 
+
+```bash
+nvm install
+```
+
+### Yarn
+We also rely on [yarn](https://yarnpkg.com) in order to manage our dependencies.
+You can install it following the [official yarn install instructions](https://yarnpkg.com/en/docs/install).
+
+Please note that you need to install the engines declared version for yarn 
+defined in the [package.json](https://github.com/mistic/static-fs/blob/master/package.json)
+
+After this step you can just install our dependencies running:
+
+```bash
+yarn install
+```
+
+## Commit Process
+
+In this project we use some tools to ensure our commits follow a standard 
+known as [conventional commits](https://www.conventionalcommits.org/en/v1.0.0-beta.4/)
+
+In order to achieve this automatically we use `commitlint` and `commitizen`.
+
+The first one will run as part as a git hook upon commit and the second one 
+can be used as a cli tool to help writing the commits in the expected format.
+Instead of use `git commit` just use `yarn cm` in you wanna use that helper tool.
+
 ## Pull Request Process
 
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a 
-   build.
-2. Update the README.md with details of changes to the interface, this includes new environment 
-   variables, exposed ports, useful file locations and container parameters.
-3. Increase the version numbers in any examples files and the README.md to the new version that this
-   Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
-4. You may merge the Pull Request in once you have the sign-off of two other developers, or if you 
-   do not have permission to do that, you may request the second reviewer to merge it for you.
+1. Ensure you just add only essential files to the PR.
+2. Ensure the README.md or any other documentation to support your new changes
+   are updated or were created along with the PR.
+3. Write tests to cover your new changes. 
+4. Once the PR is open you will need to wait for at least one review 
+   from one of the project administrators before it is able to be merged. 
 
 ## Code of Conduct
 
