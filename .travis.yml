@@ -31,6 +31,7 @@ matrix:
       node_js: "10.15.2"
       cache: false # windows cache uploads are slow
       env: YARN_GPG=no # starts gpg-agent that never exits
+      script: travis_wait yarn test
 
     - name: "macOS build"
       os: osx
