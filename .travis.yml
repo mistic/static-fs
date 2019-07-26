@@ -18,11 +18,11 @@ matrix:
   fast_finish: true
   include:
     - stage: "conventional commits"
-      name: "conventional commits"
+      name: "assert conventional commits format"
       script: commitlint-travis
 
     - stage: "lint"
-      name: "lint"
+      name: "lint source code"
       script: yarn lint
 
     - stage: "test"
@@ -41,7 +41,7 @@ matrix:
       node_js: "10.15.2"
 
     - stage: "release"
-      name: "release"
+      name: "release on npm and github"
       deploy:
         provider: script
         skip_cleanup: true
