@@ -2,11 +2,14 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:jest/recommended',
-    'plugin:prettier/recommended',
+    'plugin:import/errors',
+    'plugin:import/warnings',
+    'plugin:prettier/recommended'
   ],
   plugins: [
     'import',
-    'jest'
+    'jest',
+    'prettier'
   ],
 
   env: {
