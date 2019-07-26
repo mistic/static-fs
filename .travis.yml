@@ -24,11 +24,11 @@ matrix:
       script: yarn lint
 
     - stage: "test"
-      - name: "windows build"
-        os: windows
-        node_js: "10.15.2"
-        cache: false # windows cache uploads are slow
-        env: YARN_GPG=no # starts gpg-agent that never exits
+      name: "windows build"
+      os: windows
+      node_js: "10.15.2"
+      cache: false # windows cache uploads are slow
+      env: YARN_GPG=no # starts gpg-agent that never exits
 
       - name: "macOS build"
         os: osx
