@@ -8,7 +8,7 @@ branches:
     - /v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$/
 
 stages:
-  - assert_commits
+  - "conventional commits"
   - lint
   - test
   - name: release
@@ -17,10 +17,12 @@ stages:
 matrix:
   fast_finish: true
   include:
-    - stage: "assert_commits"
+    - stage: "conventional commits"
+      name: "conventional commits"
       script: commitlint-travis
 
     - stage: "lint"
+      name: "lint"
       script: yarn lint
 
     - stage: "test"
@@ -39,6 +41,7 @@ matrix:
       node_js: "10.15.2"
 
     - stage: "release"
+      name: "release"
       deploy:
         provider: script
         skip_cleanup: true
