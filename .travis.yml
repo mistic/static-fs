@@ -7,22 +7,43 @@ branches:
     - master
     - /v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$/
 
+stages:
+  - assert_commits
+  - lint
+  - test
+  - name: release
+    if: branch = master
+
 matrix:
   fast_finish: true
   include:
-    - name: "windows build"
-      os: windows
-      node_js: "10.15.2"
-      cache: false # windows cache uploads are slow
-      env: YARN_GPG=no # starts gpg-agent that never exits
+    - stage: "assert_commits"
+      script: commitlint-travis
 
-    - name: "macOS build"
-      os: osx
-      node_js: "10.15.2"
+    - stage: "lint"
+      script: yarn lint
 
-    - name: "linux build"
-      os: linux
-      node_js: "10.15.2"
+    - stage: "test"
+      - name: "windows build"
+        os: windows
+        node_js: "10.15.2"
+        cache: false # windows cache uploads are slow
+        env: YARN_GPG=no # starts gpg-agent that never exits
+
+      - name: "macOS build"
+        os: osx
+        node_js: "10.15.2"
+
+      - name: "linux build"
+        os: linux
+        node_js: "10.15.2"
+
+    - stage: "release"
+      deploy:
+        provider: script
+        skip_cleanup: true
+        script:
+          - yarn release
 
 cache: yarn
 

@@ -11,6 +11,7 @@
     "lint": "eslint --ext .js src",
     "lint:fix": "yarn lint --fix",
     "prepublishOnly": "yarn run build",
+    "release": "echo true",
     "test": "jest --config test/jest/config.js"
   },
   "repository": {
@@ -37,6 +38,8 @@
     "@commitlint/cli": "^8.1.0",
     "@commitlint/config-conventional": "^8.1.0",
     "@commitlint/travis-cli": "^8.1.0",
+    "@semantic-release/changelog": "^3.0.4",
+    "@semantic-release/git": "^7.0.16",
     "commitizen": "^4.0.3",
     "core-js": "2",
     "cpy": "^7.3.0",
@@ -52,6 +55,7 @@
     "jest": "^24.8.0",
     "prettier": "^1.18.2",
     "rimraf": "^2.6.3",
+    "semantic-release": "^15.13.18",
     "webpack": "^4.34.0",
     "webpack-node-externals": "^1.7.2"
   },
