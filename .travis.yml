@@ -43,6 +43,7 @@ matrix:
 
     - stage: "release"
       name: "release on npm and github"
+      script: skip
       deploy:
         provider: script
         skip_cleanup: true
