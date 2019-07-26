@@ -30,13 +30,13 @@ matrix:
       cache: false # windows cache uploads are slow
       env: YARN_GPG=no # starts gpg-agent that never exits
 
-      - name: "macOS build"
-        os: osx
-        node_js: "10.15.2"
+    - name: "macOS build"
+      os: osx
+      node_js: "10.15.2"
 
-      - name: "linux build"
-        os: linux
-        node_js: "10.15.2"
+    - name: "linux build"
+      os: linux
+      node_js: "10.15.2"
 
     - stage: "release"
       deploy:
