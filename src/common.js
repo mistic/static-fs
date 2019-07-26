@@ -257,7 +257,8 @@ export function unixifyPath(filepath) {
         // change \\?\<letter>:\ to <letter>:\
         .replace(/^\\\\\?\\(.):\\/, '$1:\\')
         // change backslashes to forward slashes. (and remove duplicates)
-        .replace(/[\\/]+/g, '/')
+        // eslint-disable-next-line no-useless-escape
+        .replace(/[\\\/]+/g, '/')
         // remove drive letter from front
         .replace(/^([a-zA-Z]+:|\.\/)/, '')
         // drop any trailing slash
