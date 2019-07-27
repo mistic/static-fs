@@ -12,30 +12,12 @@ schedules:
     always: true
 
 jobs:
-  - job: setup
-    steps:
-      - task: NodeTool@0
-        inputs:
-          versionSpec: '10.15.x'
-        displayName: 'Install required Node.js version'
-      - task: Npm@1
-        inputs:
-          command: custom
-          customCommand: i -g yarn@1.10.1
-        displayName: 'Install required yarn version'
-      - script: |
-          node -v
-          yarn -v
-        displayName: 'Print tool versions'
-      - script: yarn install
-        displayName: 'Install dependencies'
-
   - job: conventional_commits
     pool:
       vmImage: 'ubuntu-16.04'
     dependsOn: setup
     steps:
-      - checkout: none
+      - template: azure_pipelines_templates/steps_setup_tools.yml
       - script: yarn commitlint-azure-pipelines
         displayName: 'Assert conventional commits format'
 
@@ -44,6 +26,7 @@ jobs:
       vmImage: 'ubuntu-16.04'
     dependsOn: conventional_commits
     steps:
+      - template: azure_pipelines_templates/steps_setup_tools.yml
       - script: yarn lint
         displayName: 'Run eslint'
 
@@ -64,6 +47,7 @@ jobs:
       vmImage: $(imageName)
     dependsOn: lint
     steps:
+      - template: azure_pipelines_templates/steps_setup_tools.yml
       - script: yarn test
         displayName: $(imageName) 'build'
 
@@ -73,5 +57,6 @@ jobs:
     dependsOn: test
     condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
     steps:
+      - template: azure_pipelines_templates/steps_setup_tools.yml
       - script: yarn release
         displayName: 'Release new version'
