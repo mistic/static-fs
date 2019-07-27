@@ -47,7 +47,9 @@ jobs:
     dependsOn: lint
     steps:
       - template: azure_pipelines_templates/steps_setup_tools.yml
-      - script: JEST_JUNIT_OUTPUT="./junit-$(imageName).xml" yarn test --reporters=jest-junit
+      - script: yarn test --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT: ./junit-$(imageName).xml
         displayName: Run tests on $(imageName)
       - task: PublishTestResults@2
         condition: succeededOrFailed()
