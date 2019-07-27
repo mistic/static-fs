@@ -1,13 +1,18 @@
 {
   "name": "static-fs",
   "version": "0.0.1",
-  "description": "A static filesystem to bundle and read files using NodeJS",
+  "description": "A static filesystem to bundle files and read them using NodeJS",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "scripts": {
-    "test": "jest --config test/jest/config.js",
     "build": "node scripts/build",
+    "clean": "rimraf dist",
+    "cm": "git-cz",
+    "lint": "eslint --ext .js src",
+    "lint:fix": "yarn lint --fix",
     "prepublishOnly": "yarn run build",
-    "clean": "rimraf dist"
+    "release": "echo true",
+    "test": "jest --config test/jest/config.js"
   },
   "repository": {
     "type": "git",
@@ -16,9 +21,9 @@
   "keywords": [
     "filesystem",
     "static",
-    "file",
-    "system",
-    "bundle"
+    "bundle",
+    "read",
+    "node"
   ],
   "author": "Tiago Costa",
   "license": "MIT",
@@ -31,17 +36,37 @@
     "@babel/core": "^7.4.5",
     "@babel/preset-env": "^7.4.5",
     "commitlint-azure-pipelines-cli": "^1.0.2",
+    "@commitlint/cli": "^8.1.0",
+    "@commitlint/config-conventional": "^8.1.0",
+    "@commitlint/travis-cli": "^8.1.0",
+    "@semantic-release/changelog": "^3.0.4",
+    "@semantic-release/git": "^7.0.16",
+    "commitizen": "^4.0.3",
     "core-js": "2",
     "cpy": "^7.3.0",
+    "cz-conventional-changelog": "3.0.2",
     "del": "^5.0.0",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^5.1.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jest": "^22.13.6",
+    "eslint-plugin-prettier": "^3.1.0",
     "execa": "^1.0.0",
+    "husky": "^3.0.1",
     "jest": "^24.8.0",
+    "prettier": "^1.18.2",
     "rimraf": "^2.6.3",
+    "semantic-release": "^15.13.18",
     "webpack": "^4.34.0",
     "webpack-node-externals": "^1.7.2"
   },
   "engines": {
     "node": "^10.15.2",
     "yarn": "^1.10.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
