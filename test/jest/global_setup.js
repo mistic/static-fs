@@ -12,7 +12,7 @@ module.exports = async () => {
     process.env.JOBS = Math.max(1, os.cpus().length -1 );
 
     await del(resolve('test/helpers/mock_project/node_modules'), { force: true });
-    execa.shellSync('yarn install --frozen-lockfile', { cwd: 'test/helpers/mock_project' });
+    execa.shellSync('yarn install --no-lockfile', { cwd: 'test/helpers/mock_project' });
     execa.shellSync('yarn build', { cwd: 'test/helpers/mock_project/node_modules/static-fs' });
 
     process.env.GLOBAL_MOCK_PROJECT_PATH = await createTestTempDir();

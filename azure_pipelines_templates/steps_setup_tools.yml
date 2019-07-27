@@ -1,0 +1,16 @@
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '10.15.x'
+    displayName: 'Install required Node.js version'
+  - task: Npm@1
+    inputs:
+      command: custom
+      customCommand: i -g yarn@1.10.1
+    displayName: 'Install required yarn version'
+  - script: |
+      node -v
+      yarn -v
+    displayName: 'Print tool versions'
+  - script: yarn install
+    displayName: 'Install dependencies'

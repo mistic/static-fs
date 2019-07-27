@@ -9,6 +9,9 @@
 .nvmrc
 .prettierrc.js
 .travis.yml
+azure-pipelines.yml
+junit.xml
 
+azure_pipelines_templates/
 test/
 src/
