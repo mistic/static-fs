@@ -1,0 +1,76 @@
+trigger:
+  branches:
+    include:
+      - master
+
+schedules:
+  - cron: "0 12 1-7 * Sun"
+    displayName: Monthly build
+    branches:
+      include:
+        - master
+    always: true
+
+jobs:
+  - job: setup
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '10.15.x'
+        displayName: 'Install required Node.js version'
+      - task: Npm@1
+        inputs:
+          command: custom
+          customCommand: i -g yarn@1.10.1
+        displayName: 'Install required yarn version'
+      - script: |
+          node -v
+          yarn -v
+        displayName: 'Print tool versions'
+      - script: yarn install
+        displayName: 'Install dependencies'
+
+  - job: conventional_commits
+    pool:
+      vmImage: 'ubuntu-16.04'
+    dependsOn: setup
+    steps:
+      - script: ./node_modules/.bin/commitlint-azure-pipelines
+    displayName: 'Assert conventional commits format'
+
+  - job: lint
+    pool:
+      vmImage: 'ubuntu-16.04'
+    dependsOn: conventional_commits
+    steps:
+      - script: yarn lint
+    displayName: 'Lint source code'
+
+  - job: test
+    strategy:
+      maxParallel: 3
+      matrix:
+        linux:
+          imageName: 'ubuntu-16.04'
+          runningOs: 'Linux'
+        mac:
+          imageName: 'macos-10.13'
+          runningOs: 'MacOS'
+        windows:
+          imageName: 'vs2017-win2016'
+          runningOs: 'Windows'
+    pool:
+      vmImage: $(imageName)
+    dependsOn: lint
+    steps:
+      - script: yarn test
+        displayName: $(imageName) 'build'
+
+  - job: deploy
+    pool:
+      vmImage: 'ubuntu-16.04'
+    dependsOn: test
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+    steps:
+      - script: yarn release
+        displayName: 'Release new version'
