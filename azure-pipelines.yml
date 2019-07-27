@@ -15,7 +15,6 @@ jobs:
   - job: conventional_commits
     pool:
       vmImage: 'ubuntu-16.04'
-    dependsOn: setup
     steps:
       - template: azure_pipelines_templates/steps_setup_tools.yml
       - script: yarn commitlint-azure-pipelines
@@ -31,6 +30,7 @@ jobs:
         displayName: 'Run eslint'
 
   - job: test
+    displayName: 'Test across multiple platforms'
     strategy:
       maxParallel: 3
       matrix:
