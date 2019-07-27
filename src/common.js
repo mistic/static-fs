@@ -12,56 +12,70 @@ const fs = { ...filesystem };
 
 // promisify async functions.
 export function readdir(path) {
-  return new Promise((r, j) => fs.readdir(path, (err, files) => err ? j(err) : r(files)));
+  return new Promise((r, j) => fs.readdir(path, (err, files) => (err ? j(err) : r(files))));
 }
 export function stat(path) {
-  return new Promise((r, j) => fs.stat(path, (err, files) => err ? j(err) : r(files)));
+  return new Promise((r, j) => fs.stat(path, (err, files) => (err ? j(err) : r(files))));
 }
 export function lstat(path) {
-  return new Promise((r, j) => fs.lstat(path, (err, files) => err ? j(err) : r(files)));
+  return new Promise((r, j) => fs.lstat(path, (err, files) => (err ? j(err) : r(files))));
 }
 export function open(path, flags, mode) {
-  return new Promise((r, j) => fs.open(path, flags, mode, (err, descriptor) => err ? j(err) : r(descriptor)));
+  return new Promise((r, j) => fs.open(path, flags, mode, (err, descriptor) => (err ? j(err) : r(descriptor))));
 }
 export function close(fd) {
-  return new Promise((r, j) => fs.close(fd, (err) => err ? j(err) : r()));
+  return new Promise((r, j) => fs.close(fd, (err) => (err ? j(err) : r())));
 }
 export function write(fd, buffer, offset, length, position) {
-  return new Promise((r, j) => fs.write(fd, buffer, offset || 0, length || buffer.length, position || undefined, (err, written, buf) => err ? j(err) : r(written)));
+  return new Promise((r, j) =>
+    fs.write(fd, buffer, offset || 0, length || buffer.length, position || undefined, (err, written) =>
+      err ? j(err) : r(written),
+    ),
+  );
 }
 export function read(fd, buffer, offset, length, position) {
-  return new Promise((r, j) => fs.read(fd, buffer, offset, length, position || null, (err, bytes, buffer) => err ? j(err) : r(bytes)));
+  return new Promise((r, j) =>
+    fs.read(fd, buffer, offset, length, position || null, (err, bytes) => (err ? j(err) : r(bytes))),
+  );
 }
 export function readFile(path, options) {
-  return new Promise((r, j) => fs.readFile(path, options, (err, data) => err ? j(err) : r(data)));
+  return new Promise((r, j) => fs.readFile(path, options, (err, data) => (err ? j(err) : r(data))));
 }
 export function execute(command, cmdlineargs, options) {
-  return new Promise((r, j) => {
-    const cp = spawn(command, cmdlineargs, { ...options, stdio: "pipe" });
-    let err = "";
-    let out = "";
-    cp.stderr.on("data", (chunk) => { err += chunk; process.stdout.write('.'); });
-    cp.stdout.on("data", (chunk) => { out += chunk; process.stdout.write('.'); });
-    cp.on("close", (code, signal) => r({ stdout: out, stderr: err, error: code ? new Error("Process Failed.") : null, code: code }));
+  return new Promise((r) => {
+    const cp = spawn(command, cmdlineargs, { ...options, stdio: 'pipe' });
+    let err = '';
+    let out = '';
+    cp.stderr.on('data', (chunk) => {
+      err += chunk;
+      process.stdout.write('.');
+    });
+    cp.stdout.on('data', (chunk) => {
+      out += chunk;
+      process.stdout.write('.');
+    });
+    cp.on('close', (code) =>
+      r({ stdout: out, stderr: err, error: code ? new Error('Process Failed.') : null, code: code }),
+    );
   });
 }
 function fs_mkdir(path) {
-  return new Promise((r, j) => fs.mkdir(path, (err) => err ? j(err) : r()))
+  return new Promise((r, j) => fs.mkdir(path, (err) => (err ? j(err) : r())));
 }
 
 function fs_unlink(path) {
-  return new Promise((r, j) => fs.unlink(path, (err) => err ? j(err) : r()))
+  return new Promise((r, j) => fs.unlink(path, (err) => (err ? j(err) : r())));
 }
 
 function fs_rmdir(path) {
-  return new Promise((r, j) => fs.rmdir(path, (err) => err ? j(err) : r()))
+  return new Promise((r, j) => fs.rmdir(path, (err) => (err ? j(err) : r())));
 }
 
 export function rename(oldPath, newPath) {
-  return new Promise((r, j) => fs.rename(oldPath, newPath, (err) => err ? j(err) : r()))
+  return new Promise((r, j) => fs.rename(oldPath, newPath, (err) => (err ? j(err) : r())));
 }
 export function writeFile(filename, content) {
-  return new Promise((r, j) => fs.writeFile(filename, content, (err) => err ? j(err) : r()))
+  return new Promise((r, j) => fs.writeFile(filename, content, (err) => (err ? j(err) : r())));
 }
 
 export async function copyFile(source, target) {
@@ -110,7 +124,7 @@ export async function copyFolder(source, target, all) {
   }
 }
 
-export const exists = path => new Promise((r, j) => fs.stat(path, (err, stats) => err ? r(false) : r(true)));
+export const exists = (path) => new Promise((r) => fs.stat(path, (err) => (err ? r(false) : r(true))));
 
 export async function isDirectory(dirPath) {
   try {
@@ -137,12 +151,12 @@ export async function isFile(filePath) {
 
 export async function rmdir(dirPath) {
   // if it's not there, do nothing.
-  if (!await exists(dirPath)) {
+  if (!(await exists(dirPath))) {
     return;
   }
 
   //if it's not a directory, that's bad.
-  if (!await isDirectory(dirPath)) {
+  if (!(await isDirectory(dirPath))) {
     throw new Error(dirPath);
   }
 
@@ -161,17 +175,15 @@ export async function rmdir(dirPath) {
           const p = join(dirPath, file);
 
           if (await isDirectory(p)) {
-            // folders are recursively rmdir'd 
+            // folders are recursively rmdir'd
             awaiter.push(rmdir(p));
-          }
-          else {
-            // files and symlinks are unlink'd 
-            awaiter.push(fs_unlink(p).catch(() => { }));
+          } else {
+            // files and symlinks are unlink'd
+            awaiter.push(fs_unlink(p).catch(() => {}));
           }
         } catch (e) {
           // uh... can't.. ok.
         }
-
       }
     } finally {
       // after all the entries are done
@@ -202,7 +214,7 @@ export async function rmFile(filePath) {
   }
 
   try {
-    // files and symlinks are unlink'd 
+    // files and symlinks are unlink'd
     await fs_unlink(filePath);
   } catch (e) {
     // is it gone? that's all we really care about.
@@ -213,12 +225,11 @@ export async function rmFile(filePath) {
   }
 }
 
-
 export async function mkdir(dirPath) {
-  if (!await isDirectory(dirPath)) {
-    const p = normalize(dirPath + "/");
+  if (!(await isDirectory(dirPath))) {
+    const p = normalize(dirPath + '/');
     const parent = dirname(dirPath);
-    if (! await isDirectory(parent)) {
+    if (!(await isDirectory(parent))) {
       if (p !== parent) {
         await mkdir(parent);
       }
@@ -226,7 +237,7 @@ export async function mkdir(dirPath) {
     try {
       await fs_mkdir(p);
     } catch (e) {
-      if (!await isDirectory(p)) {
+      if (!(await isDirectory(p))) {
         throw new Error(e);
       }
     }
@@ -241,18 +252,18 @@ export function unixifyPath(filepath) {
   if (!isWindows) return filepath;
 
   if (filepath && typeof filepath === 'string') {
-    return filepath.
-      // change \\?\<letter>:\ to <letter>:\ 
-      replace(/^\\\\\?\\(.):\\/, '$1:\\').
-
-      // change backslashes to forward slashes. (and remove duplicates)
-      replace(/[\\\/]+/g, '/').
-
-      // remove drive letter from front
-      replace(/^([a-zA-Z]+:|\.\/)/, '').
-
-      // drop any trailing slash
-      replace(/(.+?)\/$/, '$1');
+    return (
+      filepath
+        // change \\?\<letter>:\ to <letter>:\
+        .replace(/^\\\\\?\\(.):\\/, '$1:\\')
+        // change backslashes to forward slashes. (and remove duplicates)
+        // eslint-disable-next-line no-useless-escape
+        .replace(/[\\\/]+/g, '/')
+        // remove drive letter from front
+        .replace(/^([a-zA-Z]+:|\.\/)/, '')
+        // drop any trailing slash
+        .replace(/(.+?)\/$/, '$1')
+    );
   }
   return filepath;
 }
@@ -267,7 +278,7 @@ export function isWindowsPath(filepath) {
 
     if (filepath.charCodeAt(1) === 58 && filepath.charCodeAt(2) === 92) {
       var code = filepath.charCodeAt(0);
-      return code >= 65 && code <= 90 || code >= 97 && code <= 122;
+      return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
     }
   }
   return false;
@@ -280,38 +291,31 @@ export function calculateHash(content) {
 }
 
 export function select(array, callbackFn) {
-  return array.reduce(
-    (p, c, i, a) => {
-      p.push(callbackFn(p, c, i, a));
-      return p;
-    },
-    []
-  );
+  return array.reduce((p, c, i, a) => {
+    p.push(callbackFn(p, c, i, a));
+    return p;
+  }, []);
 }
 
 export function selectMany(array, callbackFn) {
-  return array.reduce(
-    (p, c, i, a) => {
-      p.push(...callbackFn(p, c, i, a));
-      return p;
-    },
-    []
-  );
+  return array.reduce((p, c, i, a) => {
+    p.push(...callbackFn(p, c, i, a));
+    return p;
+  }, []);
 }
 
 export function first(array, selector, onError) {
   for (const each of array) {
     const result = selector(each);
     if (result !== undefined) {
-      return result
+      return result;
     }
   }
   return onError();
 }
 
-
 export async function backup(filename) {
-  if (!await isFile(filename)) {
+  if (!(await isFile(filename))) {
     // file doesn't exists, doesn't need restoring.
     return async () => {
       await rmFile(filename);
@@ -326,5 +330,5 @@ export async function backup(filename) {
   return async () => {
     await rmFile(filename);
     await rename(backupFile, filename);
-  }
+  };
 }

@@ -16,24 +16,24 @@ export class StaticFilesystem {
     switch (code) {
       case constants.errno.ENOENT:
         return {
-          ... new Error(`ENOENT: no such file or directory, ${method} '${filepath}'`),
+          ...new Error(`ENOENT: no such file or directory, ${method} '${filepath}'`),
           code: 'ENOENT',
           path: filepath,
-          errno: constants.errno.ENOENT
+          errno: constants.errno.ENOENT,
         };
       case constants.errno.EISDIR:
         return {
-          ... new Error(`EISDIR: illegal operation on a directory, ${method} '${filepath}'`),
+          ...new Error(`EISDIR: illegal operation on a directory, ${method} '${filepath}'`),
           code: 'EISDIR',
           path: filepath,
-          errno: constants.errno.EISDIR
+          errno: constants.errno.EISDIR,
         };
     }
     return {
-      ... new Error(`UNKNOWN: Error, ${method} '${filepath}'`),
+      ...new Error(`UNKNOWN: Error, ${method} '${filepath}'`),
       code: 'UNKNOWN',
       path: filepath,
-      errno: -10000
+      errno: -10000,
     };
   }
 
@@ -56,14 +56,14 @@ export class StaticFilesystem {
 
     this.pathVolumeMap = {
       ...this.pathVolumeMap,
-      ...pathVolumeIndex
+      ...pathVolumeIndex,
     };
 
     this.volumes[volume.sourcePath] = volume;
     return this;
   }
 
-  get loadedVolumes(){
+  get loadedVolumes() {
     return Object.keys(this.volumes);
   }
 
@@ -99,7 +99,7 @@ export class StaticFilesystem {
     return volume.readFileSync(targetPath, options);
   }
 
-  readFile(filepath, options, callback){
+  readFile(filepath, options, callback) {
     const targetPath = unixifyPath(filepath);
     const volume = this.volumeForFilepathSync(targetPath);
 
@@ -113,11 +113,10 @@ export class StaticFilesystem {
     });
   }
 
-  read(fd, buffer, offset, length, position, callback){
-    if (fd.type !== 'static_fs_file_descriptor')  {
-
+  read(fd, buffer, offset, length, position, callback) {
+    if (fd.type !== 'static_fs_file_descriptor') {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EBADF, "read", fd));
+        callback(this.NewError(constants.errno.EBADF, 'read', fd));
       });
       return;
     }
@@ -125,7 +124,7 @@ export class StaticFilesystem {
     const sfsFd = this.fds[fd.id];
     if (!sfsFd) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EEXIST, "read", fd));
+        callback(this.NewError(constants.errno.EEXIST, 'read', fd));
       });
       return;
     }
@@ -233,7 +232,7 @@ export class StaticFilesystem {
   }
 
   getPathForFD(fd) {
-    if (!fd || !fd.type || fd.type !== 'static_fs_file_descriptor')  {
+    if (!fd || !fd.type || fd.type !== 'static_fs_file_descriptor') {
       return null;
     }
 
@@ -261,7 +260,7 @@ export class StaticFilesystem {
       type: 'static_fs_file_descriptor',
       id: fdIdentifier,
       volumeSourcePath: volume.sourcePath,
-      filePath: path
+      filePath: path,
     };
 
     process.nextTick(() => {
@@ -270,8 +269,7 @@ export class StaticFilesystem {
   }
 
   close(fd, callback) {
-    if (fd.type !== 'static_fs_file_descriptor')  {
-
+    if (fd.type !== 'static_fs_file_descriptor') {
       process.nextTick(() => {
         callback(this.NewError(constants.errno.EBADF, 'close', fd));
       });
@@ -292,9 +290,8 @@ export class StaticFilesystem {
     });
   }
 
-  fstat(fd, callback){
-    if (fd.type !== 'static_fs_file_descriptor')  {
-
+  fstat(fd, callback) {
+    if (fd.type !== 'static_fs_file_descriptor') {
       process.nextTick(() => {
         callback(this.NewError(constants.errno.EBADF, 'fstat', fd));
       });

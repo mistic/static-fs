@@ -1,25 +1,31 @@
 import { readFileSync } from 'fs';
-import { resolve, isAbsolute } from 'path'
+import { resolve, isAbsolute } from 'path';
 
 import { isWindows, unixifyPath, isWindowsPath } from '../../common';
 
-
-const makeLong = (require('path'))._makeLong || resolve;
+const makeLong = require('path')._makeLong || resolve;
 
 function stripBOM(content) {
-  return content && content.charCodeAt(0) === 0xFEFF ? content.slice(1) : content;
+  return content && content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
 }
 
 function unixifyVolume(volume) {
-  return isWindows ? {
-    readFileSync: (path, options) => volume.readFileSync(unixifyPath(path), options),
-    realpathSync: (path, options) => volume.realpathSync(unixifyPath(path)),
-    statSync: (path) => volume.statSync(unixifyPath(path))
-    // TODO: complete windows
-  } : volume ;
+  return isWindows
+    ? {
+        readFileSync: (path, options) => volume.readFileSync(unixifyPath(path), options),
+        realpathSync: (path) => volume.realpathSync(unixifyPath(path)),
+        statSync: (path) => volume.statSync(unixifyPath(path)),
+        // TODO: complete windows
+      }
+    : volume;
 }
 
-export function patchModuleLoader(volume, enablePathNormalization = false, enableFallback = true, Module = require('module')) {
+export function patchModuleLoader(
+  volume,
+  enablePathNormalization = false,
+  enableFallback = true,
+  Module = require('module'),
+) {
   const backup = { ...Module };
   const preserveSymlinks = false;
   const statcache = {};
@@ -33,7 +39,11 @@ export function patchModuleLoader(volume, enablePathNormalization = false, enabl
   // a string or undefined when the file cannot be opened.  The speedup
   // comes from not creating Error objects on failure.
   function internalModuleReadFile(path) {
-    try { return volume.readFileSync(path, 'utf8'); } catch { }
+    try {
+      return volume.readFileSync(path, 'utf8');
+    } catch {
+      /* no-op */
+    }
     return undefined;
   }
 
@@ -41,14 +51,18 @@ export function patchModuleLoader(volume, enablePathNormalization = false, enabl
   // a file, 1 when it's a directory or < 0 on error (usually -ENOENT.)
   // The speedup comes from not creating thousands of Stat and Error objects.
   function internalModuleStat(filename) {
-    try { return volume.statSync(filename).isDirectory() ? 1 : 0; } catch { }
+    try {
+      return volume.statSync(filename).isDirectory() ? 1 : 0;
+    } catch {
+      /* no-op */
+    }
     return -2; // ENOENT
   }
 
   function stat(filename) {
     filename = makeLong(filename);
     const result = statcache[filename];
-    return (result !== undefined) ? result : statcache[filename] = internalModuleStat(filename);
+    return result !== undefined ? result : (statcache[filename] = internalModuleStat(filename));
   }
 
   function readPackage(requestPath) {
@@ -98,9 +112,11 @@ export function patchModuleLoader(volume, enablePathNormalization = false, enabl
 
     if (pkg) {
       let filename = resolve(requestPath, pkg);
-      return tryFile(filename, isMain) ||
+      return (
+        tryFile(filename, isMain) ||
         tryExtensions(filename, exts, isMain) ||
-        tryExtensions(resolve(filename, 'index'), exts, isMain);
+        tryExtensions(resolve(filename, 'index'), exts, isMain)
+      );
     }
     return undefined;
   }
@@ -120,13 +136,13 @@ export function patchModuleLoader(volume, enablePathNormalization = false, enabl
       try {
         module.exports = JSON.parse(stripBOM(volume.readFileSync(filename, 'utf8')));
       } catch (err) {
-        throw { ...err, message: filename + ': ' + err.message }
+        throw { ...err, message: filename + ': ' + err.message };
       }
     } else if (Module._fallback) {
       try {
         module.exports = JSON.parse(stripBOM(readFileSync(filename, 'utf8')));
       } catch (err) {
-        throw { ...err, message: filename + ': ' + err.message }
+        throw { ...err, message: filename + ': ' + err.message };
       }
     }
   };
@@ -145,14 +161,14 @@ export function patchModuleLoader(volume, enablePathNormalization = false, enabl
     // the given path is inside the static fs and the relative file
     // request in the real fs (for example in the native modules).
     const isWindows = process.platform === 'win32';
-    const isRelative = request.startsWith('./') ||
+    const isRelative =
+      request.startsWith('./') ||
       request.startsWith('../') ||
-      (isWindows && request.startsWith('.\\') ||
-        request.startsWith('..\\'));
+      ((isWindows && request.startsWith('.\\')) || request.startsWith('..\\'));
 
     if (isRelative && paths.length === 1) {
       const resolvedRequest = resolve(paths[0], request);
-      result = Module._originalFindPath(resolvedRequest, paths, isMain)
+      result = Module._originalFindPath(resolvedRequest, paths, isMain);
     }
 
     return !result ? Module._originalFindPath(request, paths, isMain) : result;
@@ -204,7 +220,7 @@ export function patchModuleLoader(volume, enablePathNormalization = false, enabl
       if (!trailingSlash) {
         switch (rc) {
           case 0:
-            filename = (preserveSymlinks && !isMain) ? resolve(basePath) : volume.realpathSync(basePath);
+            filename = preserveSymlinks && !isMain ? resolve(basePath) : volume.realpathSync(basePath);
             break;
           case 1:
             filename = tryPackage(basePath, exts, isMain);
@@ -217,7 +233,8 @@ export function patchModuleLoader(volume, enablePathNormalization = false, enabl
         }
       }
 
-      if (!filename && rc === 1) {  // Directory.
+      if (!filename && rc === 1) {
+        // Directory.
         filename = tryPackage(basePath, exts, isMain) || tryExtensions(resolve(basePath, 'index'), exts, isMain);
       }
 
@@ -234,5 +251,5 @@ export function patchModuleLoader(volume, enablePathNormalization = false, enabl
     Module._extensions['.js'] = backup._extensions['.js'];
     Module._extensions['.json'] = backup._extensions['.json'];
     Module._findPath = backup._findPath;
-  }
+  };
 }

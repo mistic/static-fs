@@ -1,10 +1,14 @@
 .idea
 .babelrc
+.commitlintrc.js
 .editorconfig
+.eslintrc.js
 .gitignore
+.huskyrc.js
 .npmignore
+.nvmrc
+.prettierrc.js
 .travis.yml
-yarn.lock
 
 test/
 src/
