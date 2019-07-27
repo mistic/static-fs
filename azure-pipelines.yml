@@ -36,7 +36,7 @@ jobs:
     dependsOn: setup
     steps:
       - script: ./node_modules/.bin/commitlint-azure-pipelines
-    displayName: 'Assert conventional commits format'
+        displayName: 'Assert conventional commits format'
 
   - job: lint
     pool:
@@ -44,7 +44,7 @@ jobs:
     dependsOn: conventional_commits
     steps:
       - script: yarn lint
-    displayName: 'Lint source code'
+        displayName: 'Run eslint'
 
   - job: test
     strategy:
