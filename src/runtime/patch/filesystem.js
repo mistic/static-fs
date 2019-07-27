@@ -3,7 +3,7 @@ import fs from 'fs';
 const MemberType = {
   Constructor: 0,
   Method: 1,
-  Property: 2
+  Property: 2,
 };
 
 const metadata = {
@@ -45,7 +45,7 @@ export function patchFilesystem(volume, original = fs) {
       default:
         // bind as a method
         original[member] = volume[member].bind(volume);
-        break
+        break;
     }
   }
 

@@ -1,5 +1,5 @@
 import { dirname, relative, resolve } from 'path';
-import { WritableStaticVolume } from '../filesystem'
+import { WritableStaticVolume } from '../filesystem';
 import { copyFile, isFile, readFile, writeFile } from '../common';
 
 // Creates a static-fs runtime file in the target
@@ -60,19 +60,24 @@ const addFolderToStaticFsVolume = async (mountRootDir, foldersToAdd) => {
 
   // returning all the files added to that created volume
   // TODO: We should also return folders added to the static-fs without any .node file
-  return Object.keys(sfs.index).map(filePath => resolve(sfs.mountingRoot, filePath));
+  return Object.keys(sfs.index).map((filePath) => resolve(sfs.mountingRoot, filePath));
 };
 
 // TODO: provide a way to exclude an additional list of files. Maybe a last optional parameter resulting from a glob
 export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntryPointsToPatch) => {
   const sanitizedMountRootDir = resolve(mountRootDir);
   const sanitizedOutputDir = resolve(sanitizedMountRootDir, 'static_fs');
-  const sanitizedFoldersToAdd = foldersToAdd.map(p => resolve(p));
-  const sanitizedAppEntryPointsToPatch = appEntryPointsToPatch.map(p => resolve(p));
+  const sanitizedFoldersToAdd = foldersToAdd.map((p) => resolve(p));
+  const sanitizedAppEntryPointsToPatch = appEntryPointsToPatch.map((p) => resolve(p));
 
   const filesAddedToVolume = await addFolderToStaticFsVolume(sanitizedMountRootDir, sanitizedFoldersToAdd);
-  const staticFSRuntimeFile  = await createStaticFsRuntimeFile(sanitizedOutputDir);
-  await patchEntryPoints(sanitizedAppEntryPointsToPatch, staticFSRuntimeFile, resolve(sanitizedOutputDir, 'static_fs_volume.sfsv'), sanitizedMountRootDir);
-  
+  const staticFSRuntimeFile = await createStaticFsRuntimeFile(sanitizedOutputDir);
+  await patchEntryPoints(
+    sanitizedAppEntryPointsToPatch,
+    staticFSRuntimeFile,
+    resolve(sanitizedOutputDir, 'static_fs_volume.sfsv'),
+    sanitizedMountRootDir,
+  );
+
   return filesAddedToVolume;
 };

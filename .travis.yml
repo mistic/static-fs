@@ -7,14 +7,31 @@ branches:
     - master
     - /v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$/
 
+stages:
+  - "conventional commits"
+  - lint
+  - test
+  - name: release
+    if: branch = master
+
 matrix:
   fast_finish: true
   include:
-    - name: "windows build"
+    - stage: "conventional commits"
+      name: "assert conventional commits format"
+      script: commitlint-travis
+
+    - stage: "lint"
+      name: "lint source code"
+      script: yarn lint
+
+    - stage: "test"
+      name: "windows build"
       os: windows
       node_js: "10.15.2"
       cache: false # windows cache uploads are slow
       env: YARN_GPG=no # starts gpg-agent that never exits
+      script: travis_wait yarn test
 
     - name: "macOS build"
       os: osx
@@ -23,6 +40,14 @@ matrix:
     - name: "linux build"
       os: linux
       node_js: "10.15.2"
+
+    - stage: "release"
+      name: "release on npm and github"
+      script: skip
+      deploy:
+        provider: script
+        skip_cleanup: true
+        script: yarn release
 
 cache: yarn
 

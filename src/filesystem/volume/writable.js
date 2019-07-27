@@ -21,7 +21,9 @@ export class WritableStaticVolume {
     }
 
     if (!sourceFolder.includes(this.mountingRoot)) {
-      throw new Error(`All the files to include into the static filesystem should has mountingRoot has parent: ${this.mountingRoot}`);
+      throw new Error(
+        `All the files to include into the static filesystem should has mountingRoot has parent: ${this.mountingRoot}`,
+      );
     }
 
     const calculatedTargetFolder = relative(this.mountingRoot, sourceFolder);
@@ -114,8 +116,8 @@ export class WritableStaticVolume {
       // it's a file. capture the details.
       this.index[targetPath] = {
         size: ss.size,
-        getBuffer: () => readFile(sourcePath)
-      }
+        getBuffer: () => readFile(sourcePath),
+      };
     }
     // wait for children to finish
     await Promise.all(all);

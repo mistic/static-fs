@@ -18,3 +18,9 @@ node_modules/
 
 # Operating system
 *.DS_Store
+
+# Log files
+*.log
+
+# Test related
+test/coverage
