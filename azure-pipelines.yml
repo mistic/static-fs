@@ -55,7 +55,7 @@ jobs:
         condition: succeededOrFailed()
         inputs:
           testRunner: JUnit
-          testResultsFiles: './junit-*.xml'
+          testResultsFiles: ./junit-$(imageName).xml
 
   - job: deploy
     displayName: 'Release'
