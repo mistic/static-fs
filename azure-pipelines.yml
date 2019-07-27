@@ -13,6 +13,7 @@ schedules:
 
 jobs:
   - job: conventional_commits
+    displayName: 'Lint commits'
     pool:
       vmImage: 'ubuntu-16.04'
     steps:
@@ -21,6 +22,7 @@ jobs:
         displayName: 'Assert conventional commits format'
 
   - job: lint
+    displayName: 'Lint source code'
     pool:
       vmImage: 'ubuntu-16.04'
     dependsOn: conventional_commits
@@ -52,6 +54,7 @@ jobs:
         displayName: $(imageName) 'build'
 
   - job: deploy
+    displayName: 'Release'
     pool:
       vmImage: 'ubuntu-16.04'
     dependsOn: test
