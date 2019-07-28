@@ -2,7 +2,6 @@
   static-fs
 </h1> 
 
-[![Build Status](https://travis-ci.com/mistic/static-fs.svg?branch=master)](https://travis-ci.com/mistic/static-fs)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 ![npm](https://img.shields.io/npm/v/static-fs)
 ![node](https://img.shields.io/node/v/static-fs)
