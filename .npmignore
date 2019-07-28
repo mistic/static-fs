@@ -8,7 +8,6 @@
 .npmignore
 .nvmrc
 .prettierrc.js
-.travis.yml
 azure-pipelines.yml
 junit.xml
 
