@@ -122,8 +122,8 @@ to be patched in order to read from the static filesystem.
 
 **Returns**
 
-A an `array of strings` containing the paths of each file that was added 
-into this static filesystem instance. 
+A an `array of strings` containing the paths of each file and base folder 
+that was added into this static filesystem instance. 
 
 ## Known Limitations
 
