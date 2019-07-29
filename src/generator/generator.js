@@ -1,6 +1,6 @@
 import { dirname, relative, resolve } from 'path';
 import { WritableStaticVolume } from '../filesystem';
-import { copyFile, isFile, readFile, writeFile } from '../common';
+import { copyFile, isFile, readFile, writeFile, unixifyPath } from '../common';
 
 // Creates a static-fs runtime file in the target
 const createStaticFsRuntimeFile = async (outDir) => {
@@ -49,11 +49,11 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
 };
 
 // adds file to the static filesystem volume
-const addFolderToStaticFsVolume = async (mountRootDir, foldersToAdd) => {
+const addFolderToStaticFsVolume = async (mountRootDir, foldersToAdd, exclusions) => {
   const sfs = new WritableStaticVolume(mountRootDir);
 
   for (const folderToAdd of foldersToAdd) {
-    await sfs.addFolder(folderToAdd);
+    await sfs.addFolder(folderToAdd, exclusions);
   }
 
   await sfs.write();
@@ -62,14 +62,23 @@ const addFolderToStaticFsVolume = async (mountRootDir, foldersToAdd) => {
   return sfs.getAddedFilesAndFolders();
 };
 
-// TODO: provide a way to exclude an additional list of files. Maybe a last optional parameter resulting from a glob
-export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntryPointsToPatch) => {
+export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntryPointsToPatch, exclusions = []) => {
   const sanitizedMountRootDir = resolve(mountRootDir);
   const sanitizedOutputDir = resolve(sanitizedMountRootDir, 'static_fs');
   const sanitizedFoldersToAdd = foldersToAdd.map((p) => resolve(p));
   const sanitizedAppEntryPointsToPatch = appEntryPointsToPatch.map((p) => resolve(p));
+  const sanitizedExclusions = exclusions.reduce((accum, val) => {
+    const resolvedVal = unixifyPath(resolve(val));
+    if (!resolvedVal.includes(sanitizedMountRootDir)) {
+      throw new Error(
+        `All exclusions should has mountRoot has parent: ${sanitizedMountRootDir}`,
+      );
+    }
+    accum[resolvedVal] = true;
+    return accum;
+  }, {});
 
-  const filesAddedToVolume = await addFolderToStaticFsVolume(sanitizedMountRootDir, sanitizedFoldersToAdd);
+  const filesAddedToVolume = await addFolderToStaticFsVolume(sanitizedMountRootDir, sanitizedFoldersToAdd, sanitizedExclusions);
   const staticFSRuntimeFile = await createStaticFsRuntimeFile(sanitizedOutputDir);
   await patchEntryPoints(
     sanitizedAppEntryPointsToPatch,
