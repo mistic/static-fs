@@ -11,6 +11,9 @@ schedules:
         - master
     always: true
 
+variables:
+  - group: semantic-release
+
 jobs:
   - job: conventional_commits
     displayName: 'Lint commits'
