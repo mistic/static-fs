@@ -6,14 +6,19 @@ steps:
   - task: Npm@1
     inputs:
       command: custom
-      customCommand: i -g --production windows-build-tools node-gyp@5.0.3
+      customCommand: i -g --production windows-build-tools
     condition: eq(variables['Agent.OS'], 'Windows_NT')
-    displayName: 'Install required node-gyp build tools for windows'
+    displayName: 'Install required windows build tools for native modules'
   - task: Npm@1
     inputs:
       command: custom
       customCommand: i -g yarn@1.10.1
     displayName: 'Install required yarn'
+  - task: Npm@1
+    inputs:
+      command: custom
+      customCommand: i -g node-gyp@5.0.3
+    displayName: 'Install required node-gyp version'
   - script: |
       node -v
       yarn -v
