@@ -28,6 +28,7 @@ export class WritableStaticVolume {
     }
 
     const calculatedTargetFolder = relative(this.mountingRoot, sourceFolder);
+    console.log(calculatedTargetFolder);
     await this.getFileNames(sourceFolder, calculatedTargetFolder);
   }
 
@@ -133,11 +134,13 @@ export class WritableStaticVolume {
   getAddedFilesAndFolders() {
     const addParentsForFolder = (folderPath, accum) => {
       const parent = dirname(folderPath);
-      if (parent && parent !== sep) {
+      if (parent && parent !== '/') {
         accum[parent] = true;
         return addParentsForFolder(parent, accum);
       }
     };
+
+    console.log(Object.keys(this.directoriesIndex));
 
     const foldersWithNativeModulesIndex = Object.keys(this.directoriesIndex).reduce((accum, folderPath) => {
       if (this.directoriesIndex[folderPath].hasNativeModules && !accum[folderPath]) {
