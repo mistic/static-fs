@@ -65,7 +65,7 @@ stages:
               testResultsFiles: ./junit-$(imageName).xml
 
   - stage: release
-    displayName: 'Release'
+    displayName: 'release'
     jobs:
       - job: release_npm_github
         displayName: 'npm and github'
