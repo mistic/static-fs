@@ -70,15 +70,17 @@ export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntr
   const sanitizedExclusions = exclusions.reduce((accum, val) => {
     const resolvedVal = unixifyPath(resolve(val));
     if (!resolvedVal.includes(sanitizedMountRootDir)) {
-      throw new Error(
-        `All exclusions should has mountRoot has parent: ${sanitizedMountRootDir}`,
-      );
+      throw new Error(`All exclusions should has mountRoot has parent: ${sanitizedMountRootDir}`);
     }
     accum[resolvedVal] = true;
     return accum;
   }, {});
 
-  const filesAddedToVolume = await addFolderToStaticFsVolume(sanitizedMountRootDir, sanitizedFoldersToAdd, sanitizedExclusions);
+  const filesAddedToVolume = await addFolderToStaticFsVolume(
+    sanitizedMountRootDir,
+    sanitizedFoldersToAdd,
+    sanitizedExclusions,
+  );
   const staticFSRuntimeFile = await createStaticFsRuntimeFile(sanitizedOutputDir);
   await patchEntryPoints(
     sanitizedAppEntryPointsToPatch,
