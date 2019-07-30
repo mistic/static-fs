@@ -2,6 +2,7 @@
   static-fs
 </h1> 
 
+[![Build Status](https://dev.azure.com/static-fs/static-fs/_apis/build/status/mistic.static-fs?branchName=master)](https://dev.azure.com/static-fs/static-fs/_build/latest?definitionId=1&branchName=master)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 ![npm](https://img.shields.io/npm/v/static-fs)
 ![node](https://img.shields.io/node/v/static-fs)
