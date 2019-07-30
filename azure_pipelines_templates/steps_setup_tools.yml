@@ -8,6 +8,14 @@ steps:
       command: custom
       customCommand: i -g yarn@1.10.1
     displayName: 'Install required Yarn version'
+  - task: Npm@1
+    inputs:
+      command: custom
+      customCommand: i -g node-gyp@5.0.3
+    displayName: 'Install required node-gyp version'
+  - script: npm prefix -g | % {npm config set node_gyp "$_\node_modules\node-gyp\bin\node-gyp.js"}
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+    displayName: 'Config latest v5 node-gyp to work with vs2019'
   - script: |
       node -v
       yarn -v
