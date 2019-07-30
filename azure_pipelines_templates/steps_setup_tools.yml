@@ -16,7 +16,7 @@ steps:
   - script: |
       node -v
       yarn -v
-      yarn node-gyp -v
+      node-gyp -v
     displayName: 'Print tool versions'
   - script: yarn install
     displayName: 'Install dependencies'
