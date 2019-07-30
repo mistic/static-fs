@@ -12,61 +12,67 @@ schedules:
     always: true
 
 variables:
-  - group: semantic-release
+  - group: release-env
 
-jobs:
-  - job: conventional_commits
-    displayName: 'Lint commits'
-    pool:
-      vmImage: 'ubuntu-16.04'
-    steps:
-      - template: azure_pipelines_templates/steps_setup_tools.yml
-      - script: yarn commitlint-azure-pipelines
-        displayName: 'Assert conventional commits format'
+stages:
+  - stage: lint
+    displayName: 'Lint'
+    jobs:
+      - job: conventional_commits
+        displayName: 'Lint commits'
+        pool:
+          vmImage: 'ubuntu-16.04'
+        steps:
+          - template: azure_pipelines_templates/steps_setup_tools.yml
+          - script: yarn commitlint-azure-pipelines
+            displayName: 'Assert conventional commits format'
 
-  - job: lint
-    displayName: 'Lint source code'
-    pool:
-      vmImage: 'ubuntu-16.04'
-    dependsOn: conventional_commits
-    steps:
-      - template: azure_pipelines_templates/steps_setup_tools.yml
-      - script: yarn lint
-        displayName: 'Run eslint'
+      - job: lint
+        displayName: 'Lint source code'
+        pool:
+          vmImage: 'ubuntu-16.04'
+        steps:
+          - template: azure_pipelines_templates/steps_setup_tools.yml
+          - script: yarn lint
+            displayName: 'Run eslint'
 
-  - job: test
-    displayName: 'Test for platform'
-    strategy:
-      maxParallel: 3
-      matrix:
-        linux:
-          imageName: 'ubuntu-16.04'
-        mac:
-          imageName: 'macos-10.14'
-        windows:
-          imageName: 'windows-2019'
-    pool:
-      vmImage: $(imageName)
-    dependsOn: lint
-    steps:
-      - template: azure_pipelines_templates/steps_setup_tools.yml
-      - script: yarn test --reporters=jest-junit
-        env:
-          JEST_JUNIT_OUTPUT: ./junit-$(imageName).xml
-        displayName: Run tests on $(imageName)
-      - task: PublishTestResults@2
-        condition: succeededOrFailed()
-        inputs:
-          testRunner: JUnit
-          testResultsFiles: ./junit-$(imageName).xml
+  - stage: test
+    displayName: 'Test'
+    jobs:
+      - job: test
+        displayName: 'Test for platform'
+        strategy:
+          maxParallel: 3
+          matrix:
+            linux:
+              imageName: 'ubuntu-16.04'
+            mac:
+              imageName: 'macos-10.14'
+            windows:
+              imageName: 'windows-2019'
+        pool:
+          vmImage: $(imageName)
+        steps:
+          - template: azure_pipelines_templates/steps_setup_tools.yml
+          - script: yarn test --reporters=jest-junit
+            env:
+              JEST_JUNIT_OUTPUT: ./junit-$(imageName).xml
+            displayName: Run tests on $(imageName)
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testRunner: JUnit
+              testResultsFiles: ./junit-$(imageName).xml
 
-  - job: deploy
+  - stage: release
     displayName: 'Release'
-    pool:
-      vmImage: 'ubuntu-16.04'
-    dependsOn: test
-    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
-    steps:
-      - template: azure_pipelines_templates/steps_setup_tools.yml
-      - script: yarn release
-        displayName: 'Release new version'
+    jobs:
+      - job: release
+        displayName: 'Release Npm & GitHub'
+        pool:
+          vmImage: 'ubuntu-16.04'
+        condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+        steps:
+          - template: azure_pipelines_templates/steps_setup_tools.yml
+          - script: yarn release
+            displayName: 'Release a new version'
