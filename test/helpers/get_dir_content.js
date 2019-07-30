@@ -1,12 +1,11 @@
 import { readdirSync, statSync } from 'fs';
 import { dirname, resolve, sep } from 'path';
-import { unixifyPath } from "../../src/common";
 
 export function getDirContent(path, exclusions = []) {
   const foldersWithNativeModulesIdx = {};
   const foldersIdx = {};
   const sanitizedExclusions = exclusions.reduce((accum, val) => {
-    const resolvedVal = unixifyPath(resolve(val));
+    const resolvedVal = resolve(val);
     accum[resolvedVal] = true;
     return accum;
   }, {});

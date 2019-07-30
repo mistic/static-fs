@@ -1,6 +1,6 @@
 import { dirname, relative, resolve } from 'path';
 import { WritableStaticVolume } from '../filesystem';
-import { copyFile, isFile, readFile, writeFile, unixifyPath } from '../common';
+import { copyFile, isFile, readFile, writeFile } from '../common';
 
 // Creates a static-fs runtime file in the target
 const createStaticFsRuntimeFile = async (outDir) => {
@@ -68,7 +68,7 @@ export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntr
   const sanitizedFoldersToAdd = foldersToAdd.map((p) => resolve(p));
   const sanitizedAppEntryPointsToPatch = appEntryPointsToPatch.map((p) => resolve(p));
   const sanitizedExclusions = exclusions.reduce((accum, val) => {
-    const resolvedVal = unixifyPath(resolve(val));
+    const resolvedVal = resolve(val);
     if (!resolvedVal.includes(sanitizedMountRootDir)) {
       throw new Error(`All exclusions should has mountRoot has parent: ${sanitizedMountRootDir}`);
     }
