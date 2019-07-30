@@ -16,7 +16,7 @@ export class WritableStaticVolume {
     this.intBuffer = Buffer.alloc(INTSIZE);
   }
 
-  async addFolder(sourceFolder) {
+  async addFolder(sourceFolder, exclusions) {
     if (this.mountingRoot === sourceFolder) {
       throw new Error('You cannot add the mounting root of the project to the static filesystem');
     }
@@ -28,7 +28,7 @@ export class WritableStaticVolume {
     }
 
     const calculatedTargetFolder = relative(this.mountingRoot, sourceFolder);
-    await this.getFileNames(sourceFolder, calculatedTargetFolder);
+    await this.getFileNames(sourceFolder, calculatedTargetFolder, exclusions);
   }
 
   get headerLength() {
@@ -93,7 +93,7 @@ export class WritableStaticVolume {
     return this.hash;
   }
 
-  async getFileNames(sourceFolder, targetFolder) {
+  async getFileNames(sourceFolder, targetFolder, exclusions) {
     const files = await readdir(sourceFolder);
     const all = [];
 
@@ -102,13 +102,20 @@ export class WritableStaticVolume {
       const sourcePath = `${sourceFolder}${sep}${file}`;
       const targetPath = `${targetFolder}${sep}${file}`;
 
+      // is declared exclusion?
+      const foundExclusion = exclusions[sourceFolder] || exclusions[sourcePath];
+      if (foundExclusion) {
+        continue;
+      }
+
       // is this a directory
       const ss = await stat(sourcePath);
       if (ss.isDirectory()) {
         this.directoriesIndex[sourcePath] = {
           hasNativeModules: false,
         };
-        all.push(this.getFileNames(sourcePath, targetPath));
+
+        all.push(this.getFileNames(sourcePath, targetPath, exclusions));
         continue;
       }
 
