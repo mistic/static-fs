@@ -106,7 +106,7 @@ export class WritableStaticVolume {
       const ss = await stat(sourcePath);
       if (ss.isDirectory()) {
         this.directoriesIndex[sourcePath] = {
-          hasNativeModules: false
+          hasNativeModules: false,
         };
         all.push(this.getFileNames(sourcePath, targetPath));
         continue;
@@ -115,7 +115,7 @@ export class WritableStaticVolume {
       const isNativeModuleFile = file.includes('.node');
       if (isNativeModuleFile) {
         this.directoriesIndex[sourcePath] = {
-          hasNativeModules: true
+          hasNativeModules: true,
         };
         continue;
       }
@@ -149,7 +149,7 @@ export class WritableStaticVolume {
     }, {});
 
     const addedFolders = Object.keys(this.directoriesIndex)
-      .filter(folderPath => !foldersWithNativeModulesIndex[folderPath])
+      .filter((folderPath) => !foldersWithNativeModulesIndex[folderPath])
       .map((folderPath) => resolve(this.mountingRoot, folderPath));
 
     const addedFiles = Object.keys(this.index).map((filePath) => resolve(this.mountingRoot, filePath));
