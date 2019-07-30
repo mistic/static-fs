@@ -8,6 +8,9 @@ steps:
       command: custom
       customCommand: i -g yarn@1.10.1
     displayName: 'Install required yarn version'
+  - script: yarn global add windows-build-tools
+    displayName: 'Install required build tools for windows'
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
   - script: yarn global add node-gyp@5.0.3
     displayName: 'Install required node-gyp'
   - script: |
@@ -15,8 +18,5 @@ steps:
       yarn -v
       yarn node-gyp -v
     displayName: 'Print tool versions'
-  - script: yarn global add windows-build-tools
-    displayName: 'Install required build tools for windows'
-    condition: eq(variables['Agent.OS'], 'Windows_NT')
   - script: yarn install
     displayName: 'Install dependencies'
