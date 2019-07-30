@@ -16,7 +16,6 @@ variables:
 
 stages:
   - stage: lint
-    displayName: 'Lint'
     jobs:
       - job: conventional_commits
         displayName: 'Lint commits'
