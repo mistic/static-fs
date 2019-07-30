@@ -65,10 +65,10 @@ stages:
               testResultsFiles: ./junit-$(imageName).xml
 
   - stage: release_lib
-    displayName: 'Release'
+    displayName: 'release'
     jobs:
       - job: release_npm_github
-        displayName: 'Npm & GitHub'
+        displayName: 'npm & github'
         pool:
           vmImage: 'ubuntu-16.04'
         condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
