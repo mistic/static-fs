@@ -17,6 +17,6 @@ steps:
     displayName: 'Print tool versions'
   - script: yarn global add windows-build-tools
     displayName: 'Install required build tools for windows'
-    condition: eq(variables['Agent.OS'], 'Windows_NT'))
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
   - script: yarn install
     displayName: 'Install dependencies'
