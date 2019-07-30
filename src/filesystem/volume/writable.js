@@ -1,4 +1,4 @@
-import { relative, resolve, dirname } from 'path';
+import { relative, resolve, dirname, sep } from 'path';
 import { readdir, stat, open, close, write, readFile, INTSIZE, calculateHash, mkdir } from '../../common';
 
 export class WritableStaticVolume {
@@ -133,7 +133,7 @@ export class WritableStaticVolume {
   getAddedFilesAndFolders() {
     const addParentsForFolder = (folderPath, accum) => {
       const parent = dirname(folderPath);
-      if (parent && parent !== '/') {
+      if (parent && parent !== sep) {
         accum[parent] = true;
         return addParentsForFolder(parent, accum);
       }
