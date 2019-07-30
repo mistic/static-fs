@@ -1,4 +1,4 @@
-import { relative, resolve, dirname , sep } from 'path';
+import { relative, resolve, dirname, sep } from 'path';
 import { readdir, stat, open, close, write, readFile, INTSIZE, calculateHash, mkdir } from '../../common';
 
 export class WritableStaticVolume {
