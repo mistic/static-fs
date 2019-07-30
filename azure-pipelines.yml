@@ -15,10 +15,11 @@ variables:
   - group: release-env
 
 stages:
-  - stage: lint
+  - stage: lint_lib
+    displayName: 'Lint'
     jobs:
-      - job: conventional_commits
-        displayName: 'Lint commits'
+      - job: lint_commits
+        displayName: 'commits'
         pool:
           vmImage: 'ubuntu-16.04'
         steps:
@@ -26,8 +27,8 @@ stages:
           - script: yarn commitlint-azure-pipelines
             displayName: 'Assert conventional commits format'
 
-      - job: lint
-        displayName: 'Lint source code'
+      - job: lint_source_code
+        displayName: 'source code'
         pool:
           vmImage: 'ubuntu-16.04'
         steps:
@@ -35,11 +36,11 @@ stages:
           - script: yarn lint
             displayName: 'Run eslint'
 
-  - stage: test
+  - stage: test_lib
     displayName: 'Test'
     jobs:
-      - job: test
-        displayName: 'Test for platform'
+      - job: test_for_platform
+        displayName: 'for platform'
         strategy:
           maxParallel: 3
           matrix:
@@ -63,15 +64,15 @@ stages:
               testRunner: JUnit
               testResultsFiles: ./junit-$(imageName).xml
 
-  - stage: release
+  - stage: release_lib
     displayName: 'Release'
     jobs:
-      - job: release
-        displayName: 'Release Npm & GitHub'
+      - job: release_npm_github
+        displayName: 'Npm & GitHub'
         pool:
           vmImage: 'ubuntu-16.04'
         condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
         steps:
           - template: azure_pipelines_templates/steps_setup_tools.yml
           - script: yarn release
-            displayName: 'Release a new version'
+            displayName: 'Run script yarn script to release new version'
