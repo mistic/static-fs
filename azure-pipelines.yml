@@ -15,7 +15,7 @@ variables:
   - group: release-env
 
 stages:
-  - stage: lint_lib
+  - stage: lint
     displayName: 'Lint'
     jobs:
       - job: lint_commits
@@ -36,7 +36,7 @@ stages:
           - script: yarn lint
             displayName: 'Run eslint'
 
-  - stage: test_lib
+  - stage: test
     displayName: 'Test'
     jobs:
       - job: test_for_platform
@@ -64,7 +64,7 @@ stages:
               testRunner: JUnit
               testResultsFiles: ./junit-$(imageName).xml
 
-  - stage: release_lib
+  - stage: release
     displayName: 'Release'
     jobs:
       - job: release_npm_github
