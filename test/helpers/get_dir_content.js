@@ -1,6 +1,6 @@
 import { readdirSync, statSync } from 'fs';
-import {dirname, resolve, sep} from 'path';
-import {unixifyPath} from "../../src/common";
+import { dirname, resolve, sep } from 'path';
+import { unixifyPath } from "../../src/common";
 
 export function getDirContent(path, exclusions = []) {
   const foldersWithNativeModulesIdx = {};

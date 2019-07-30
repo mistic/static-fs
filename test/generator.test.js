@@ -34,7 +34,6 @@ describe('Static Fs Generator', () => {
   });
 
   afterAll(async () => {
-    // const filesOnStaticFsExceptStaticFs = filesAddedToStaticFs.filter(filePath => !filePath.includes(`node_modules${sep}static-fs`));
     await del(filesAddedToStaticFs, { force: true });
   });
 
@@ -54,7 +53,6 @@ describe('Static Fs Generator', () => {
 
   test('static fs bundle for the expected files (= all except .node)', async () => {
     const expectedFilesOnStaticFs = getDirContent(folderToAdd, exceptions);
-      // .filter(fileName => !fileName.includes('.node') && !exceptions.some(exc => fileName.includes(exc)));
 
     expect(filesAddedToStaticFs.length).toEqual(expectedFilesOnStaticFs.length);
   });
