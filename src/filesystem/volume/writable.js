@@ -1,5 +1,4 @@
-/* eslint-disable no-console */
-import { relative, resolve, dirname } from 'path';
+import { relative, resolve, dirname , sep } from 'path';
 import { readdir, stat, open, close, write, readFile, INTSIZE, calculateHash, mkdir } from '../../common';
 
 export class WritableStaticVolume {
@@ -29,7 +28,6 @@ export class WritableStaticVolume {
     }
 
     const calculatedTargetFolder = relative(this.mountingRoot, sourceFolder);
-    console.log(calculatedTargetFolder);
     await this.getFileNames(sourceFolder, calculatedTargetFolder);
   }
 
@@ -101,8 +99,8 @@ export class WritableStaticVolume {
 
     for (const file of files) {
       // compute the path names
-      const sourcePath = `${sourceFolder}/${file}`;
-      const targetPath = `${targetFolder}/${file}`;
+      const sourcePath = `${sourceFolder}${sep}${file}`;
+      const targetPath = `${targetFolder}${sep}${file}`;
 
       // is this a directory
       const ss = await stat(sourcePath);
@@ -135,13 +133,11 @@ export class WritableStaticVolume {
   getAddedFilesAndFolders() {
     const addParentsForFolder = (folderPath, accum) => {
       const parent = dirname(folderPath);
-      if (parent && parent !== '/') {
+      if (parent && parent !== this.mountingRoot && parent.includes(this.mountingRoot)) {
         accum[parent] = true;
         return addParentsForFolder(parent, accum);
       }
     };
-
-    console.log(Object.keys(this.directoriesIndex));
 
     const foldersWithNativeModulesIndex = Object.keys(this.directoriesIndex).reduce((accum, folderPath) => {
       if (this.directoriesIndex[folderPath].hasNativeModules && !accum[folderPath]) {
