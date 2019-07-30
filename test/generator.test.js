@@ -48,8 +48,7 @@ describe('Static Fs Generator', () => {
   });
 
   test('static fs bundle for the expected files (= all except .node)', async () => {
-    const expectedFilesOnStaticFs = getDirContent(folderToAdd)
-      .filter(fileName => !fileName.includes('.node'));
+    const expectedFilesOnStaticFs = getDirContent(folderToAdd);
 
     expect(filesAddedToStaticFs.length).toEqual(expectedFilesOnStaticFs.length);
   });

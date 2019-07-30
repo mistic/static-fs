@@ -1,4 +1,4 @@
-import { relative, resolve, dirname } from 'path';
+import { relative, resolve, dirname, sep } from 'path';
 import { readdir, stat, open, close, write, readFile, INTSIZE, calculateHash, mkdir } from '../../common';
 
 export class WritableStaticVolume {
@@ -12,6 +12,7 @@ export class WritableStaticVolume {
     this.hash = '';
     this.hashBuffer = Buffer.allocUnsafe(0);
     this.index = [];
+    this.directoriesIndex = {};
     this.intBuffer = Buffer.alloc(INTSIZE);
   }
 
@@ -98,18 +99,24 @@ export class WritableStaticVolume {
 
     for (const file of files) {
       // compute the path names
-      const sourcePath = `${sourceFolder}/${file}`;
-      const targetPath = `${targetFolder}/${file}`;
+      const sourcePath = `${sourceFolder}${sep}${file}`;
+      const targetPath = `${targetFolder}${sep}${file}`;
 
       // is this a directory
       const ss = await stat(sourcePath);
       if (ss.isDirectory()) {
+        this.directoriesIndex[sourcePath] = {
+          hasNativeModules: false,
+        };
         all.push(this.getFileNames(sourcePath, targetPath));
         continue;
       }
 
       const isNativeModuleFile = file.includes('.node');
       if (isNativeModuleFile) {
+        this.directoriesIndex[sourcePath] = {
+          hasNativeModules: true,
+        };
         continue;
       }
 
@@ -121,5 +128,31 @@ export class WritableStaticVolume {
     }
     // wait for children to finish
     await Promise.all(all);
+  }
+
+  getAddedFilesAndFolders() {
+    const addParentsForFolder = (folderPath, accum) => {
+      const parent = dirname(folderPath);
+      if (parent && parent !== this.mountingRoot && parent.includes(this.mountingRoot)) {
+        accum[parent] = true;
+        return addParentsForFolder(parent, accum);
+      }
+    };
+
+    const foldersWithNativeModulesIndex = Object.keys(this.directoriesIndex).reduce((accum, folderPath) => {
+      if (this.directoriesIndex[folderPath].hasNativeModules && !accum[folderPath]) {
+        accum[folderPath] = true;
+        addParentsForFolder(folderPath, accum);
+      }
+
+      return accum;
+    }, {});
+
+    const addedFolders = Object.keys(this.directoriesIndex)
+      .filter((folderPath) => !foldersWithNativeModulesIndex[folderPath])
+      .map((folderPath) => resolve(this.mountingRoot, folderPath));
+
+    const addedFiles = Object.keys(this.index).map((filePath) => resolve(this.mountingRoot, filePath));
+    return addedFiles.concat(addedFolders);
   }
 }
