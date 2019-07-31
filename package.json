@@ -25,6 +25,10 @@
     "read",
     "node"
   ],
+  "files": [
+    "dist/**/*.js",
+    "yarn.lock"
+  ],
   "author": "Tiago Costa",
   "license": "MIT",
   "bugs": {
