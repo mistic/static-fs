@@ -71,7 +71,7 @@ stages:
         displayName: 'npm and github'
         pool:
           vmImage: 'ubuntu-16.04'
-        condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+        # condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
         steps:
           - template: azure_pipelines_templates/steps_setup_tools.yml
           - script: yarn release
