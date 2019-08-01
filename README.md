@@ -80,6 +80,7 @@ const del = require('del');
     [
       entryPoint
     ]
+    //, [] -> exclusions are optional and equal to [] by default
   );
   
   // Delete all the files bundled into the static filesystem volume
@@ -119,7 +120,7 @@ to bundle inside that static filesystem instance. Could not be the same as
 - `appEntryPointsToPatch: string[]`: List of paths for the application entry points 
 to be patched in order to read from the static filesystem.
 
-- `exclusions: string[]`: List of paths that would explicit not be included by 
+- `exclusions: string[] = []`: List of paths that would explicit not be included by 
 the static filesystem during the generation phase. The paths on this list could 
 be a folder or a single file and they should be absolute resolved against 
 `mountRootDir` otherwise the function would throw an error. In case the path 
