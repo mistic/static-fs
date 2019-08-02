@@ -150,22 +150,29 @@ export function patchModuleLoader(
   Module._originalFindPath = Module._findPath;
 
   Module._findPath = (request, paths, isMain) => {
-    let result = Module._alternateFindPath(request, paths, isMain);
-
-    if (!Module._fallback || result) {
-      return result;
-    }
-
-    // NOTE: we have a special use case when Module._fallback is on
-    // and we have a findPath call with a relative file request where
-    // the given path is inside the static fs and the relative file
-    // request in the real fs (for example in the native modules).
     const isWindows = process.platform === 'win32';
     const isRelative =
       request.startsWith('./') ||
       request.startsWith('../') ||
       ((isWindows && request.startsWith('.\\')) || request.startsWith('..\\'));
 
+    let result = Module._alternateFindPath(request, paths, isMain);
+
+    // NOTE: special use case when we have a findPath call with a relative file request where
+    // the given path is in the real fs and the relative file
+    // is inside the static fs
+    if (isRelative && paths.length === 1) {
+      const resolvedRequest = resolve(paths[0], request);
+      result = Module._alternateFindPath(resolvedRequest, paths, isMain);
+    }
+
+    if (!Module._fallback || result) {
+      return result;
+    }
+
+    // NOTE: special use case when we have a findPath call with a relative file request where
+    // the given path is inside the static fs and the relative file
+    // request in the real fs (for example in the native modules).
     if (isRelative && paths.length === 1) {
       const resolvedRequest = resolve(paths[0], request);
       result = Module._originalFindPath(resolvedRequest, paths, isMain);
