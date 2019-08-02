@@ -89,9 +89,7 @@ export class StaticFilesystem {
   }
 
   sanitizePath(path) {
-    return resolve(
-      unixifyPath(path)
-    );
+    return resolve(unixifyPath(path));
   }
 
   readFileSync(filepath, options) {
