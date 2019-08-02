@@ -128,7 +128,7 @@ is a folder, the entire folder and children would be also excluded.
 
 **Returns**
 
-A an `array of strings` containing the paths of each file and base folder 
+An `string[]` containing the paths of each file and base folder 
 that was added into this static filesystem instance. 
 
 ## Known Limitations
@@ -158,3 +158,10 @@ If you wanna contribute please read [CONTRIBUTING.md](https://github.com/mistic/
 ## License
 
 See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
+
+## Thanks To
+
+- @zeit for [Pkg](https://github.com/zeit/pkg) as it was the first project we 
+  start investigate in order to solve that problem and was also source of some ideas.
+- @fearthecowboy for [static-link](https://github.com/fearthecowboy/static-link) as 
+  it was the main inspiration for that project.
