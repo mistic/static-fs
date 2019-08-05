@@ -2,13 +2,13 @@
   static-fs
 </h1> 
 
-[![Build Status](https://dev.azure.com/static-fs/static-fs/_apis/build/status/mistic.static-fs?branchName=master)](https://dev.azure.com/static-fs/static-fs/_build/latest?definitionId=1&branchName=master)
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
-![npm](https://img.shields.io/npm/v/static-fs)
-![node](https://img.shields.io/node/v/static-fs)
-![David](https://img.shields.io/david/mistic/static-fs)
-![David](https://img.shields.io/david/dev/mistic/static-fs)
-[![install size](https://packagephobia.now.sh/badge?p=static-fs)](https://packagephobia.now.sh/result?p=static-fs)
+[![CI Build Status][ci-build-status-image]][ci-build-status-url]
+[![Commitizen Friendly][commitizen-friendly-image]][commitizen-friendly-url]
+[![NPM Version][npm-version-image]][npm-version-url]
+[![NODE Version][node-version-image]][node-version-url]
+[![David Node Deps Manager][david-node-deps-manager-image]][david-node-deps-manager-url]
+[![David Node Deps Manager Development][david-node-deps-manager-dev-image]][david-node-deps-manager-dev-url]
+[![NPM Install Size][npm-install-size-image]][npm-install-size-url]
 
 
 A static filesystem to bundle multiple files into one that are lately
@@ -166,3 +166,18 @@ See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
   start investigate in order to solve that problem and was also source of some ideas.
 - @fearthecowboy for [static-link](https://github.com/fearthecowboy/static-link) as 
   it was the main inspiration for that project.
+  
+[ci-build-status-image]: https://dev.azure.com/static-fs/static-fs/_apis/build/status/mistic.static-fs?branchName=master 
+[ci-build-status-url]: https://dev.azure.com/static-fs/static-fs/_build/latest?definitionId=1&branchName=master
+[commitizen-friendly-image]: https://img.shields.io/badge/commitizen-friendly-brightgreen.svg
+[commitizen-friendly-url]: http://commitizen.github.io/cz-cli
+[npm-version-image]: https://img.shields.io/npm/v/static-fs
+[npm-version-url]: https://www.npmjs.com/package/static-fs
+[node-version-image]: https://img.shields.io/node/v/static-fs
+[node-version-url]: https://nodejs.org/download/release/v10.15.2
+[david-node-deps-manager-image]: https://img.shields.io/david/mistic/static-fs
+[david-node-deps-manager-url]: https://david-dm.org/mistic/static-fs
+[david-node-deps-manager-dev-image]: https://img.shields.io/david/dev/mistic/static-fs
+[david-node-deps-manager-dev-url]: https://david-dm.org/mistic/static-fs?type=dev
+[npm-install-size-image]: https://badgen.net/packagephobia/install/static-fs
+[npm-install-size-url]: https://packagephobia.now.sh/result?p=static-fs
