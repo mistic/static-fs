@@ -8,6 +8,10 @@ const testTempDir = global.__mock_project_path,
   folderToAdd = resolve(testTempDir, 'node_modules'),
   mountRoot = testTempDir,
   entryPoint = resolve(testTempDir, 'test_cases/full_app_usage.js'),
+  exceptions = [
+    resolve(testTempDir, 'node_modules', 'static-fs'),
+    resolve(testTempDir, 'node_modules', 'mock_simple_module_non_bundled')
+  ],
   filesAddedToStaticFs = [];
 
 describe('Static Fs Generator', () => {
@@ -22,15 +26,15 @@ describe('Static Fs Generator', () => {
           ],
           [
             entryPoint
-          ]
+          ],
+          exceptions
         )
       )
     );
   });
 
   afterAll(async () => {
-    const filesOnStaticFsExceptStaticFs = filesAddedToStaticFs.filter(filePath => !filePath.includes(`node_modules${sep}static-fs`));
-    await del(filesOnStaticFsExceptStaticFs, { force: true });
+    await del(filesAddedToStaticFs, { force: true });
   });
 
   test('create a valid static fs into the mounting root', async () => {
@@ -48,7 +52,7 @@ describe('Static Fs Generator', () => {
   });
 
   test('static fs bundle for the expected files (= all except .node)', async () => {
-    const expectedFilesOnStaticFs = getDirContent(folderToAdd);
+    const expectedFilesOnStaticFs = getDirContent(folderToAdd, exceptions);
 
     expect(filesAddedToStaticFs.length).toEqual(expectedFilesOnStaticFs.length);
   });

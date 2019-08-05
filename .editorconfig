@@ -1,6 +1,6 @@
 # EditorConfig is awesome: http://EditorConfig.org
 
-# top-most EditorConfig file
+# Top-most EditorConfig file
 root = true
 
 # Unix-style newlines with a newline ending every file
@@ -12,8 +12,9 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 end_of_line = lf
 
-# editor config tools is unable to ignore longs strings or urls
+# Editor config tools is unable to ignore longs strings or urls
 max_line_length = off
 
+# Preference for md files
 [*.md]
 trim_trailing_whitespace = false

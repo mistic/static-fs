@@ -81,6 +81,7 @@ const del = require('del');
     [
       entryPoint
     ]
+    //, [] -> exclusions are optional and equal to [] by default
   );
   
   // Delete all the files bundled into the static filesystem volume
@@ -95,15 +96,14 @@ in the root of your distributable app folder and everything should work.
 
 ## API
 
-// TODO: provide a way to exclude an additional list of files.
-
-### `async generateStaticFsVolume(mountRootDir, foldersToAdd, appEntryPointsToPatch)`
+### `async generateStaticFsVolume(mountRootDir, foldersToAdd, appEntryPointsToPatch, exclusions)`
 
 An async function that would take care of generating the static filesystem 
 considering that the root path to mount it would be `mountRootDir`, the content 
-would be created according `foldersToAdd` and your application entry points 
+would be created according `foldersToAdd`, your application entry points 
 would be automatically patched according `appEntryPointsToPatch` so node can read 
-from the generated static filesystem.
+from the generated static filesystem, and any path (folder or file) listed on `exclusions`
+would be discarded.
 
 > NOTE: After running that function a folder called `static_fs` would be 
 created inside `mountRootDir` with `static_fs_volume.sfsv` and 
@@ -121,9 +121,15 @@ to bundle inside that static filesystem instance. Could not be the same as
 - `appEntryPointsToPatch: string[]`: List of paths for the application entry points 
 to be patched in order to read from the static filesystem.
 
+- `exclusions: string[] = []`: List of paths that would explicit not be included by 
+the static filesystem during the generation phase. The paths on this list could 
+be a folder or a single file and they should be absolute resolved against 
+`mountRootDir` otherwise the function would throw an error. In case the path 
+is a folder, the entire folder and children would be also excluded. 
+
 **Returns**
 
-A an `array of strings` containing the paths of each file and base folder 
+An `string[]` containing the paths of each file and base folder 
 that was added into this static filesystem instance. 
 
 ## Known Limitations
@@ -153,3 +159,10 @@ If you wanna contribute please read [CONTRIBUTING.md](https://github.com/mistic/
 ## License
 
 See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
+
+## Thanks To
+
+- @zeit for [Pkg](https://github.com/zeit/pkg) as it was the first project we 
+  start investigate in order to solve that problem and was also source of some ideas.
+- @fearthecowboy for [static-link](https://github.com/fearthecowboy/static-link) as 
+  it was the main inspiration for that project.

@@ -17,6 +17,8 @@
     "mock_child_process_module": "../../fixtures/node_modules/mock_child_process_module",
     "mock_native_module": "../../fixtures/node_modules/mock_native_module",
     "mock_simple_module": "../../fixtures/node_modules/mock_simple_module",
+    "mock_simple_module_non_bundled": "../../fixtures/node_modules/mock_simple_module_non_bundled",
+    "mock_simple_module_relative": "../../fixtures/node_modules/mock_simple_module_relative",
     "static-fs": "../../../"
   },
   "engines": {
