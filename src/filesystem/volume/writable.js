@@ -160,6 +160,7 @@ export class WritableStaticVolume {
       .map((folderPath) => resolve(this.mountingRoot, folderPath));
 
     const addedFiles = Object.keys(this.index).map((filePath) => resolve(this.mountingRoot, filePath));
-    return addedFiles.concat(addedFolders);
+
+    return addedFiles.concat(addedFolders).sort((a, b) => b.localeCompare(a));
   }
 }
