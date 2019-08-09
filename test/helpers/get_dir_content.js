@@ -40,7 +40,7 @@ function _getDirContent(path, foldersWithNativeModulesIdx, foldersIdx, baseRoot,
       _getDirContent(newPath, foldersWithNativeModulesIdx, foldersIdx, baseRoot, exclusions, result);
     } else {
       const file = `${path}${sep}${each}`;
-      const isNativeModuleFile = file.includes('.node');
+      const isNativeModuleFile = file.endsWith('.node');
 
       if (isNativeModuleFile && !foldersWithNativeModulesIdx[path]) {
         foldersWithNativeModulesIdx[path] = true;

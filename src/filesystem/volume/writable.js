@@ -119,7 +119,7 @@ export class WritableStaticVolume {
         continue;
       }
 
-      const isNativeModuleFile = file.includes('.node');
+      const isNativeModuleFile = file.endsWith('.node');
       if (isNativeModuleFile) {
         this.directoriesIndex[sourcePath] = {
           hasNativeModules: true,
