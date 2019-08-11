@@ -179,5 +179,5 @@ See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
 [david-node-deps-manager-url]: https://david-dm.org/mistic/static-fs
 [david-node-deps-manager-dev-image]: https://img.shields.io/david/dev/mistic/static-fs
 [david-node-deps-manager-dev-url]: https://david-dm.org/mistic/static-fs?type=dev
-[npm-install-size-image]: https://badgen.net/packagephobia/install/static-fs
+[npm-install-size-image]: https://packagephobia.now.sh/badge?p=static-fs
 [npm-install-size-url]: https://packagephobia.now.sh/result?p=static-fs
