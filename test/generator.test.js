@@ -57,6 +57,12 @@ describe('Static Fs Generator', () => {
     expect(filesAddedToStaticFs.length).toEqual(expectedFilesOnStaticFs.length);
   });
 
+  test('if list of added files has paths in the correct order', async () => {
+    const orderedFilesAddedList = [...filesAddedToStaticFs].sort((a, b) => b.localeCompare(a));
+
+    expect(filesAddedToStaticFs).toEqual(orderedFilesAddedList);
+  });
+
   test('if the entry points were patched', async () => {
     const entryPointContent = readFileSync(entryPoint, { encoding: 'utf8' }).toString();
 
