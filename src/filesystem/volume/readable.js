@@ -119,7 +119,7 @@ export class ReadableStaticVolume {
   }
 
   updateDirectoriesIndex(name) {
-    if (!this.index[name] || unixifyPath(this.moutingRoot) === this.index[name]) {
+    if (!this.index[name] || unixifyPath(this.moutingRoot) === name) {
       return;
     }
 
