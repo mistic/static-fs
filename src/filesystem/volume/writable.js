@@ -73,8 +73,15 @@ export class WritableStaticVolume {
     for (const each in this.index) {
       const entry = this.index[each];
       const position = dataOffset;
-      dataOffset += entry.size;
       const buf = await this.index[each].getBuffer();
+
+      // On windows the file size returned by stats
+      // could be 0 if the file is too small
+      // so we need to set the file size according
+      // to the content size as expected
+      this.index[each].size = buf.length;
+      dataOffset += entry.size;
+
       await write(fd, buf, 0, buf.length, position);
     }
 
