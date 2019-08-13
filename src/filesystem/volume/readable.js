@@ -31,7 +31,6 @@ export class ReadableStaticVolume {
 
     // clone the original static fs values and set some defaults
     this.statData = {
-      ...fs.statSync(this.sourcePath),
       isDirectory: () => false,
       isSymbolicLink: () => false,
       isBlockDevice: () => false,
@@ -40,6 +39,7 @@ export class ReadableStaticVolume {
       isFIFO: () => false,
       isSocket: () => false,
       size: 0,
+      ...fs.statSync(this.sourcePath),
     };
 
     // read the index
