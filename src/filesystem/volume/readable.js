@@ -146,7 +146,7 @@ export class ReadableStaticVolume {
 
   _resolveMountedPath(unmountedPath) {
     if (unmountedPath.includes(this.moutingRoot)) {
-      return unixifyPath(unmountedPath);
+      return unmountedPath;
     }
 
     return unixifyPath(resolve(this.moutingRoot, unmountedPath));
