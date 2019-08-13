@@ -1,7 +1,6 @@
-import del from 'del';
 import { existsSync, readFileSync } from 'fs';
 import { resolve, sep } from 'path';
-import { getDirContent, getStaticFsPackage } from './helpers';
+import { deleteFiles, getDirContent, getStaticFsPackage } from './helpers';
 
 const testTempDir = global.__mock_project_path,
   staticFs = getStaticFsPackage(testTempDir),
@@ -34,7 +33,7 @@ describe('Static Fs Generator', () => {
   });
 
   afterAll(async () => {
-    await del(filesAddedToStaticFs, { force: true });
+    await deleteFiles(filesAddedToStaticFs);
   });
 
   test('create a valid static fs into the mounting root', async () => {
