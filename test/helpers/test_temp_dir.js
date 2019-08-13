@@ -2,10 +2,11 @@ const cpy = require('cpy');
 const { mkdtemp, realpathSync } = require('fs');
 const os = require('os');
 const { join, resolve } = require('path');
-const del = require('del');
+const rimraf = require('rimraf');
 const { promisify } = require('util');
 
 const mkdtempAsync = promisify(mkdtemp);
+const rimRafAsync = promisify(rimraf);
 
 async function createTestTempDir() {
   try {
@@ -24,7 +25,7 @@ async function createTestTempDir() {
 }
 
 async function removeTestTempDirs() {
-  await del(join(os.tmpdir(), 'static-fs-test-*'), { force: true });
+  await rimRafAsync('/static-fs-test-*', { glob: { root: os.tmpdir() } });
 }
 
 module.exports = {
