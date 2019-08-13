@@ -109,7 +109,7 @@ export class ReadableStaticVolume {
 
   addParentFolders(name) {
     const parent = dirname(name);
-    if (parent && !this.index[parent] && parent.includes(this.moutingRoot)) {
+    if (parent && !this.index[parent] && parent.includes(unixifyPath(this.moutingRoot))) {
       this.index[parent] = Object.assign({}, this.statData, { isDirectory: () => true });
 
       this.pathVolumeIndex[parent] = this.sourcePath;
@@ -119,7 +119,7 @@ export class ReadableStaticVolume {
   }
 
   updateDirectoriesIndex(name) {
-    if (!this.index[name] || this.moutingRoot === this.index[name] || unixifyPath(name) === '/') {
+    if (!this.index[name] || unixifyPath(this.moutingRoot) === name) {
       return;
     }
 
