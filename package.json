@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "description": "A static filesystem to bundle files and read them using NodeJS",
   "main": "dist/index.js",
-  "module": "dist/index.js",
   "scripts": {
     "build": "node scripts/build",
     "clean": "rimraf dist",
