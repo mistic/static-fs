@@ -15,6 +15,6 @@ const execa = require('execa');
 
     console.log('End building process');
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 })();
