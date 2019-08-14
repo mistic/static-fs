@@ -1,8 +1,8 @@
 # IDE
-.idea/
+.idea
 
 # Project build
-dist/
+dist
 
 # Source code related
 *.js.map
@@ -14,7 +14,7 @@ webpack-stats.json
 
 # Npm related
 npm-debug.log*
-node_modules/
+node_modules
 
 # Operating system
 *.DS_Store
