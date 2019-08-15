@@ -1,9 +1,8 @@
 import { resolve } from 'path';
 import { constants } from 'os';
-
 import { unixifyPath } from '../common';
-import { ReadableStaticVolume } from './volume';
 import { ReadStream } from './streams';
+import { ReadableStaticVolume } from './volume';
 
 export class StaticFilesystem {
   constructor() {

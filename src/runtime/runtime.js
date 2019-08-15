@@ -1,10 +1,9 @@
 import * as fs from 'fs';
 import * as child_process from 'child_process';
-import { patchModuleLoader } from './patch/module_loader';
+import * as Module from 'module';
 import { StaticFilesystem } from '../filesystem';
 import { patchFilesystem } from './patch/filesystem';
-
-const Module = require('module');
+import { patchModuleLoader } from './patch/module_loader';
 
 if (isRunningAsEntry()) {
   // this is for "fork mode" where we are forking a child process.

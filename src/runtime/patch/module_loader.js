@@ -1,7 +1,6 @@
 import { readFileSync } from 'fs';
-import { resolve, isAbsolute } from 'path';
-
-import { isWindows, unixifyPath, isWindowsPath } from '../../common';
+import { isAbsolute, resolve } from 'path';
+import { isWindows, isWindowsPath, unixifyPath } from '../../common';
 
 const makeLong = require('path')._makeLong || resolve;
 

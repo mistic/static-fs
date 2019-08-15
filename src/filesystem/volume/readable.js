@@ -1,6 +1,6 @@
 import * as filesystem from 'fs';
-import { dirname, basename, resolve } from 'path';
-import { INTSIZE, unixifyPath } from '../../common';
+import { basename, dirname, resolve } from 'path';
+import { INT_SIZE, unixifyPath } from '../../common';
 
 const fs = { ...filesystem };
 
@@ -17,7 +17,7 @@ export class ReadableStaticVolume {
     this.directoriesIndex = {};
     this.fd = -1;
     this.hash = '';
-    this.intBuffer = Buffer.alloc(INTSIZE);
+    this.intBuffer = Buffer.alloc(INT_SIZE);
     this.index = {};
     this.statData = {};
     this.filesBeingRead = {};
@@ -98,7 +98,7 @@ export class ReadableStaticVolume {
   }
 
   readInt() {
-    fs.readSync(this.fd, this.intBuffer, 0, INTSIZE, null);
+    fs.readSync(this.fd, this.intBuffer, 0, INT_SIZE, null);
     return this.intBuffer.readIntBE(0, 6);
   }
 

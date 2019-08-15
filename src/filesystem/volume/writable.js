@@ -1,5 +1,5 @@
-import { relative, resolve, dirname, sep } from 'path';
-import { readdir, stat, open, close, write, readFile, INTSIZE, calculateHash, mkdir } from '../../common';
+import { dirname, relative, resolve, sep } from 'path';
+import { calculateHash, close, INT_SIZE, mkdir, open, readdir, readFile, stat, write } from '../../common';
 
 export class WritableStaticVolume {
   constructor(mountingRoot) {
@@ -13,7 +13,7 @@ export class WritableStaticVolume {
     this.hashBuffer = Buffer.allocUnsafe(0);
     this.index = [];
     this.directoriesIndex = {};
-    this.intBuffer = Buffer.alloc(INTSIZE);
+    this.intBuffer = Buffer.alloc(INT_SIZE);
   }
 
   async addFolder(sourceFolder, exclusions) {
@@ -32,29 +32,29 @@ export class WritableStaticVolume {
   }
 
   get headerLength() {
-    let size = INTSIZE; // start of data
+    let size = INT_SIZE; // start of data
 
     // put hash size in header
     this.hashBuffer = Buffer.from(this.hash, 'utf-8');
 
-    size += INTSIZE;
+    size += INT_SIZE;
     size += this.hashBuffer.byteLength;
 
     for (const each in this.index) {
-      size += INTSIZE; // name size
-      size += INTSIZE; // data size
+      size += INT_SIZE; // name size
+      size += INT_SIZE; // data size
 
       const filenameBuffer = Buffer.from(each, 'utf-8');
       this.index[each].filename = filenameBuffer;
       size += filenameBuffer.byteLength; // name itself.
     }
-    size += INTSIZE; // trailing zero.
+    size += INT_SIZE; // trailing zero.
     return size;
   }
 
   writeInt(fd, value, position) {
     this.intBuffer.writeIntBE(value, 0, 6);
-    return write(fd, this.intBuffer, 0, INTSIZE, position);
+    return write(fd, this.intBuffer, 0, INT_SIZE, position);
   }
 
   async write() {
