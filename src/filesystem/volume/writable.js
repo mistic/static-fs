@@ -41,7 +41,7 @@ export class WritableStaticVolume {
     size += this.hashBuffer.byteLength;
 
     const filePaths = Object.keys(this.index);
-    for (const each in filePaths) {
+    for (const each of filePaths) {
       size += INT_SIZE; // name size
       size += INT_SIZE; // data size
 
@@ -73,7 +73,7 @@ export class WritableStaticVolume {
     const filePaths = Object.keys(this.index);
 
     // start writing out the data
-    for (const each in filePaths) {
+    for (const each of filePaths) {
       const entry = this.index[each];
       const position = dataOffset;
       dataOffset += entry.size;
@@ -85,7 +85,7 @@ export class WritableStaticVolume {
     await Promise.all(all);
 
     // write the header
-    for (const each in filePaths) {
+    for (const each of filePaths) {
       const entry = this.index[each];
       headerPosition += await this.writeInt(fd, entry.filename.length, headerPosition);
       headerPosition += await this.writeInt(fd, entry.size, headerPosition);
