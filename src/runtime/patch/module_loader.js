@@ -1,38 +1,13 @@
+import * as Module from 'module';
 import { readFileSync } from 'fs';
-import { isAbsolute, resolve } from 'path';
-import { isWindows, isWindowsPath, unixifyPath } from '../../common';
+import { isAbsolute, resolve, toNamespacedPath } from 'path';
+import { isWindows, isWindowsPath, stripBOM, unixifyPath } from '../../common';
 
-const makeLong = require('path')._makeLong || resolve;
-
-function stripBOM(content) {
-  return content && content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
-}
-
-function unixifyVolume(volume) {
-  return isWindows
-    ? {
-        readFileSync: (path, options) => volume.readFileSync(unixifyPath(path), options),
-        realpathSync: (path) => volume.realpathSync(unixifyPath(path)),
-        statSync: (path) => volume.statSync(unixifyPath(path)),
-        // TODO: complete windows
-      }
-    : volume;
-}
-
-export function patchModuleLoader(
-  volume,
-  enablePathNormalization = false,
-  enableFallback = true,
-  Module = require('module'),
-) {
+export function patchModuleLoader(volume) {
   const backup = { ...Module };
   const preserveSymlinks = false;
-  const statcache = {};
+  const statCache = {};
   const packageMainCache = {};
-  Module._fallback = enableFallback;
-  if (enablePathNormalization) {
-    volume = unixifyVolume(volume);
-  }
 
   // Used to speed up module loading.  Returns the contents of the file as
   // a string or undefined when the file cannot be opened.  The speedup
@@ -43,6 +18,7 @@ export function patchModuleLoader(
     } catch {
       /* no-op */
     }
+
     return undefined;
   }
 
@@ -55,13 +31,15 @@ export function patchModuleLoader(
     } catch {
       /* no-op */
     }
+
     return -2; // ENOENT
   }
 
   function stat(filename) {
-    filename = makeLong(filename);
-    const result = statcache[filename];
-    return result !== undefined ? result : (statcache[filename] = internalModuleStat(filename));
+    filename = toNamespacedPath(filename);
+    const result = statCache[filename];
+
+    return result !== undefined ? result : (statCache[filename] = internalModuleStat(filename));
   }
 
   function readPackage(requestPath) {
@@ -71,7 +49,7 @@ export function patchModuleLoader(
     }
 
     const jsonPath = resolve(requestPath, 'package.json');
-    const json = internalModuleReadFile(makeLong(jsonPath));
+    const json = internalModuleReadFile(toNamespacedPath(jsonPath));
 
     if (json === undefined) {
       return false;
@@ -85,6 +63,7 @@ export function patchModuleLoader(
       e.message = 'Error parsing ' + jsonPath + ': ' + e.message;
       throw e;
     }
+
     return pkg;
   }
 
@@ -92,6 +71,7 @@ export function patchModuleLoader(
     if (preserveSymlinks && !isMain) {
       return stat(requestPath) === 0 ? resolve(requestPath) : undefined;
     }
+
     return stat(requestPath) === 0 ? volume.realpathSync(requestPath) : undefined;
   }
 
@@ -103,6 +83,7 @@ export function patchModuleLoader(
         return filename;
       }
     }
+
     return undefined;
   }
 
@@ -117,39 +98,30 @@ export function patchModuleLoader(
         tryExtensions(resolve(filename, 'index'), exts, isMain)
       );
     }
+
     return undefined;
   }
 
   // Native extension for .js
   Module._extensions['.js'] = (module, filename) => {
-    if (stat(filename) === 0) {
-      module._compile(stripBOM(volume.readFileSync(filename, 'utf8')), filename);
-    } else if (Module._fallback) {
-      module._compile(stripBOM(readFileSync(filename, 'utf8')), filename);
-    }
+    const readFileFn = (stat(filename) === 0) ? volume.readFileSync : readFileSync;
+    module._compile(stripBOM(readFileFn(filename, 'utf8')), filename);
   };
 
   // Native extension for .json
   Module._extensions['.json'] = (module, filename) => {
-    if (stat(filename) === 0) {
-      try {
-        module.exports = JSON.parse(stripBOM(volume.readFileSync(filename, 'utf8')));
-      } catch (err) {
-        throw { ...err, message: filename + ': ' + err.message };
-      }
-    } else if (Module._fallback) {
-      try {
-        module.exports = JSON.parse(stripBOM(readFileSync(filename, 'utf8')));
-      } catch (err) {
-        throw { ...err, message: filename + ': ' + err.message };
-      }
+    const readFileFn = (stat(filename) === 0) ? volume.readFileSync : readFileSync;
+
+    try {
+      module.exports = JSON.parse(stripBOM(readFileFn(filename, 'utf8')));
+    } catch (err) {
+      throw { ...err, message: filename + ': ' + err.message };
     }
   };
 
   Module._originalFindPath = Module._findPath;
 
   Module._findPath = (request, paths, isMain) => {
-    const isWindows = process.platform === 'win32';
     const isRelative =
       request.startsWith('./') ||
       request.startsWith('../') ||
@@ -165,7 +137,7 @@ export function patchModuleLoader(
       result = Module._alternateFindPath(resolvedRequest, paths, isMain);
     }
 
-    if (!Module._fallback || result) {
+    if (result) {
       return result;
     }
 

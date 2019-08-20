@@ -162,3 +162,7 @@ export function calculateHash(content) {
     .update(JSON.stringify(content))
     .digest('base64');
 }
+
+export function stripBOM(content) {
+  return content && content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
+}
