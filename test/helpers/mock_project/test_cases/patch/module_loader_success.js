@@ -6,16 +6,16 @@ const { unixifyPath } = require('static-fs/dist/common');
 
 const mockFs = {
   readFileSync: (path) => {
-    if (path === unixifyPath(resolve('./static_fs_mock/patched/path/file.js'))) {
+    if (unixifyPath(path) === unixifyPath(resolve('./static_fs_mock/patched/path/file.js'))) {
       return 'module.exports = 1';
     }
     throw new Error();
   },
   realpathSync: (path) => {
-    return path;
+    return unixifyPath((path);
   },
   statSync: (path) => {
-    if (path === unixifyPath(resolve('.'))) {
+    if (unixifyPath(path) === unixifyPath(resolve('.'))) {
       return {
         isFile: () => false,
         isDirectory: () => true,
@@ -27,7 +27,7 @@ const mockFs = {
       }
     }
 
-    if (path === unixifyPath(resolve('./static_fs_mock/patched/path/file.js'))) {
+    if (unixifyPath(path) === unixifyPath(resolve('./static_fs_mock/patched/path/file.js'))) {
       return {
         isFile: () => true,
         isDirectory: () => false,
