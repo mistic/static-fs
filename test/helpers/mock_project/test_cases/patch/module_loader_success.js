@@ -12,7 +12,7 @@ const mockFs = {
     throw new Error();
   },
   realpathSync: (path) => {
-    return unixifyPath((path);
+    return unixifyPath((path));
   },
   statSync: (path) => {
     if (unixifyPath(path) === unixifyPath(resolve('.'))) {
