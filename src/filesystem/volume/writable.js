@@ -61,7 +61,7 @@ export class WritableStaticVolume {
 
   async write() {
     await mkdir(dirname(this.outputFile));
-    this.hash = calculateHash(this.index);
+    this.hash = calculateHash(Object.keys(this.index).sort());
     let dataOffset = this.headerLength;
     const fd = await open(this.outputFile, 'w');
     let headerPosition = await this.writeInt(fd, dataOffset);

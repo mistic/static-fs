@@ -1,6 +1,6 @@
 import * as filesystem from 'fs';
 import { basename, dirname, resolve } from 'path';
-import { INT_SIZE, unixifyPath } from '../../common';
+import { calculateHash, INT_SIZE, unixifyPath } from '../../common';
 
 const fs = { ...filesystem };
 
@@ -55,6 +55,8 @@ export class ReadableStaticVolume {
     this.readBuffer(this.buf, hashSize);
     this.hash = this.buf.toString('utf8', 0, hashSize);
 
+    const hashCheckIndex = {};
+
     do {
       const nameSz = this.readInt();
       if (nameSz === 0) {
@@ -67,6 +69,8 @@ export class ReadableStaticVolume {
       this.readBuffer(this.buf, nameSz);
       const name = this.buf.toString('utf8', 0, nameSz);
       const mountedName = this._resolveMountedPath(name);
+
+      hashCheckIndex[name] = true;
 
       // add entry for file into index
       this.index[mountedName] = Object.assign({}, this.statData, {
@@ -89,6 +93,11 @@ export class ReadableStaticVolume {
 
       dataOffset += dataSz;
     } while (true);
+
+    const hashCheck = calculateHash(Object.keys(hashCheckIndex).sort());
+    if (hashCheck !== this.hash) {
+      throw new Error(`Something went wrong loading the volume ${this.sourcePath}. Check hash after loading is different from the one stored in the volume.`);
+    }
 
     return this.pathVolumeIndex;
   }
