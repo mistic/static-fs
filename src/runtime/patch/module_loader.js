@@ -104,13 +104,13 @@ export function patchModuleLoader(volume) {
 
   // Native extension for .js
   Module._extensions['.js'] = (module, filename) => {
-    const readFileFn = (stat(filename) === 0) ? volume.readFileSync : readFileSync;
+    const readFileFn = stat(filename) === 0 ? volume.readFileSync : readFileSync;
     module._compile(stripBOM(readFileFn(filename, 'utf8')), filename);
   };
 
   // Native extension for .json
   Module._extensions['.json'] = (module, filename) => {
-    const readFileFn = (stat(filename) === 0) ? volume.readFileSync : readFileSync;
+    const readFileFn = stat(filename) === 0 ? volume.readFileSync : readFileSync;
 
     try {
       module.exports = JSON.parse(stripBOM(readFileFn(filename, 'utf8')));
