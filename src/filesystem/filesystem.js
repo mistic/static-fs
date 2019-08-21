@@ -1,6 +1,6 @@
 import { resolve } from 'path';
 import { constants } from 'os';
-import { unixifyPath } from '../common';
+import { sanitizePath } from '../common';
 import { ReadStream } from './streams';
 import { ReadableStaticVolume } from './volume';
 
@@ -87,12 +87,8 @@ export class StaticFilesystem {
     return Object.keys(this.pathVolumeMap);
   }
 
-  sanitizePath(path) {
-    return unixifyPath(resolve(path));
-  }
-
   readFileSync(filepath, options) {
-    const targetPath = this.sanitizePath(filepath);
+    const targetPath = sanitizePath(filepath);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {
@@ -103,7 +99,7 @@ export class StaticFilesystem {
   }
 
   readFile(filepath, options, callback) {
-    const targetPath = this.sanitizePath(filepath);
+    const targetPath = sanitizePath(filepath);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {
@@ -133,7 +129,7 @@ export class StaticFilesystem {
     }
 
     const filePath = sfsFd.filePath;
-    const targetPath = this.sanitizePath(filePath);
+    const targetPath = sanitizePath(filePath);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {
@@ -144,7 +140,7 @@ export class StaticFilesystem {
   }
 
   realpathSync(filepath) {
-    const targetPath = this.sanitizePath(filepath);
+    const targetPath = sanitizePath(filepath);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {
@@ -155,7 +151,7 @@ export class StaticFilesystem {
   }
 
   realpath(filepath, callback) {
-    const targetPath = this.sanitizePath(filepath);
+    const targetPath = sanitizePath(filepath);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {
@@ -169,7 +165,7 @@ export class StaticFilesystem {
   }
 
   volumeForFilepathSync(filepath) {
-    const targetPath = this.sanitizePath(filepath);
+    const targetPath = sanitizePath(filepath);
     const volumePathForFilePath = this.pathVolumeMap[targetPath];
 
     if (!volumePathForFilePath) {
@@ -186,7 +182,7 @@ export class StaticFilesystem {
   }
 
   statSync(filepath) {
-    const targetPath = this.sanitizePath(filepath);
+    const targetPath = sanitizePath(filepath);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {
@@ -197,7 +193,7 @@ export class StaticFilesystem {
   }
 
   stat(filepath, callback) {
-    const targetPath = this.sanitizePath(filepath);
+    const targetPath = sanitizePath(filepath);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {
@@ -211,7 +207,7 @@ export class StaticFilesystem {
   }
 
   readdirSync(filepath) {
-    const targetPath = this.sanitizePath(filepath);
+    const targetPath = sanitizePath(filepath);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {
@@ -222,7 +218,7 @@ export class StaticFilesystem {
   }
 
   readdir(filepath, callback) {
-    const targetPath = this.sanitizePath(filepath);
+    const targetPath = sanitizePath(filepath);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {
@@ -248,7 +244,7 @@ export class StaticFilesystem {
   }
 
   open(path, callback) {
-    const targetPath = this.sanitizePath(path);
+    const targetPath = sanitizePath(path);
     const volume = this.volumeForFilepathSync(targetPath);
 
     if (!volume) {

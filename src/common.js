@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { dirname, normalize } from 'path';
+import {dirname, normalize, resolve} from 'path';
 
 import * as filesystem from 'fs';
 
@@ -165,4 +165,9 @@ export function calculateHash(content) {
 
 export function stripBOM(content) {
   return content && content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
+}
+
+export function sanitizePath(...args) {
+  const resolvedPath = resolve(...args);
+  return unixifyPath(resolvedPath);
 }

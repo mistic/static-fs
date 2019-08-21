@@ -1,6 +1,6 @@
 import * as filesystem from 'fs';
 import { basename, dirname, resolve } from 'path';
-import { calculateHash, INT_SIZE, unixifyPath } from '../../common';
+import { calculateHash, INT_SIZE, sanitizePath, unixifyPath } from '../../common';
 
 const fs = { ...filesystem };
 
@@ -160,7 +160,7 @@ export class ReadableStaticVolume {
       return unmountedPath;
     }
 
-    return unixifyPath(resolve(this.moutingRoot, unmountedPath));
+    return sanitizePath(this.moutingRoot, unmountedPath);
   }
 
   readFileSync(filepath, options) {
