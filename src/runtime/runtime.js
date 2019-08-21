@@ -337,7 +337,7 @@ export function load(staticModule) {
         }
 
         return fsS(path, sanitizedCallback);
-      }
+      },
     });
     global.__STATIC_FS_RUNTIME.undo = () => {
       undo_fs();

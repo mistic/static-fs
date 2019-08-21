@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import {dirname, normalize, resolve} from 'path';
+import { dirname, normalize, resolve } from 'path';
 
 import * as filesystem from 'fs';
 
