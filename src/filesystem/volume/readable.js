@@ -96,7 +96,9 @@ export class ReadableStaticVolume {
 
     const hashCheck = calculateHash(Object.keys(hashCheckIndex).sort());
     if (hashCheck !== this.hash) {
-      throw new Error(`Something went wrong loading the volume ${this.sourcePath}. Check hash after loading is different from the one stored in the volume.`);
+      throw new Error(
+        `Something went wrong loading the volume ${this.sourcePath}. Check hash after loading is different from the one stored in the volume.`,
+      );
     }
 
     return this.pathVolumeIndex;
