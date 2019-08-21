@@ -166,6 +166,7 @@ See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
   start investigate in order to solve that problem and was also source of some ideas.
 - @fearthecowboy for [static-link](https://github.com/fearthecowboy/static-link) as 
   it was the main inspiration for that project.
+- @eletron
   
 [ci-build-status-image]: https://dev.azure.com/static-fs/static-fs/_apis/build/status/mistic.static-fs?branchName=master 
 [ci-build-status-url]: https://dev.azure.com/static-fs/static-fs/_build/latest?definitionId=1&branchName=master
