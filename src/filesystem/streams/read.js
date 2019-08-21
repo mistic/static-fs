@@ -1,3 +1,6 @@
+// NOTE: this is a raw re-implementation of https://github.com/nodejs/node/blob/v10.x/lib/internal/fs/streams.js#L45
+// that is setup to follow our needs for the static filesystem
+
 import { Readable } from 'stream';
 import util from 'util';
 

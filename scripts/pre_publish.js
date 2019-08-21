@@ -31,5 +31,5 @@ const shouldWeRunPrePublish = () => {
 };
 
 if (shouldWeRunPrePublish()) {
-  exec('yarn run build')
+  exec('yarn run build');
 }

@@ -1,6 +1,6 @@
+const path = require('path');
 const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
-const path = require('path');
 
 (async () => {
   console.log('Bundling runtime file');
@@ -45,7 +45,7 @@ const path = require('path');
   try {
     await webpackPromise;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 
   console.log('Bundling end');

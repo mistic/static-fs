@@ -1,6 +1,6 @@
 import * as filesystem from 'fs';
-import { dirname, basename, resolve } from 'path';
-import { INTSIZE, unixifyPath } from '../../common';
+import { basename, dirname, resolve } from 'path';
+import { calculateHash, INT_SIZE, sanitizePath, unixifyPath } from '../../common';
 
 const fs = { ...filesystem };
 
@@ -17,7 +17,7 @@ export class ReadableStaticVolume {
     this.directoriesIndex = {};
     this.fd = -1;
     this.hash = '';
-    this.intBuffer = Buffer.alloc(INTSIZE);
+    this.intBuffer = Buffer.alloc(INT_SIZE);
     this.index = {};
     this.statData = {};
     this.filesBeingRead = {};
@@ -55,6 +55,8 @@ export class ReadableStaticVolume {
     this.readBuffer(this.buf, hashSize);
     this.hash = this.buf.toString('utf8', 0, hashSize);
 
+    const hashCheckIndex = {};
+
     do {
       const nameSz = this.readInt();
       if (nameSz === 0) {
@@ -67,6 +69,8 @@ export class ReadableStaticVolume {
       this.readBuffer(this.buf, nameSz);
       const name = this.buf.toString('utf8', 0, nameSz);
       const mountedName = this._resolveMountedPath(name);
+
+      hashCheckIndex[name] = true;
 
       // add entry for file into index
       this.index[mountedName] = Object.assign({}, this.statData, {
@@ -90,6 +94,13 @@ export class ReadableStaticVolume {
       dataOffset += dataSz;
     } while (true);
 
+    const hashCheck = calculateHash(Object.keys(hashCheckIndex).sort());
+    if (hashCheck !== this.hash) {
+      throw new Error(
+        `Something went wrong loading the volume ${this.sourcePath}. Check hash after loading is different from the one stored in the volume.`,
+      );
+    }
+
     return this.pathVolumeIndex;
   }
 
@@ -98,13 +109,21 @@ export class ReadableStaticVolume {
   }
 
   readInt() {
-    fs.readSync(this.fd, this.intBuffer, 0, INTSIZE, null);
+    fs.readSync(this.fd, this.intBuffer, 0, INT_SIZE, null);
     return this.intBuffer.readIntBE(0, 6);
   }
 
   shutdown() {
     fs.closeSync(this.fd);
     this.reset();
+  }
+
+  getFromDirectoriesIndex(filePath) {
+    return this.directoriesIndex[sanitizePath(filePath)];
+  }
+
+  getFromIndex(filePath) {
+    return this.index[sanitizePath(filePath)];
   }
 
   addParentFolders(name) {
@@ -149,11 +168,12 @@ export class ReadableStaticVolume {
       return unmountedPath;
     }
 
-    return unixifyPath(resolve(this.moutingRoot, unmountedPath));
+    return sanitizePath(this.moutingRoot, unmountedPath);
   }
 
-  readFileSync(filepath, options) {
-    const item = this.index[filepath];
+  readFileSync(filePath, options) {
+    const sanitizedFilePath = sanitizePath(filePath);
+    const item = this.index[sanitizedFilePath];
 
     if (item && item.isFile()) {
       const encoding = options
@@ -177,42 +197,43 @@ export class ReadableStaticVolume {
     return undefined;
   }
 
-  _deleteReadFileFromCache(filepath, length, position) {
-    const cachedBuffer = this.filesBeingRead[filepath].buffer;
+  _deleteReadFileFromCache(filePath, length, position) {
+    const cachedBuffer = this.filesBeingRead[filePath].buffer;
 
     if (position >= cachedBuffer.length || position + length >= cachedBuffer.length) {
-      this.filesBeingRead[filepath].consumers -= 1;
+      this.filesBeingRead[filePath].consumers -= 1;
     }
 
-    if (this.filesBeingRead[filepath].consumers <= 0) {
-      delete this.filesBeingRead[filepath];
+    if (this.filesBeingRead[filePath].consumers <= 0) {
+      delete this.filesBeingRead[filePath];
     }
   }
 
-  _readFromCache(filepath, buffer, offset, length, position, callback) {
-    const cachedBuffer = this.filesBeingRead[filepath].buffer;
+  _readFromCache(filePath, buffer, offset, length, position, callback) {
+    const cachedBuffer = this.filesBeingRead[filePath].buffer;
 
     if (position >= cachedBuffer.length) {
-      this._deleteReadFileFromCache(filepath, length, position);
+      this._deleteReadFileFromCache(filePath, length, position);
       callback(null, 0, buffer);
       return;
     }
 
     const copiedBytes = cachedBuffer.copy(buffer, offset, position, Math.min(position + length, cachedBuffer.length));
-    this._deleteReadFileFromCache(filepath, length, position);
+    this._deleteReadFileFromCache(filePath, length, position);
     callback(null, copiedBytes, buffer);
   }
 
-  read(filepath, buffer, offset, length, position, callback) {
-    const item = this.index[filepath];
+  read(filePath, buffer, offset, length, position, callback) {
+    const sanitizedFilePath = sanitizePath(filePath);
+    const item = this.index[sanitizedFilePath];
 
     if (item && item.isFile()) {
       // read the content and return a string
-      if (this.filesBeingRead[filepath]) {
-        this.filesBeingRead[filepath].consumers += 1;
-        this._readFromCache(filepath, buffer, offset, length, position, callback);
+      if (this.filesBeingRead[filePath]) {
+        this.filesBeingRead[filePath].consumers += 1;
+        this._readFromCache(filePath, buffer, offset, length, position, callback);
       } else {
-        const cachedFile = (this.filesBeingRead[filepath] = {
+        const cachedFile = (this.filesBeingRead[filePath] = {
           buffer: Buffer.alloc(item.size),
           consumers: 1,
         });
@@ -221,7 +242,7 @@ export class ReadableStaticVolume {
           if (err) {
             callback(err);
           }
-          this._readFromCache(filepath, buffer, offset, length, position, callback);
+          this._readFromCache(filePath, buffer, offset, length, position, callback);
         });
       }
     } else {

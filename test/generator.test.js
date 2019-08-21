@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
-import { resolve, sep } from 'path';
+import { resolve } from 'path';
 import { deleteFiles, getDirContent, getStaticFsPackage } from './helpers';
 
 const testTempDir = global.__mock_project_path,

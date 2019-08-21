@@ -4,7 +4,7 @@ const { resolve } = require('path');
 const rimraf = require('rimraf');
 const { promisify } = require('util');
 
-import { createTestTempDir } from '../helpers';
+const { createTestTempDir } = require('../helpers');
 
 const rimRafAsync = promisify(rimraf);
 
