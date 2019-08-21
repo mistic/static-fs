@@ -292,7 +292,7 @@ export class StaticFilesystem {
   fstat(fd, callback) {
     if (fd.type !== 'static_fs_file_descriptor') {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EBADF, 'fstat', fd));
+        callback(StaticFilesystem.NewError(constants.errno.EBADF, 'fstat', fd));
       });
       return;
     }
@@ -300,7 +300,7 @@ export class StaticFilesystem {
     const sfsFd = this.fds[fd.id];
     if (!sfsFd) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EEXIST, 'fstat', fd));
+        callback(StaticFilesystem.NewError(constants.errno.EEXIST, 'fstat', fd));
       });
       return;
     }
