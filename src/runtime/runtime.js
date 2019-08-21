@@ -165,7 +165,7 @@ export function list(staticModule) {
   for (const each of svs.entries) {
     const st = svs.statSync(each);
     if (!st.isFile()) {
-      dir.push(`${padStart('<dir>', 12)}   ${each}`);
+      dir.push(`${padStart('{dir}', 12)}   ${each}`);
     } else {
       files[each] = `${padStart(`${st.size}`, 12)}   ${each}`;
     }
@@ -209,16 +209,19 @@ export function load(staticModule) {
     const undo_loader = patchModuleLoader(svs);
     const fsRFS = fs.readFileSync;
     const fsRPS = fs.realpathSync;
+    const fsRLS = fs.readlinkSync;
     const fsRDS = fs.readdirSync;
     const fsSS = fs.statSync;
     const fsRF = fs.readFile;
     const fsRP = fs.realpath;
+    const fsRL = fs.readlink;
     const fsRD = fs.readdir;
     const fsS = fs.stat;
     const fsO = fs.open;
     const fsC = fs.close;
     const fsCRS = fs.createReadStream;
     const fsFs = fs.fstat;
+
     const undo_fs = patchFilesystem({
       close: (fd, callback) => {
         if (existsFdInFs(svs, fd)) {
@@ -266,6 +269,14 @@ export function load(staticModule) {
 
         return fsRPS(path, options);
       },
+      readlinkSync: (path, options) => {
+        // implemented using realpathSync
+        if (existsInFs(svs, path)) {
+          return svs.realpathSync(path);
+        }
+
+        return fsRLS(path, options);
+      },
       readdirSync: (path, options) => {
         if (existsInFs(svs, path)) {
           return svs.readdirSync(path);
@@ -299,6 +310,16 @@ export function load(staticModule) {
 
         return fsRP(path, options, callback);
       },
+      readlink: (path, options, callback) => {
+        // implemented using realpath
+        const sanitizedCallback = typeof callback === 'function' ? callback : options;
+
+        if (existsInFs(svs, path)) {
+          return svs.realpath(path, sanitizedCallback);
+        }
+
+        return fsRL(path, options, callback);
+      },
       readdir: (path, options, callback) => {
         const sanitizedCallback = typeof callback === 'function' ? callback : options;
 
@@ -316,12 +337,7 @@ export function load(staticModule) {
         }
 
         return fsS(path, sanitizedCallback);
-      },
-      // TODO: We also need to at least implement readlink and readlinkSync
-      // We can also implement fs.readJsonSync and fs.readJson
-      // realpath should be fixed to recognize ../node_modules/module imports
-      // native modules should be solved patching the native loader
-      // support all node versions up to node 8
+      }
     });
     global.__STATIC_FS_RUNTIME.undo = () => {
       undo_fs();
