@@ -1,5 +1,5 @@
-import { relative, resolve, dirname, sep } from 'path';
-import { readdir, stat, open, close, write, readFile, INTSIZE, calculateHash, mkdir } from '../../common';
+import { dirname, relative, resolve, sep } from 'path';
+import { calculateHash, close, INT_SIZE, mkdir, open, readdir, readFile, stat, write } from '../../common';
 
 export class WritableStaticVolume {
   constructor(mountingRoot) {
@@ -13,7 +13,7 @@ export class WritableStaticVolume {
     this.hashBuffer = Buffer.allocUnsafe(0);
     this.index = [];
     this.directoriesIndex = {};
-    this.intBuffer = Buffer.alloc(INTSIZE);
+    this.intBuffer = Buffer.alloc(INT_SIZE);
   }
 
   async addFolder(sourceFolder, exclusions) {
@@ -32,34 +32,36 @@ export class WritableStaticVolume {
   }
 
   get headerLength() {
-    let size = INTSIZE; // start of data
+    let size = INT_SIZE; // start of data
 
     // put hash size in header
     this.hashBuffer = Buffer.from(this.hash, 'utf-8');
 
-    size += INTSIZE;
+    size += INT_SIZE;
     size += this.hashBuffer.byteLength;
 
-    for (const each in this.index) {
-      size += INTSIZE; // name size
-      size += INTSIZE; // data size
+    const filePaths = Object.keys(this.index);
+    for (const each of filePaths) {
+      size += INT_SIZE; // name size
+      size += INT_SIZE; // data size
 
       const filenameBuffer = Buffer.from(each, 'utf-8');
       this.index[each].filename = filenameBuffer;
       size += filenameBuffer.byteLength; // name itself.
     }
-    size += INTSIZE; // trailing zero.
+
+    size += INT_SIZE; // trailing zero.
     return size;
   }
 
   writeInt(fd, value, position) {
     this.intBuffer.writeIntBE(value, 0, 6);
-    return write(fd, this.intBuffer, 0, INTSIZE, position);
+    return write(fd, this.intBuffer, 0, INT_SIZE, position);
   }
 
   async write() {
     await mkdir(dirname(this.outputFile));
-    this.hash = calculateHash(this.index);
+    this.hash = calculateHash(Object.keys(this.index).sort());
     let dataOffset = this.headerLength;
     const fd = await open(this.outputFile, 'w');
     let headerPosition = await this.writeInt(fd, dataOffset);
@@ -68,9 +70,10 @@ export class WritableStaticVolume {
     headerPosition += await write(fd, this.hashBuffer, 0, this.hashBuffer.byteLength, headerPosition);
 
     const all = [];
+    const filePaths = Object.keys(this.index);
 
     // start writing out the data
-    for (const each in this.index) {
+    for (const each of filePaths) {
       const entry = this.index[each];
       const position = dataOffset;
       dataOffset += entry.size;
@@ -82,7 +85,7 @@ export class WritableStaticVolume {
     await Promise.all(all);
 
     // write the header
-    for (const each in this.index) {
+    for (const each of filePaths) {
       const entry = this.index[each];
       headerPosition += await this.writeInt(fd, entry.filename.length, headerPosition);
       headerPosition += await this.writeInt(fd, entry.size, headerPosition);
@@ -119,7 +122,7 @@ export class WritableStaticVolume {
         continue;
       }
 
-      const isNativeModuleFile = file.includes('.node');
+      const isNativeModuleFile = file.endsWith('.node');
       if (isNativeModuleFile) {
         this.directoriesIndex[sourcePath] = {
           hasNativeModules: true,
@@ -160,6 +163,7 @@ export class WritableStaticVolume {
       .map((folderPath) => resolve(this.mountingRoot, folderPath));
 
     const addedFiles = Object.keys(this.index).map((filePath) => resolve(this.mountingRoot, filePath));
-    return addedFiles.concat(addedFolders);
+
+    return addedFiles.concat(addedFolders).sort((a, b) => b.localeCompare(a));
   }
 }

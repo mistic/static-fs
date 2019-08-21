@@ -1,18 +1,11 @@
 import { resolve } from 'path';
 import { constants } from 'os';
-
-import { unixifyPath } from '../common';
-import { ReadableStaticVolume } from './volume';
+import { sanitizePath } from '../common';
 import { ReadStream } from './streams';
+import { ReadableStaticVolume } from './volume';
 
 export class StaticFilesystem {
-  constructor() {
-    this.volumes = {};
-    this.fds = {};
-    this.pathVolumeMap = {};
-  }
-
-  NewError(code, method, filepath) {
+  static NewError(code, method, filepath) {
     switch (code) {
       case constants.errno.ENOENT:
         return {
@@ -35,6 +28,12 @@ export class StaticFilesystem {
       path: filepath,
       errno: -10000,
     };
+  }
+
+  constructor() {
+    this.volumes = {};
+    this.fds = {};
+    this.pathVolumeMap = {};
   }
 
   shutdown() {
@@ -88,85 +87,85 @@ export class StaticFilesystem {
     return Object.keys(this.pathVolumeMap);
   }
 
-  readFileSync(filepath, options) {
-    const targetPath = unixifyPath(filepath);
-    const volume = this.volumeForFilepathSync(targetPath);
+  readFileSync(filePath, options) {
+    const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      throw this.NewError(constants.errno.ENOENT, 'readFileSync', filepath);
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'readFileSync', filePath);
     }
 
-    return volume.readFileSync(targetPath, options);
+    return volume.readFileSync(filePath, options);
   }
 
-  readFile(filepath, options, callback) {
-    const targetPath = unixifyPath(filepath);
-    const volume = this.volumeForFilepathSync(targetPath);
+  readFile(filePath, options, callback) {
+    const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      throw this.NewError(constants.errno.ENOENT, 'readFile', filepath);
+      process.nextTick(() => {
+        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'readFile', filePath));
+      });
+      return;
     }
 
-    const foundFile = volume.readFileSync(targetPath, options);
+    const foundFile = volume.readFileSync(filePath, options);
     process.nextTick(() => {
       callback(undefined, foundFile);
     });
   }
 
   read(fd, buffer, offset, length, position, callback) {
-    if (fd.type !== 'static_fs_file_descriptor') {
+    try {
+      this.getValidatedFD(fd);
+    } catch (e) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EBADF, 'read', fd));
+        callback(e);
       });
       return;
     }
 
-    const sfsFd = this.fds[fd.id];
-    if (!sfsFd) {
+    const filePath = fd.filePath;
+    const volume = this.volumeForFilepathSync(filePath);
+
+    if (!volume) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EEXIST, 'read', fd));
+        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'read', fd));
       });
       return;
     }
 
-    const filePath = sfsFd.filePath;
-    const targetPath = unixifyPath(filePath);
-    const volume = this.volumeForFilepathSync(targetPath);
-
-    if (!volume) {
-      throw this.NewError(constants.errno.ENOENT, 'read', fd);
-    }
-
-    volume.read(targetPath, buffer, offset, length, position, callback);
+    process.nextTick(() => {
+      volume.read(filePath, buffer, offset, length, position, callback);
+    });
   }
 
-  realpathSync(filepath) {
-    const targetPath = unixifyPath(filepath);
-    const volume = this.volumeForFilepathSync(targetPath);
+  realpathSync(filePath) {
+    const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      throw this.NewError(constants.errno.ENOENT, 'realpathSync', filepath);
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'realpathSync', filePath);
     }
 
-    return volume.index[targetPath] ? targetPath : undefined;
+    return volume.getFromIndex(filePath) ? sanitizePath(filePath) : undefined;
   }
 
-  realpath(filepath, callback) {
-    const targetPath = unixifyPath(filepath);
-    const volume = this.volumeForFilepathSync(targetPath);
+  realpath(filePath, callback) {
+    const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      this.NewError(constants.errno.ENOENT, 'realpath', filepath);
+      process.nextTick(() => {
+        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'realpath', filePath));
+      });
+      return;
     }
 
-    const foundPath = volume.index[targetPath] ? targetPath : undefined;
+    const foundPath = volume.getFromIndex(filePath) ? sanitizePath(filePath) : undefined;
     process.nextTick(() => {
       callback(undefined, foundPath);
     });
   }
 
-  volumeForFilepathSync(filepath) {
-    const targetPath = unixifyPath(filepath);
+  volumeForFilepathSync(filePath) {
+    const targetPath = sanitizePath(filePath);
     const volumePathForFilePath = this.pathVolumeMap[targetPath];
 
     if (!volumePathForFilePath) {
@@ -182,85 +181,86 @@ export class StaticFilesystem {
     return volumeForFilePath;
   }
 
-  statSync(filepath) {
-    const targetPath = unixifyPath(filepath);
-    const volume = this.volumeForFilepathSync(targetPath);
+  statSync(filePath) {
+    const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      this.NewError(constants.errno.ENOENT, 'statSync', filepath);
+      StaticFilesystem.NewError(constants.errno.ENOENT, 'statSync', filePath);
     }
 
-    return volume.index[targetPath];
+    return volume.getFromIndex(filePath);
   }
 
-  stat(filepath, callback) {
-    const targetPath = unixifyPath(filepath);
-    const volume = this.volumeForFilepathSync(targetPath);
+  stat(filePath, callback) {
+    const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      this.NewError(constants.errno.ENOENT, 'stat', filepath);
+      process.nextTick(() => {
+        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'stat', filePath));
+      });
+      return;
     }
 
-    const foundStat = volume.index[targetPath];
+    const foundStat = volume.getFromIndex(filePath);
     process.nextTick(() => {
       callback(undefined, foundStat);
     });
   }
 
-  readdirSync(filepath) {
-    const targetPath = unixifyPath(filepath);
-    const volume = this.volumeForFilepathSync(targetPath);
+  readdirSync(filePath) {
+    const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      this.NewError(constants.errno.ENOENT, 'readdirSync', filepath);
+      StaticFilesystem.NewError(constants.errno.ENOENT, 'readdirSync', filePath);
     }
 
-    return Object.keys(volume.directoriesIndex[targetPath]) || [];
+    return Object.keys(volume.getFromDirectoriesIndex(filePath)) || [];
   }
 
-  readdir(filepath, callback) {
-    const targetPath = unixifyPath(filepath);
-    const volume = this.volumeForFilepathSync(targetPath);
-
-    if (!volume) {
-      this.NewError(constants.errno.ENOENT, 'readdir', filepath);
-    }
-
-    process.nextTick(() => {
-      callback(undefined, Object.keys(volume.directoriesIndex[targetPath]) || []);
-    });
-  }
-
-  getPathForFD(fd) {
-    if (!fd || !fd.type || fd.type !== 'static_fs_file_descriptor') {
-      return null;
-    }
-
-    const sfsFd = this.fds[fd.id];
-    if (!sfsFd) {
-      return null;
-    }
-
-    return sfsFd.filePath;
-  }
-
-  open(path, callback) {
-    const targetPath = unixifyPath(path);
-    const volume = this.volumeForFilepathSync(targetPath);
+  readdir(filePath, callback) {
+    const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.ENOENT, 'open', path));
+        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'readdir', filePath));
       });
       return;
     }
 
-    const fdIdentifier = `${volume.sourcePath}#${targetPath}`;
+    process.nextTick(() => {
+      callback(undefined, Object.keys(volume.getFromDirectoriesIndex(filePath)) || []);
+    });
+  }
+
+  getValidatedFD(fd) {
+    if (!fd || !fd.type || fd.type !== 'static_fs_file_descriptor') {
+      throw StaticFilesystem.NewError(constants.errno.EBADF, 'getValidatedFD', fd);
+    }
+
+    const sfsFd = this.fds[fd.id];
+    if (!sfsFd) {
+      throw StaticFilesystem.NewError(constants.errno.EEXIST, 'getValidatedFD', fd);
+    }
+
+    return sfsFd;
+  }
+
+  open(filePath, callback) {
+    const volume = this.volumeForFilepathSync(filePath);
+
+    if (!volume) {
+      process.nextTick(() => {
+        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'open', filePath));
+      });
+      return;
+    }
+
+    const fdIdentifier = `${volume.sourcePath}#${sanitizePath(filePath)}`;
     this.fds[fdIdentifier] = {
       type: 'static_fs_file_descriptor',
       id: fdIdentifier,
       volumeSourcePath: volume.sourcePath,
-      filePath: path,
+      filePath: filePath,
     };
 
     process.nextTick(() => {
@@ -269,17 +269,11 @@ export class StaticFilesystem {
   }
 
   close(fd, callback) {
-    if (fd.type !== 'static_fs_file_descriptor') {
+    try {
+      this.getValidatedFD(fd);
+    } catch (e) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EBADF, 'close', fd));
-      });
-      return;
-    }
-
-    const sfsFd = this.fds[fd.id];
-    if (!sfsFd) {
-      process.nextTick(() => {
-        callback(this.NewError(constants.errno.EEXIST, 'close', fd));
+        callback(e);
       });
       return;
     }
@@ -291,25 +285,19 @@ export class StaticFilesystem {
   }
 
   fstat(fd, callback) {
-    if (fd.type !== 'static_fs_file_descriptor') {
+    try {
+      this.getValidatedFD(fd);
+    } catch (e) {
       process.nextTick(() => {
-        callback(this.NewError(constants.errno.EBADF, 'fstat', fd));
+        callback(e);
       });
       return;
     }
 
-    const sfsFd = this.fds[fd.id];
-    if (!sfsFd) {
-      process.nextTick(() => {
-        callback(this.NewError(constants.errno.EEXIST, 'fstat', fd));
-      });
-      return;
-    }
-
-    this.stat(sfsFd.filePath, callback);
+    this.stat(fd.filePath, callback);
   }
 
-  createReadStream(path, options) {
-    return new ReadStream(this, path, options);
+  createReadStream(filePath, options) {
+    return new ReadStream(this, filePath, options);
   }
 }

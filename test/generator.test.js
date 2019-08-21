@@ -1,7 +1,6 @@
-import del from 'del';
 import { existsSync, readFileSync } from 'fs';
-import { resolve, sep } from 'path';
-import { getDirContent, getStaticFsPackage } from './helpers';
+import { resolve } from 'path';
+import { deleteFiles, getDirContent, getStaticFsPackage } from './helpers';
 
 const testTempDir = global.__mock_project_path,
   staticFs = getStaticFsPackage(testTempDir),
@@ -34,7 +33,7 @@ describe('Static Fs Generator', () => {
   });
 
   afterAll(async () => {
-    await del(filesAddedToStaticFs, { force: true });
+    await deleteFiles(filesAddedToStaticFs);
   });
 
   test('create a valid static fs into the mounting root', async () => {
@@ -55,6 +54,12 @@ describe('Static Fs Generator', () => {
     const expectedFilesOnStaticFs = getDirContent(folderToAdd, exceptions);
 
     expect(filesAddedToStaticFs.length).toEqual(expectedFilesOnStaticFs.length);
+  });
+
+  test('if list of added files has paths in the correct order', async () => {
+    const orderedFilesAddedList = [...filesAddedToStaticFs].sort((a, b) => b.localeCompare(a));
+
+    expect(filesAddedToStaticFs).toEqual(orderedFilesAddedList);
   });
 
   test('if the entry points were patched', async () => {

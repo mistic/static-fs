@@ -2,12 +2,13 @@
   static-fs
 </h1> 
 
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
-![npm](https://img.shields.io/npm/v/static-fs)
-![node](https://img.shields.io/node/v/static-fs)
-![David](https://img.shields.io/david/mistic/static-fs)
-![David](https://img.shields.io/david/dev/mistic/static-fs)
-[![install size](https://packagephobia.now.sh/badge?p=static-fs)](https://packagephobia.now.sh/result?p=static-fs)
+[![CI Build Status][ci-build-status-image]][ci-build-status-url]
+[![Commitizen Friendly][commitizen-friendly-image]][commitizen-friendly-url]
+[![NPM Version][npm-version-image]][npm-version-url]
+[![NODE Version][node-version-image]][node-version-url]
+[![David Node Deps Manager][david-node-deps-manager-image]][david-node-deps-manager-url]
+[![David Node Deps Manager Development][david-node-deps-manager-dev-image]][david-node-deps-manager-dev-url]
+[![NPM Install Size][npm-install-size-image]][npm-install-size-url]
 
 
 A static filesystem to bundle multiple files into one that are lately
@@ -80,6 +81,7 @@ const del = require('del');
     [
       entryPoint
     ]
+    //, [] -> exclusions are optional and equal to [] by default
   );
   
   // Delete all the files bundled into the static filesystem volume
@@ -119,7 +121,7 @@ to bundle inside that static filesystem instance. Could not be the same as
 - `appEntryPointsToPatch: string[]`: List of paths for the application entry points 
 to be patched in order to read from the static filesystem.
 
-- `exclusions: string[]`: List of paths that would explicit not be included by 
+- `exclusions: string[] = []`: List of paths that would explicit not be included by 
 the static filesystem during the generation phase. The paths on this list could 
 be a folder or a single file and they should be absolute resolved against 
 `mountRootDir` otherwise the function would throw an error. In case the path 
@@ -127,7 +129,7 @@ is a folder, the entire folder and children would be also excluded.
 
 **Returns**
 
-A an `array of strings` containing the paths of each file and base folder 
+An `string[]` containing the paths of each file and base folder 
 that was added into this static filesystem instance. 
 
 ## Known Limitations
@@ -157,3 +159,28 @@ If you wanna contribute please read [CONTRIBUTING.md](https://github.com/mistic/
 ## License
 
 See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
+
+## Thanks To
+
+- @zeit for [Pkg](https://github.com/zeit/pkg) as it was the first project we 
+  start investigate in order to solve that problem and was also source of some ideas.
+- @fearthecowboy for [static-link](https://github.com/fearthecowboy/static-link) as 
+  it was the main inspiration for that project.
+- @electron for [asar](https://github.com/electron/asar). While we found it in a later stage 
+  of that project it was curious to understand how both projects share some of the same ideas,
+  however still capable of achieving different results and different implementations.
+  
+[ci-build-status-image]: https://dev.azure.com/static-fs/static-fs/_apis/build/status/mistic.static-fs?branchName=master 
+[ci-build-status-url]: https://dev.azure.com/static-fs/static-fs/_build/latest?definitionId=1&branchName=master
+[commitizen-friendly-image]: https://img.shields.io/badge/commitizen-friendly-brightgreen.svg
+[commitizen-friendly-url]: http://commitizen.github.io/cz-cli
+[npm-version-image]: https://img.shields.io/npm/v/static-fs
+[npm-version-url]: https://www.npmjs.com/package/static-fs
+[node-version-image]: https://img.shields.io/node/v/static-fs
+[node-version-url]: https://nodejs.org/download/release/v10.15.2
+[david-node-deps-manager-image]: https://img.shields.io/david/mistic/static-fs
+[david-node-deps-manager-url]: https://david-dm.org/mistic/static-fs
+[david-node-deps-manager-dev-image]: https://img.shields.io/david/dev/mistic/static-fs
+[david-node-deps-manager-dev-url]: https://david-dm.org/mistic/static-fs?type=dev
+[npm-install-size-image]: https://packagephobia.now.sh/badge?p=static-fs
+[npm-install-size-url]: https://packagephobia.now.sh/result?p=static-fs

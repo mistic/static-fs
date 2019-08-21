@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "A static filesystem to bundle files and read them using NodeJS",
   "main": "dist/index.js",
-  "module": "dist/index.js",
   "scripts": {
     "build": "node scripts/build",
     "clean": "rimraf dist",
@@ -48,7 +47,6 @@
     "core-js": "2",
     "cpy": "^7.3.0",
     "cz-conventional-changelog": "3.0.2",
-    "del": "^5.0.0",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^5.1.0",
     "eslint-plugin-import": "^2.18.2",

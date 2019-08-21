@@ -19,6 +19,8 @@ describe('Static Fs Use Case', () => {
     expect(countStringOccurrences(mockProjectStdout, 'mock_native_module has run')).toBe(1);
     expect(countStringOccurrences(mockProjectStdout, 'mock_project has run')).toBe(1);
     expect(countStringOccurrences(mockProjectStdout, 'mock_simple_module_non_bundled has run')).toBe(1);
+    expect(countStringOccurrences(mockProjectStdout, 'mock_simple_module_relative content')).toBe(1);
+    expect(countStringOccurrences(mockProjectStdout, 'mock_simple_module_relative has run')).toBe(1);
   });
 
   test('use case of run a mock project for errors', () => {

@@ -1,13 +1,14 @@
-const cpy = require('cpy');
-const { mkdtemp, realpathSync } = require('fs');
-const os = require('os');
-const { join, resolve } = require('path');
-const del = require('del');
-const { promisify } = require('util');
+import cpy from 'cpy';
+import { mkdtemp, realpathSync } from 'fs';
+import os from 'os';
+import { join, resolve } from 'path';
+import rimraf from 'rimraf';
+import { promisify } from 'util';
 
 const mkdtempAsync = promisify(mkdtemp);
+const rimRafAsync = promisify(rimraf);
 
-async function createTestTempDir() {
+export async function createTestTempDir() {
   try {
     const createdTempTestDir = await mkdtempAsync(join(realpathSync(os.tmpdir()), 'static-fs-test-'));
     // copy mock_project into it
@@ -23,11 +24,6 @@ async function createTestTempDir() {
   }
 }
 
-async function removeTestTempDirs() {
-  await del(join(os.tmpdir(), 'static-fs-test-*'), { force: true });
+export async function removeTestTempDirs() {
+  await rimRafAsync('/static-fs-test-*', { glob: { root: os.tmpdir() } });
 }
-
-module.exports = {
-  createTestTempDir,
-  removeTestTempDirs
-};
