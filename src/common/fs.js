@@ -1,15 +1,8 @@
-import { createHash } from 'crypto';
-import { dirname, normalize, resolve } from 'path';
-
 import * as filesystem from 'fs';
+import { dirname, normalize } from 'path';
 
 // shallow copy original function implementations before we start tweaking.
 const fs = { ...filesystem };
-
-export const isWindows = process.platform === 'win32';
-
-// size of integers in file. (node uses 6-byte integers in buffer.)
-export const INT_SIZE = 6;
 
 // promisify async functions.
 export function readdir(path) {
@@ -120,54 +113,3 @@ export async function mkdir(dirPath) {
   }
 }
 
-// Strips down a path into an absolute-style unix path
-export function unixifyPath(filepath) {
-  if (!isWindows) return filepath;
-
-  if (filepath && typeof filepath === 'string') {
-    return (
-      filepath
-        // change \\?\<letter>:\ to <letter>:\
-        .replace(/^\\\\\?\\(.):\\/, '$1:\\')
-        // change backslashes to forward slashes. (and remove duplicates)
-        // eslint-disable-next-line no-useless-escape
-        .replace(/[\\\/]+/g, '/')
-        // remove drive letter from front
-        .replace(/^([a-zA-Z]+:|\.\/)/, '')
-        // drop any trailing slash
-        .replace(/(.+?)\/$/, '$1')
-    );
-  }
-  return filepath;
-}
-
-export function isWindowsPath(filepath) {
-  if (!isWindows) return filepath;
-
-  if (filepath && filepath.length >= 3) {
-    if (filepath.charCodeAt(0) === 92 && filepath.charCodeAt(1) === 92) {
-      return true;
-    }
-
-    if (filepath.charCodeAt(1) === 58 && filepath.charCodeAt(2) === 92) {
-      const code = filepath.charCodeAt(0);
-      return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
-    }
-  }
-  return false;
-}
-
-export function calculateHash(content) {
-  return createHash('sha256')
-    .update(JSON.stringify(content))
-    .digest('base64');
-}
-
-export function stripBOM(content) {
-  return content && content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
-}
-
-export function sanitizePath(...args) {
-  const resolvedPath = resolve(...args);
-  return unixifyPath(resolvedPath);
-}
