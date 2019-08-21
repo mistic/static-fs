@@ -8,7 +8,7 @@ export function unixifyPath(filePath) {
   if (filePath && typeof filePath === 'string') {
     return (
       filePath
-      // change \\?\<letter>:\ to <letter>:\
+        // change \\?\<letter>:\ to <letter>:\
         .replace(/^\\\\\?\\(.):\\/, '$1:\\')
         // change backslashes to forward slashes. (and remove duplicates)
         // eslint-disable-next-line no-useless-escape
