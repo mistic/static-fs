@@ -191,13 +191,13 @@ function existsInFs(svs, filePath) {
 }
 
 function existsFdInFs(svs, fd) {
-  const pathForFD = svs.getPathForFD(fd);
-
-  if (!pathForFD) {
-    return false;
+  try {
+    svs.getValidatedFD(fd);
+    return existsInFs(svs, fd.filePath);
+  } catch {
+    /* no-op */
   }
-
-  return existsInFs(svs, pathForFD);
+  return false;
 }
 
 export function load(staticModule) {
