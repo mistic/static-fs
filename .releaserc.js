@@ -4,7 +4,7 @@ module.exports = {
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
     ['@semantic-release/changelog', {
-      changelogTitle: 'static-fs Changelog',
+      changelogTitle: '# Static-Fs Changelog',
     }],
     ['@semantic-release/github', {
       assets: [
