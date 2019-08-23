@@ -71,8 +71,17 @@ stages:
         displayName: 'npm and github'
         pool:
           vmImage: 'ubuntu-16.04'
-        condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+        # condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
         steps:
           - template: azure_pipelines_templates/steps_setup_tools.yml
-          - script: yarn release
-            displayName: 'Run script yarn script to release new version'
+          - script: |
+            env:
+              GH_TOKEN: $(GH_TOKEN)
+              NPM_TOKEN: $(NPM_TOKEN)
+              TEST_VAR: $(TEST_VAR)
+              TEST_VAR2: $(TEST_VAR2)
+            displayName: 'Copy pipeline variables to env variables'
+          - bash: echo $TEST_VAR
+          - bash: echo $TEST_VAR2
+          # - script: yarn release
+          #  displayName: 'Run script yarn script to release new version'
