@@ -1,6 +1,6 @@
 {
   "name": "static-fs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A static filesystem to bundle files and read them using NodeJS",
   "main": "dist/index.js",
   "scripts": {

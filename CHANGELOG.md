@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.0.1](https://github.com/mistic/static-fs/compare/v1.0.0...v1.0.1) (2019-08-24)
+
+
+### Bug Fixes
+
+* static fs build args for child process functions ([#62](https://github.com/mistic/static-fs/issues/62)) ([875e508](https://github.com/mistic/static-fs/commit/875e508))
+
 # 1.0.0 (2019-08-23)
 
 
