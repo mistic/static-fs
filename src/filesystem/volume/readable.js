@@ -181,10 +181,10 @@ export class ReadableStaticVolume {
 
     const encoding = options
       ? typeof options === 'string'
-          ? options
-          : typeof options === 'object'
-            ? options.encoding
-            : null
+        ? options
+        : typeof options === 'object'
+        ? options.encoding
+        : null
       : null;
 
     // re-alloc if necessary
