@@ -175,26 +175,31 @@ export class ReadableStaticVolume {
     const sanitizedFilePath = sanitizePath(filePath);
     const item = this.index[sanitizedFilePath];
 
-    if (item && item.isFile()) {
-      const encoding = options
-        ? typeof options === 'string'
-          ? options
-          : typeof options === 'object'
-          ? options.encoding || 'utf8'
-          : 'utf8'
-        : 'utf8';
-
-      // re-alloc if necessary
-      if (this.buf.length < item.size) {
-        this.buf = Buffer.alloc(item.size);
-      }
-
-      // read the content and return a string
-      fs.readSync(this.fd, this.buf, 0, item.size, item.ino);
-      return this.buf.toString(encoding, 0, item.size);
+    if (!item || !item.isFile()) {
+      return undefined;
     }
 
-    return undefined;
+    const encoding = options
+      ? typeof options === 'string'
+          ? options
+          : typeof options === 'object'
+            ? options.encoding
+            : null
+      : null;
+
+    // re-alloc if necessary
+    if (this.buf.length < item.size) {
+      this.buf = Buffer.alloc(item.size);
+    }
+
+    // read the content and return a string
+    fs.readSync(this.fd, this.buf, 0, item.size, item.ino);
+
+    if (!encoding) {
+      return this.buf.slice(0, item.size);
+    }
+
+    return this.buf.toString(encoding, 0, item.size);
   }
 
   _deleteReadFileFromCache(filePath, length, position) {
