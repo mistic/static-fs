@@ -196,7 +196,9 @@ export class ReadableStaticVolume {
     fs.readSync(this.fd, this.buf, 0, item.size, item.ino);
 
     if (!encoding) {
-      return this.buf.slice(0, item.size);
+      const buf = Buffer.alloc(item.size);
+      this.buf.copy(buf);
+      return buf;
     }
 
     return this.buf.toString(encoding, 0, item.size);
