@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.0.2](https://github.com/mistic/static-fs/compare/v1.0.1...v1.0.2) (2019-08-27)
+
+
+### Bug Fixes
+
+* do not apply default encoding on fs.readFileSync ([#65](https://github.com/mistic/static-fs/issues/65)) ([1293c57](https://github.com/mistic/static-fs/commit/1293c57))
+
 ## [1.0.1](https://github.com/mistic/static-fs/compare/v1.0.0...v1.0.1) (2019-08-24)
 
 
