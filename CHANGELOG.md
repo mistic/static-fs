@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+# [1.2.0](https://github.com/mistic/static-fs/compare/v1.1.1...v1.2.0) (2019-08-29)
+
+
+### Features
+
+* create nodejs custom symbols for fs module ([#70](https://github.com/mistic/static-fs/issues/70)) ([69cfdd8](https://github.com/mistic/static-fs/commit/69cfdd8))
+
 ## [1.1.1](https://github.com/mistic/static-fs/compare/v1.1.0...v1.1.1) (2019-08-29)
 
 
