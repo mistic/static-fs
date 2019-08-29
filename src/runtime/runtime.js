@@ -1,6 +1,7 @@
-import * as fs from 'fs';
 import * as child_process from 'child_process';
+import * as fs from 'fs';
 import * as Module from 'module';
+import * as util from 'util';
 import { StaticFilesystem } from '../filesystem';
 import { patchFilesystem } from './patch/filesystem';
 import { patchModuleLoader } from './patch/module_loader';
@@ -217,6 +218,14 @@ function assureCwdOnSanitizedOptions(options, svs, existsOnRealFs) {
   }
 }
 
+function createCustomNodeJsSymbolsForFs() {
+  Object.defineProperty(fs.exists, util.promisify.custom, {
+    value: (path) => {
+      return new Promise((resolve) => fs.exists(path, resolve));
+    },
+  });
+}
+
 export function load(staticModule) {
   if (!global.__STATIC_FS_RUNTIME) {
     global.__STATIC_FS_RUNTIME = {};
@@ -342,13 +351,19 @@ export function load(staticModule) {
       },
       exists: (path, callback) => {
         if (existsInFs(svs, path)) {
-          callback(true);
-          return;
+          return process.nextTick(() => callback(true));
         }
 
         return fsE(path, callback);
       },
     });
+
+    // NOTE: After patching the fs we should apply some custom symbols
+    // that nodeJS applies by itself to be used for example on util.promisify
+    // As an example we can check the definition of custom symbols on
+    // exists function : https://github.com/nodejs/node/blob/v10.x/lib/fs.js
+    createCustomNodeJsSymbolsForFs();
+
     global.__STATIC_FS_RUNTIME.undo = () => {
       undo_fs();
       undo_loader();
