@@ -200,6 +200,23 @@ function existsFdInFs(svs, fd) {
   return false;
 }
 
+function assureCwdOnSanitizedOptions(options, svs, existsOnRealFs) {
+  const cwd = options && options.cwd;
+
+  if (!cwd) {
+    return;
+  }
+
+  try {
+    const cwdStat = svs.statSync(cwd);
+    if (!!cwdStat && cwdStat.isDirectory() && !existsOnRealFs(cwd)) {
+      fs.mkdirSync(cwd, { recursive: true });
+    }
+  } catch {
+    /* no-op */
+  }
+}
+
 export function load(staticModule) {
   if (!global.__STATIC_FS_RUNTIME) {
     global.__STATIC_FS_RUNTIME = {};
@@ -368,6 +385,7 @@ export function load(staticModule) {
       // that would get added as the first argument
       const builtArgs = buildStaticFsArgs(sanitizedArgs, null, svs.loadedVolumes, modulePath);
       if (args && optsEnv.STATIC_FS_ENV) {
+        assureCwdOnSanitizedOptions(sanitizedOptions, svs, fsES);
         return fork(process.env.STATIC_FS_MAIN_RUNTIME_PATH, builtArgs, { ...sanitizedOptions, env: optsEnv });
       } else {
         return fork(modulePath, args, options);
@@ -382,6 +400,7 @@ export function load(staticModule) {
       // add in the new process as the first real argument of the new process
       const builtArgs = buildStaticFsArgs(args, process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes);
       if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
+        assureCwdOnSanitizedOptions(sanitizedOptions, svs, fsES);
         return spawn(command, builtArgs, { ...sanitizedOptions, env: optsEnv });
       }
       return spawn(command, args, options);
@@ -392,6 +411,7 @@ export function load(staticModule) {
       const optsEnv = Object.assign(process.env, sanitizedOptions.env || {});
       const builtArgs = buildStaticFsArgs(args, process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes);
       if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
+        assureCwdOnSanitizedOptions(sanitizedOptions, svs, fsES);
         return spawnSync(command, builtArgs, { ...sanitizedOptions, env: optsEnv });
       }
       return spawnSync(command, args, options);
@@ -407,6 +427,8 @@ export function load(staticModule) {
           process.env.STATIC_FS_MAIN_RUNTIME_PATH,
           svs.loadedVolumes,
         ).join(' ');
+
+        assureCwdOnSanitizedOptions(sanitizedOptions, svs, fsES);
         return exec(`${command.substring(0, pos)} ${builtArgs}`, { ...sanitizedOptions, env: optsEnv }, callback);
       }
       return exec(command, options, callback);
@@ -422,6 +444,8 @@ export function load(staticModule) {
           process.env.STATIC_FS_MAIN_RUNTIME_PATH,
           svs.loadedVolumes,
         ).join(' ');
+
+        assureCwdOnSanitizedOptions(sanitizedOptions, svs, fsES);
         return execSync(`${command.substring(0, pos)} ${builtArgs}`, { ...sanitizedOptions, env: optsEnv });
       }
       return execSync(command, options);
