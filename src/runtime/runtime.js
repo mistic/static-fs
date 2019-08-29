@@ -211,6 +211,7 @@ export function load(staticModule) {
     const fsRPS = fs.realpathSync;
     const fsRDS = fs.readdirSync;
     const fsSS = fs.statSync;
+    const fsES = fs.existsSync;
     const fsRF = fs.readFile;
     const fsRP = fs.realpath;
     const fsRD = fs.readdir;
@@ -219,6 +220,7 @@ export function load(staticModule) {
     const fsC = fs.close;
     const fsCRS = fs.createReadStream;
     const fsFs = fs.fstat;
+    const fsE = fs.exists;
 
     const undo_fs = patchFilesystem({
       close: (fd, callback) => {
@@ -281,6 +283,9 @@ export function load(staticModule) {
 
         return fsSS(path);
       },
+      existsSync: (path) => {
+        return existsInFs(svs, path) || fsES(path);
+      },
       readFile: (path, options, callback) => {
         const sanitizedCallback = typeof callback === 'function' ? callback : options;
         const sanitizedOptions = typeof options === 'object' || typeof options === 'string' ? options : null;
@@ -317,6 +322,14 @@ export function load(staticModule) {
         }
 
         return fsS(path, sanitizedCallback);
+      },
+      exists: (path, callback) => {
+        if (existsInFs(svs, path)) {
+          callback(true);
+          return;
+        }
+
+        return fsE(path, callback);
       },
     });
     global.__STATIC_FS_RUNTIME.undo = () => {
