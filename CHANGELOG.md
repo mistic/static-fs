@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+# [1.1.0](https://github.com/mistic/static-fs/compare/v1.0.2...v1.1.0) (2019-08-29)
+
+
+### Features
+
+* add static fs implementation for existsSync and exists ([#66](https://github.com/mistic/static-fs/issues/66)) ([5e647f8](https://github.com/mistic/static-fs/commit/5e647f8))
+
 ## [1.0.2](https://github.com/mistic/static-fs/compare/v1.0.1...v1.0.2) (2019-08-27)
 
 
