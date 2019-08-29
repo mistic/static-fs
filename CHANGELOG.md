@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.1.1](https://github.com/mistic/static-fs/compare/v1.1.0...v1.1.1) (2019-08-29)
+
+
+### Bug Fixes
+
+* assure cwd on child_process functions options exists on filesystem ([#68](https://github.com/mistic/static-fs/issues/68)) ([ac501cf](https://github.com/mistic/static-fs/commit/ac501cf))
+
 # [1.1.0](https://github.com/mistic/static-fs/compare/v1.0.2...v1.1.0) (2019-08-29)
 
 
