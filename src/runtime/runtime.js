@@ -222,7 +222,7 @@ function createCustomNodeJsSymbolsForFs() {
   Object.defineProperty(fs.exists, util.promisify.custom, {
     value: (path) => {
       return new Promise((resolve) => fs.exists(path, resolve));
-    }
+    },
   });
 }
 
@@ -310,7 +310,7 @@ export function load(staticModule) {
         return fsSS(path);
       },
       existsSync: (path) => {
-        return (existsInFs(svs, path) || fsES(path));
+        return existsInFs(svs, path) || fsES(path);
       },
       readFile: (path, options, callback) => {
         const sanitizedCallback = typeof callback === 'function' ? callback : options;
