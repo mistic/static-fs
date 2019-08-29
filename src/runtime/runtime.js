@@ -400,6 +400,11 @@ export function load(staticModule) {
       // add in the new process as the first real argument of the new process
       const builtArgs = buildStaticFsArgs(args, process.env.STATIC_FS_MAIN_RUNTIME_PATH, svs.loadedVolumes);
       if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
+        // NOTE: that  assureCwdOnSanitizedOptions is needed as it is reasonable
+        // to declare cwd for the spawn that is bundled inside the static-fs volumes
+        // and in that case will not exist on the real filesystem.
+        // As nodejs uses uv_spawn to launch the child_process ultimately,
+        // that library would throw an error if the cwd does not exist
         assureCwdOnSanitizedOptions(sanitizedOptions, svs, fsES);
         return spawn(command, builtArgs, { ...sanitizedOptions, env: optsEnv });
       }
