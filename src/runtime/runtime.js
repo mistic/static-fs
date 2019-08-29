@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as child_process from 'child_process';
 import * as Module from 'module';
-import * as path from 'path';
 import { StaticFilesystem } from '../filesystem';
 import { patchFilesystem } from './patch/filesystem';
 import { patchModuleLoader } from './patch/module_loader';
