@@ -3,10 +3,9 @@ steps:
     inputs:
       versionSpec: '10.15.x'
     displayName: 'Install required Node.js version'
-  - task: Npm@1
-    inputs:
-      command: custom
-      customCommand: r -g yarn
+  - script: |
+      yarn -v
+      npm install -g yarn@1.10.1
   - task: Npm@1
     inputs:
       command: custom
