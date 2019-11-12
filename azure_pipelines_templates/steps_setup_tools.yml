@@ -5,7 +5,7 @@ steps:
     displayName: 'Install required Node.js version'
   - powershell: Rename-Item C:\npm\prefix\yarn.cmd C:\npm\prefix\yarn_default.cmd; Rename-Item C:\npm\prefix\yarnpkg.cmd C:\npm\prefix\yarnpkg_default.cmd
     condition: eq(variables['Agent.OS'], 'Windows_NT')
-    displayName: 'Remove previous yarn installation on windows'
+    displayName: 'Remove default Yarn on windows'
   - task: Npm@1
     inputs:
       command: custom
