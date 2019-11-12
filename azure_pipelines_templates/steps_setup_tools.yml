@@ -3,9 +3,9 @@ steps:
     inputs:
       versionSpec: '10.15.x'
     displayName: 'Install required Node.js version'
-  - script: |
-      npm uninstall -g yarn
-      npm install -g yarn@1.10.1
+  - powershell: npm uninstall -g yarn
+      condition: eq(variables['Agent.OS'], 'Windows_NT')
+      displayName: 'Remove previous yarn installation on windows'
   - task: Npm@1
     inputs:
       command: custom
