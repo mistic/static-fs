@@ -4,7 +4,7 @@ steps:
       versionSpec: '10.15.x'
     displayName: 'Install required Node.js version'
   - script: |
-      yarn -v
+      npm uninstall -g yarn
       npm install -g yarn@1.10.1
   - task: Npm@1
     inputs:
