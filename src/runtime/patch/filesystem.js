@@ -32,6 +32,13 @@ export function patchFilesystem(volume, original = fs) {
       continue;
     }
 
+    // For now skip promises
+    // but they should be implemented
+    // as a new feature in the future
+    if (member === 'promises') {
+      continue;
+    }
+
     switch (metadata[member]) {
       case MemberType.Constructor:
         // bind as a constructor

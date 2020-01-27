@@ -273,13 +273,29 @@ export function load(staticModule) {
         return fsFs(fd, options, callback);
       },
       open: (path, flags, mode, callback) => {
-        const sanitizedCallback = typeof callback === 'function' ? callback : typeof mode === 'function' ? mode : flags;
+        let sanitizedCallback;
+        let sanitizedMode;
+        let sanitizedFlags;
+
+        if (callback) {
+          sanitizedCallback = callback;
+          sanitizedMode = mode;
+          sanitizedFlags = flags;
+        } else if (typeof mode === 'function') {
+          sanitizedCallback = mode;
+          sanitizedMode = 0o666;
+          sanitizedFlags = flags;
+        } else if (typeof flags === 'function') {
+          sanitizedCallback = flags;
+          sanitizedMode = 0o666;
+          sanitizedFlags = 'r';
+        }
 
         if (existsInFs(svs, path)) {
           return svs.open(path, sanitizedCallback);
         }
 
-        return fsO(path, flags, mode, callback);
+        return fsO(path, sanitizedFlags, sanitizedMode, sanitizedCallback);
       },
       readFileSync: (path, options) => {
         if (existsInFs(svs, path)) {
