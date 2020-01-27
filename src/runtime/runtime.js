@@ -182,6 +182,15 @@ export function list(staticModule) {
   svs.shutdown();
 }
 
+function existsInRealFs(fs, filePath) {
+  try {
+    return !!fs.statSync(filePath);
+  } catch {
+    /* no-op */
+  }
+  return false;
+}
+
 function existsInFs(svs, filePath) {
   try {
     return !!svs.statSync(filePath);
@@ -233,6 +242,7 @@ export function load(staticModule) {
 
     // first patch the require
     const undo_loader = patchModuleLoader(svs);
+    const realFs = fs;
     const fsRFS = fs.readFileSync;
     const fsRPS = fs.realpathSync;
     const fsRDS = fs.readdirSync;
@@ -273,13 +283,29 @@ export function load(staticModule) {
         return fsFs(fd, options, callback);
       },
       open: (path, flags, mode, callback) => {
-        const sanitizedCallback = typeof callback === 'function' ? callback : typeof mode === 'function' ? mode : flags;
+        let sanitizedCallback;
+        let sanitizedMode;
+        let sanitizedFlags;
+
+        if (callback) {
+          sanitizedCallback = callback;
+          sanitizedMode = mode;
+          sanitizedFlags = flags;
+        } else if (typeof mode === 'function') {
+          sanitizedCallback = mode;
+          sanitizedMode = 0o666;
+          sanitizedFlags = flags;
+        } else if (typeof flags === 'function') {
+          sanitizedCallback = flags;
+          sanitizedMode = 0o666;
+          sanitizedFlags = 'r';
+        }
 
         if (existsInFs(svs, path)) {
           return svs.open(path, sanitizedCallback);
         }
 
-        return fsO(path, flags, mode, callback);
+        return fsO(path, sanitizedFlags, sanitizedMode, sanitizedCallback);
       },
       readFileSync: (path, options) => {
         if (existsInFs(svs, path)) {
@@ -296,11 +322,17 @@ export function load(staticModule) {
         return fsRPS(path, options);
       },
       readdirSync: (path, options) => {
+        const dirContent = [];
+
         if (existsInFs(svs, path)) {
-          return svs.readdirSync(path);
+          dirContent.concat(svs.readdirSync(path));
         }
 
-        return fsRDS(path, options);
+        if (existsInRealFs(realFs, path)) {
+          dirContent.concat(fsRDS(path, options));
+        }
+
+        return new Set(dirContent).keys();
       },
       statSync: (path) => {
         if (existsInFs(svs, path)) {
@@ -333,12 +365,40 @@ export function load(staticModule) {
       },
       readdir: (path, options, callback) => {
         const sanitizedCallback = typeof callback === 'function' ? callback : options;
+        const pathExistsInRealFs = existsInRealFs(realFs, path);
+        const pathExistsInFs = existsInFs(svs, path);
 
-        if (existsInFs(svs, path)) {
+        if (pathExistsInRealFs && pathExistsInFs) {
+          const dirContent = [];
+
+          svs.readdir(path, (error, files) => {
+            if (error) {
+              sanitizedCallback(error);
+              return;
+            }
+
+            dirContent.concat(files);
+            fsRD(path, options, (realError, realFiles) => {
+              if (realError) {
+                sanitizedCallback(realError);
+                return;
+              }
+
+              dirContent.concat(realFiles);
+              sanitizedCallback(null, new Set(dirContent).keys());
+            });
+          });
+
+          return;
+        }
+
+        if (pathExistsInFs) {
           return svs.readdir(path, sanitizedCallback);
         }
 
-        return fsRD(path, options, callback);
+        if (pathExistsInRealFs) {
+          return fsRD(path, options, callback);
+        }
       },
       stat: (path, options, callback) => {
         const sanitizedCallback = typeof callback === 'function' ? callback : options;
