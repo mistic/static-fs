@@ -243,6 +243,7 @@ export function load(staticModule) {
     // first patch the require
     const undo_loader = patchModuleLoader(svs);
     const realFs = fs;
+    const fsCS = fs.closeSync;
     const fsRFS = fs.readFileSync;
     const fsRPS = fs.realpathSync;
     const fsRDS = fs.readdirSync;
@@ -267,7 +268,8 @@ export function load(staticModule) {
         return fsC(fd, callback);
       },
       createReadStream: (path, options) => {
-        if (existsInFs(svs, path)) {
+        const optionsFd = options && options.fd;
+        if (existsInFs(svs, path) || existsFdInFs(svs, optionsFd)) {
           return svs.createReadStream(path, options);
         }
 
@@ -307,6 +309,13 @@ export function load(staticModule) {
 
         return fsO(path, sanitizedFlags, sanitizedMode, sanitizedCallback);
       },
+      closeSync: (fd) => {
+        if (existsFdInFs(svs, fd)) {
+          return svs.closeSync(fd);
+        }
+
+        return fsCS(fd);
+      },
       readFileSync: (path, options) => {
         if (existsInFs(svs, path)) {
           return svs.readFileSync(path, options);
@@ -325,14 +334,14 @@ export function load(staticModule) {
         const dirContent = [];
 
         if (existsInFs(svs, path)) {
-          dirContent.concat(svs.readdirSync(path));
+          dirContent.push(...svs.readdirSync(path));
         }
 
         if (existsInRealFs(realFs, path)) {
-          dirContent.concat(fsRDS(path, options));
+          dirContent.push(...fsRDS(path, options));
         }
 
-        return new Set(dirContent).keys();
+        return Array.from(new Set(dirContent).keys());
       },
       statSync: (path) => {
         if (existsInFs(svs, path)) {

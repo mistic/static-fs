@@ -284,6 +284,16 @@ export class StaticFilesystem {
     });
   }
 
+  closeSync(fd) {
+    try {
+      this.getValidatedFD(fd);
+    } catch (e) {
+      StaticFilesystem.NewError(constants.errno.ENOENT, 'closeSync', e);
+    }
+
+    delete this.fds[fd.id];
+  }
+
   fstat(fd, callback) {
     try {
       this.getValidatedFD(fd);

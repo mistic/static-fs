@@ -114,7 +114,9 @@ export class ReadableStaticVolume {
   }
 
   shutdown() {
-    fs.closeSync(this.fd);
+    if (this.fd > 0) {
+      fs.closeSync(this.fd);
+    }
     this.reset();
   }
 
