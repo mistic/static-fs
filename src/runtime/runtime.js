@@ -374,40 +374,35 @@ export function load(staticModule) {
       },
       readdir: (path, options, callback) => {
         const sanitizedCallback = typeof callback === 'function' ? callback : options;
+        const sanitizedOptions = typeof options === 'object' ? options : { encoding: 'utf8', withFileTypes: false };
         const pathExistsInRealFs = existsInRealFs(realFs, path);
         const pathExistsInFs = existsInFs(svs, path);
 
         if (pathExistsInRealFs && pathExistsInFs) {
           const dirContent = [];
 
-          svs.readdir(path, (error, files) => {
+          return svs.readdir(path, (error, files) => {
             if (error) {
-              sanitizedCallback(error);
-              return;
+              return sanitizedCallback(error);
             }
 
-            dirContent.concat(files);
-            fsRD(path, options, (realError, realFiles) => {
+            dirContent.push(...files);
+            return fsRD(path, sanitizedOptions, (realError, realFiles) => {
               if (realError) {
-                sanitizedCallback(realError);
-                return;
+                return sanitizedCallback(realError);
               }
 
-              dirContent.concat(realFiles);
-              sanitizedCallback(null, new Set(dirContent).keys());
+              dirContent.push(...realFiles);
+              return sanitizedCallback(null, Array.from(new Set(dirContent).keys()));
             });
           });
-
-          return;
-        }
-
-        if (pathExistsInFs) {
-          return svs.readdir(path, sanitizedCallback);
         }
 
         if (pathExistsInRealFs) {
           return fsRD(path, options, callback);
         }
+
+        return svs.readdir(path, sanitizedCallback);
       },
       stat: (path, options, callback) => {
         const sanitizedCallback = typeof callback === 'function' ? callback : options;
