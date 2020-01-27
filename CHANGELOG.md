@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.2.2](https://github.com/mistic/static-fs/compare/v1.2.1...v1.2.2) (2020-01-27)
+
+
+### Bug Fixes
+
+* **na:** readdir method in the static-fs to also consider real fs ([#136](https://github.com/mistic/static-fs/issues/136)) ([19deb7d](https://github.com/mistic/static-fs/commit/19deb7d))
+
 ## [1.2.1](https://github.com/mistic/static-fs/compare/v1.2.0...v1.2.1) (2020-01-27)
 
 
