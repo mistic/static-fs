@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.2.1](https://github.com/mistic/static-fs/compare/v1.2.0...v1.2.1) (2020-01-27)
+
+
+### Bug Fixes
+
+* multiple problems with the patch api ([#134](https://github.com/mistic/static-fs/issues/134)) ([770b762](https://github.com/mistic/static-fs/commit/770b762))
+
 # [1.2.0](https://github.com/mistic/static-fs/compare/v1.1.1...v1.2.0) (2019-08-29)
 
 
