@@ -332,7 +332,7 @@ export function load(staticModule) {
           dirContent.concat(fsRDS(path, options));
         }
 
-        return (new Set(dirContent)).keys();
+        return new Set(dirContent).keys();
       },
       statSync: (path) => {
         if (existsInFs(svs, path)) {
@@ -385,7 +385,7 @@ export function load(staticModule) {
               }
 
               dirContent.concat(realFiles);
-              sanitizedCallback(null, (new Set(dirContent)).keys())
+              sanitizedCallback(null, new Set(dirContent).keys())
             });
           });
 
