@@ -182,6 +182,15 @@ export function list(staticModule) {
   svs.shutdown();
 }
 
+function existsInRealFs(fs, filePath) {
+  try {
+    return !!fs.statSync(filePath);
+  } catch {
+    /* no-op */
+  }
+  return false;
+}
+
 function existsInFs(svs, filePath) {
   try {
     return !!svs.statSync(filePath);
@@ -233,6 +242,7 @@ export function load(staticModule) {
 
     // first patch the require
     const undo_loader = patchModuleLoader(svs);
+    const realFs = fs;
     const fsRFS = fs.readFileSync;
     const fsRPS = fs.realpathSync;
     const fsRDS = fs.readdirSync;
@@ -312,11 +322,17 @@ export function load(staticModule) {
         return fsRPS(path, options);
       },
       readdirSync: (path, options) => {
+        const dirContent = [];
+
         if (existsInFs(svs, path)) {
-          return svs.readdirSync(path);
+          dirContent.concat(svs.readdirSync(path));
         }
 
-        return fsRDS(path, options);
+        if (existsInRealFs(realFs, path)) {
+          dirContent.concat(fsRDS(path, options));
+        }
+
+        return (new Set(dirContent)).keys();
       },
       statSync: (path) => {
         if (existsInFs(svs, path)) {
@@ -349,12 +365,40 @@ export function load(staticModule) {
       },
       readdir: (path, options, callback) => {
         const sanitizedCallback = typeof callback === 'function' ? callback : options;
+        const pathExistsInRealFs = existsInRealFs(realFs, path);
+        const pathExistsInFs = existsInFs(svs, path);
 
-        if (existsInFs(svs, path)) {
+        if (pathExistsInRealFs && pathExistsInFs) {
+          const dirContent = [];
+
+          svs.readdir(path, (error, files) => {
+            if (error) {
+              sanitizedCallback(error);
+              return;
+            }
+
+            dirContent.concat(files);
+            fsRD(path, options, (realError, realFiles) => {
+              if (realError) {
+                sanitizedCallback(realError);
+                return;
+              }
+
+              dirContent.concat(realFiles);
+              sanitizedCallback(null, (new Set(dirContent)).keys())
+            });
+          });
+
+          return;
+        }
+
+        if (pathExistsInFs) {
           return svs.readdir(path, sanitizedCallback);
         }
 
-        return fsRD(path, options, callback);
+        if (pathExistsInRealFs) {
+          return fsRD(path, options, callback);
+        }
       },
       stat: (path, options, callback) => {
         const sanitizedCallback = typeof callback === 'function' ? callback : options;
