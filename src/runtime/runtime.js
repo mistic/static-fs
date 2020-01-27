@@ -385,7 +385,7 @@ export function load(staticModule) {
               }
 
               dirContent.concat(realFiles);
-              sanitizedCallback(null, new Set(dirContent).keys())
+              sanitizedCallback(null, new Set(dirContent).keys());
             });
           });
 
