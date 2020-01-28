@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+# [1.3.0](https://github.com/mistic/static-fs/compare/v1.2.2...v1.3.0) (2020-01-28)
+
+
+### Features
+
+* include top level directory in the added files when not excluded ([#137](https://github.com/mistic/static-fs/issues/137)) ([9a770db](https://github.com/mistic/static-fs/commit/9a770db))
+
 ## [1.2.2](https://github.com/mistic/static-fs/compare/v1.2.1...v1.2.2) (2020-01-27)
 
 
