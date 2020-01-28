@@ -5,6 +5,7 @@ import { deleteFiles, getDirContent, getStaticFsPackage } from './helpers';
 const testTempDir = global.__mock_project_path,
   staticFs = getStaticFsPackage(testTempDir),
   folderToAdd = resolve(testTempDir, 'node_modules'),
+  extraFolderToAdd = resolve(testTempDir, 'extra_simple_folder'),
   mountRoot = testTempDir,
   entryPoint = resolve(testTempDir, 'test_cases/full_app_usage.js'),
   exceptions = [
@@ -21,7 +22,8 @@ describe('Static Fs Generator', () => {
         await staticFs.generateStaticFsVolume(
           mountRoot,
           [
-            folderToAdd
+            folderToAdd,
+            extraFolderToAdd
           ],
           [
             entryPoint
@@ -52,6 +54,10 @@ describe('Static Fs Generator', () => {
 
   test('static fs bundle for the expected files (= all except .node)', async () => {
     const expectedFilesOnStaticFs = getDirContent(folderToAdd, exceptions);
+    expectedFilesOnStaticFs.push(
+      getDirContent(extraFolderToAdd),
+      extraFolderToAdd
+    );
 
     expect(filesAddedToStaticFs.length).toEqual(expectedFilesOnStaticFs.length);
   });
