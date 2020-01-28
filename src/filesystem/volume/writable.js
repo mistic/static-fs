@@ -30,7 +30,7 @@ export class WritableStaticVolume {
     const calculatedTargetFolder = relative(this.mountingRoot, sourceFolder);
     const isFolder = (await stat(sourceFolder)).isDirectory();
     if (!isFolder) {
-      throw new Error(`The given path ${ sourceFolder } is not a folder.`);
+      throw new Error(`The given path ${sourceFolder} is not a folder.`);
     }
 
     this.directoriesIndex[sourceFolder] = {
