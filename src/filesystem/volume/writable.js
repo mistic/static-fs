@@ -117,7 +117,7 @@ export class WritableStaticVolume {
       hash: this.hash,
       volume: this.outputFile,
       directories: Object.keys(this.directoriesIndex),
-      files: Object.keys(this.index)
+      files: Object.keys(this.index),
     };
 
     await writeFile(this.manifestFile, JSON.stringify(manifestContent, null, 2));
