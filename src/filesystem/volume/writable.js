@@ -1,10 +1,11 @@
-import { dirname, relative, resolve, sep } from 'path';
-import { calculateHash, close, INT_SIZE, mkdir, open, readdir, readFile, stat, write } from '../../common';
+import { basename, dirname, relative, resolve, sep } from 'path';
+import { calculateHash, close, INT_SIZE, mkdir, open, readdir, readFile, stat, write, writeFile } from '../../common';
 
 export class WritableStaticVolume {
   constructor(mountingRoot) {
     this.mountingRoot = mountingRoot;
     this.outputFile = resolve(this.mountingRoot, 'static_fs/static_fs_volume.sfsv');
+    this.manifestFile = resolve(this.mountingRoot, 'static_fs/static_fs_manifest.json');
     this.reset();
   }
 
@@ -33,7 +34,7 @@ export class WritableStaticVolume {
       throw new Error(`The given path ${sourceFolder} is not a folder.`);
     }
 
-    this.directoriesIndex[sourceFolder] = {
+    this.directoriesIndex[calculatedTargetFolder] = {
       hasNativeModules: false,
     };
 
@@ -102,7 +103,24 @@ export class WritableStaticVolume {
     }
 
     await close(fd);
+
+    // write the manifest file
+    await this.writeManifest();
+
     return this.hash;
+  }
+
+  async writeManifest() {
+    const manifestContent = {
+      manifest: basename(this.manifestFile),
+      mountingRoot: this.mountingRoot,
+      hash: this.hash,
+      volume: this.outputFile,
+      directories: Object.keys(this.directoriesIndex),
+      files: Object.keys(this.index),
+    };
+
+    await writeFile(this.manifestFile, JSON.stringify(manifestContent, null, 2));
   }
 
   async getFileNames(sourceFolder, targetFolder, exclusions) {
@@ -123,7 +141,7 @@ export class WritableStaticVolume {
       // is this a directory
       const ss = await stat(sourcePath);
       if (ss.isDirectory()) {
-        this.directoriesIndex[sourcePath] = {
+        this.directoriesIndex[targetPath] = {
           hasNativeModules: false,
         };
 
@@ -133,7 +151,7 @@ export class WritableStaticVolume {
 
       const isNativeModuleFile = file.endsWith('.node');
       if (isNativeModuleFile) {
-        this.directoriesIndex[sourcePath] = {
+        this.directoriesIndex[targetPath] = {
           hasNativeModules: true,
         };
         continue;
@@ -151,8 +169,9 @@ export class WritableStaticVolume {
 
   getAddedFilesAndFolders() {
     const addParentsForFolder = (folderPath, accum) => {
+      const calculatedParent = dirname(resolve(this.mountingRoot, folderPath));
       const parent = dirname(folderPath);
-      if (parent && parent !== this.mountingRoot && parent.includes(this.mountingRoot)) {
+      if (calculatedParent && calculatedParent !== this.mountingRoot && calculatedParent.includes(this.mountingRoot)) {
         accum[parent] = true;
         return addParentsForFolder(parent, accum);
       }
