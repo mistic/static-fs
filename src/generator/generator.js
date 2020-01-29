@@ -48,8 +48,8 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
   }
 };
 
-// adds file to the static filesystem volume
-const addFolderToStaticFsVolume = async (mountRootDir, foldersToAdd, exclusions) => {
+// adds folders and files to the static filesystem volume
+const addFoldersToStaticFsVolume = async (mountRootDir, foldersToAdd, exclusions) => {
   const sfs = new WritableStaticVolume(mountRootDir);
 
   for (const folderToAdd of foldersToAdd) {
@@ -76,7 +76,7 @@ export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntr
     return accum;
   }, {});
 
-  const filesAddedToVolume = await addFolderToStaticFsVolume(
+  const filesAddedToVolume = await addFoldersToStaticFsVolume(
     sanitizedMountRootDir,
     sanitizedFoldersToAdd,
     sanitizedExclusions,

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import { resolve} from 'path';
 import { deleteFiles, getDirContent, getStaticFsPackage } from './helpers';
 
 const testTempDir = global.__mock_project_path,
@@ -44,11 +44,12 @@ describe('Static Fs Generator', () => {
     const sfsBaseFolderFiles = getDirContent(baseSFSFolder);
     const expectedFilesOnBaseSFSFolder = [
       resolve(baseSFSFolder, 'static_fs_volume.sfsv'),
-      resolve(baseSFSFolder, 'static_fs_runtime.js')
+      resolve(baseSFSFolder, 'static_fs_runtime.js'),
+      resolve(baseSFSFolder, 'static_fs_manifest.json')
     ];
 
     expect(existsBaseSFSFolder).toBeTruthy();
-    expect(sfsBaseFolderFiles.length).toBe(2);
+    expect(sfsBaseFolderFiles.length).toBe(3);
     expect(sfsBaseFolderFiles).toEqual(expect.arrayContaining(expectedFilesOnBaseSFSFolder));
   });
 
@@ -72,5 +73,18 @@ describe('Static Fs Generator', () => {
     const entryPointContent = readFileSync(entryPoint, { encoding: 'utf8' }).toString();
 
     expect(entryPointContent.includes('// load static_fs_volume:')).toBeTruthy();
+  });
+
+  test('if static fs manifest file have the expected keys', async () => {
+    const sfsManifestFileContent = JSON.parse(
+      readFileSync(resolve(mountRoot, 'static_fs', 'static_fs_manifest.json'), { encoding: 'utf8' }).toString()
+    );
+
+    expect(sfsManifestFileContent).toHaveProperty('manifest');
+    expect(sfsManifestFileContent).toHaveProperty('mountingRoot');
+    expect(sfsManifestFileContent).toHaveProperty('hash');
+    expect(sfsManifestFileContent).toHaveProperty('volume');
+    expect(sfsManifestFileContent).toHaveProperty('directories');
+    expect(sfsManifestFileContent).toHaveProperty('files');
   });
 });
