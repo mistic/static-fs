@@ -42,7 +42,11 @@ const mockFs = {
   }
 };
 
-const undo_module_loader_patch = patchModuleLoader(mockFs);
+const mockStaticFsRuntime = {
+  staticfilesystem: mockFs
+};
+
+const undo_module_loader_patch = patchModuleLoader(mockStaticFsRuntime);
 require('./static_fs_mock/patched/path/file');
 undo_module_loader_patch();
-require('./static_fs_mock/patched/path/file');
+console.log(require('./static_fs_mock/patched/path/file'));

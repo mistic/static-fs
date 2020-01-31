@@ -1,20 +1,26 @@
+import * as realFs from 'fs';
 import * as Module from 'module';
-import { readFileSync } from 'fs';
 import { isAbsolute, resolve, toNamespacedPath } from 'path';
 import { isWindows, isWindowsPath, stripBOM, unixifyPath } from '../../common';
 
-export function patchModuleLoader(volume) {
-  const backup = { ...Module };
+export function patchModuleLoader(staticFsRuntime) {
+  const moduleExtensionsJS = Module._extensions['.js'];
+  const moduleExtensionsJSON = Module._extensions['.json'];
+  const moduleFindPath = Module._findPath;
+  const moduleCache = { ...Module._cache };
+  const modulePathCache = { ...Module._pathCache };
+
   const preserveSymlinks = false;
   const statCache = {};
   const packageMainCache = {};
+  const sfs = staticFsRuntime.staticfilesystem;
 
   // Used to speed up module loading.  Returns the contents of the file as
   // a string or undefined when the file cannot be opened.  The speedup
   // comes from not creating Error objects on failure.
   function internalModuleReadFile(path) {
     try {
-      return volume.readFileSync(path, 'utf8');
+      return sfs.readFileSync(path, 'utf8');
     } catch {
       /* no-op */
     }
@@ -27,7 +33,7 @@ export function patchModuleLoader(volume) {
   // The speedup comes from not creating thousands of Stat and Error objects.
   function internalModuleStat(filename) {
     try {
-      return volume.statSync(filename).isDirectory() ? 1 : 0;
+      return sfs.statSync(filename).isDirectory() ? 1 : 0;
     } catch {
       /* no-op */
     }
@@ -72,7 +78,7 @@ export function patchModuleLoader(volume) {
       return stat(requestPath) === 0 ? resolve(requestPath) : undefined;
     }
 
-    return stat(requestPath) === 0 ? volume.realpathSync(requestPath) : undefined;
+    return stat(requestPath) === 0 ? sfs.realpathSync(requestPath) : undefined;
   }
 
   // given a path check a the file exists with any of the set extensions
@@ -104,13 +110,13 @@ export function patchModuleLoader(volume) {
 
   // Native extension for .js
   Module._extensions['.js'] = (module, filename) => {
-    const readFileFn = stat(filename) === 0 ? volume.readFileSync.bind(volume) : readFileSync.bind(this);
+    const readFileFn = stat(filename) === 0 ? sfs.readFileSync.bind(sfs) : realFs.readFileSync.bind(this);
     module._compile(stripBOM(readFileFn(filename, 'utf8')), filename);
   };
 
   // Native extension for .json
   Module._extensions['.json'] = (module, filename) => {
-    const readFileFn = stat(filename) === 0 ? volume.readFileSync.bind(volume) : readFileSync.bind(this);
+    const readFileFn = stat(filename) === 0 ? sfs.readFileSync.bind(sfs) : realFs.readFileSync.bind(this);
 
     try {
       module.exports = JSON.parse(stripBOM(readFileFn(filename, 'utf8')));
@@ -198,7 +204,7 @@ export function patchModuleLoader(volume) {
       if (!trailingSlash) {
         switch (rc) {
           case 0:
-            filename = preserveSymlinks && !isMain ? resolve(basePath) : volume.realpathSync(basePath);
+            filename = preserveSymlinks && !isMain ? resolve(basePath) : sfs.realpathSync(basePath);
             break;
           case 1:
             filename = tryPackage(basePath, exts, isMain);
@@ -226,8 +232,10 @@ export function patchModuleLoader(volume) {
 
   // magic sauce to revert the patching.
   return () => {
-    Module._extensions['.js'] = backup._extensions['.js'];
-    Module._extensions['.json'] = backup._extensions['.json'];
-    Module._findPath = backup._findPath;
+    Module._extensions['.js'] = moduleExtensionsJS;
+    Module._extensions['.json'] = moduleExtensionsJSON;
+    Module._findPath = moduleFindPath;
+    Module._cache = moduleCache;
+    Module._pathCache = modulePathCache;
   };
 }
