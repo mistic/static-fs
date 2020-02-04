@@ -7,23 +7,23 @@ function patchFn(patchedFs, fn) {
 }
 
 function open(patchedFs, path, flag, modes) {
-  return promisify(patchedFs.open)(path, flag, modes)
+  return promisify(patchedFs.open)(path, flag, modes);
 }
 
 function readdir(patchedFs, path, options) {
-  return promisify(patchedFs.readdir)(path, options)
+  return promisify(patchedFs.readdir)(path, options);
 }
 
 function readFile(patchedFs, path, options) {
-  return promisify(patchedFs.readFile)(path, options)
+  return promisify(patchedFs.readFile)(path, options);
 }
 
 function realpath(patchedFs, path, options) {
-  return promisify(patchedFs.realpath)(path, options)
+  return promisify(patchedFs.realpath)(path, options);
 }
 
 function stat(patchedFs, path, options) {
-  return promisify(patchedFs.stat)(path, options)
+  return promisify(patchedFs.stat)(path, options);
 }
 
 export function createPatchedFsPromises(patchedFs) {

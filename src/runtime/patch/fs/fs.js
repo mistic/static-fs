@@ -235,6 +235,6 @@ export function createPatchedFs(sfsRuntime, originalFs) {
 
   return {
     ...basePatchedFs,
-    promises: patchedPromises
-  }
+    promises: patchedPromises,
+  };
 }

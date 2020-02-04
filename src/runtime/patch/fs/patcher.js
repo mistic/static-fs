@@ -23,7 +23,7 @@ const metadata = {
   W_OK: MemberType.Property,
   X_OK: MemberType.Property,
 
-  promises: MemberType.PromisesApi
+  promises: MemberType.PromisesApi,
 };
 
 function applyPatchFs(patchedFs, originalFs) {

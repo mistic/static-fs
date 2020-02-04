@@ -1,12 +1,7 @@
 import * as fs from 'fs';
 import * as Module from 'module';
 import { StaticFilesystem } from '../filesystem';
-import {
-  patchChildProcess,
-  patchFilesystem,
-  patchModuleLoader,
-  patchProcess
-} from './patch';
+import { patchChildProcess, patchFilesystem, patchModuleLoader, patchProcess } from './patch';
 
 if (isRunningAsEntry()) {
   // this is for "fork mode" where we are forking a child process.
