@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+# [1.4.0](https://github.com/mistic/static-fs/compare/v1.3.0...v1.4.0) (2020-01-29)
+
+
+### Features
+
+* **na:** generate a manifest for each static_fs volume ([#139](https://github.com/mistic/static-fs/issues/139)) ([f232bd6](https://github.com/mistic/static-fs/commit/f232bd6))
+
 # [1.3.0](https://github.com/mistic/static-fs/compare/v1.2.2...v1.3.0) (2020-01-28)
 
 

@@ -177,7 +177,7 @@ See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
 [npm-version-image]: https://img.shields.io/npm/v/static-fs
 [npm-version-url]: https://www.npmjs.com/package/static-fs
 [node-version-image]: https://img.shields.io/node/v/static-fs
-[node-version-url]: https://nodejs.org/download/release/v10.15.2
+[node-version-url]: https://nodejs.org/download/release/v10.18.0
 [david-node-deps-manager-image]: https://img.shields.io/david/mistic/static-fs
 [david-node-deps-manager-url]: https://david-dm.org/mistic/static-fs
 [david-node-deps-manager-dev-image]: https://img.shields.io/david/dev/mistic/static-fs

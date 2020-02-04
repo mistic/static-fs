@@ -1,7 +1,7 @@
 steps:
   - task: NodeTool@0
     inputs:
-      versionSpec: '10.15.x'
+      versionSpec: '10.18.x'
     displayName: 'Install required Node.js version'
   - powershell: Rename-Item C:\npm\prefix\yarn.cmd C:\npm\prefix\yarn_default.cmd; Rename-Item C:\npm\prefix\yarnpkg.cmd C:\npm\prefix\yarnpkg_default.cmd
     condition: eq(variables['Agent.OS'], 'Windows_NT')
@@ -9,7 +9,7 @@ steps:
   - task: Npm@1
     inputs:
       command: custom
-      customCommand: i -g yarn@1.10.1
+      customCommand: i -g yarn@1.21.1
     displayName: 'Install required Yarn version'
   - task: Npm@1
     inputs:
