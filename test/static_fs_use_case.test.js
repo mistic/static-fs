@@ -24,6 +24,7 @@ describe('Static Fs Use Case', () => {
   });
 
   test('use case of run a mock project for errors', () => {
+    console.log(mockProjectStderr);
     expect(mockProjectStderr.length).toBe(0);
   })
 });
