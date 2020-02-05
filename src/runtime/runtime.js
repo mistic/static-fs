@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import * as realFs from 'fs';
 import * as Module from 'module';
 import { StaticFilesystem } from '../filesystem';
 import { patchChildProcess, patchFilesystem, patchModuleLoader, patchProcess } from './patch';
@@ -17,7 +17,7 @@ if (isRunningAsEntry()) {
   delete process.env.STATIC_FS_MAIN_RUNTIME_PATH;
 
   try {
-    startPath = fs.realpathSync(currentRuntimePath);
+    startPath = realFs.realpathSync(currentRuntimePath);
   } catch {
     /* no-op */
   }
@@ -29,7 +29,7 @@ if (isRunningAsEntry()) {
   }
 
   for (let i = 0; i < process.argv.length; i++) {
-    if (fs.realpathSync(process.argv[i]) === startPath) {
+    if (realFs.realpathSync(process.argv[i]) === startPath) {
       process.argv.splice(i, 1);
       while (i < process.argv.length && process.argv[i].startsWith('--static-fs-volumes=')) {
         const staticFsVolume = process.argv[i].split('=')[1];
