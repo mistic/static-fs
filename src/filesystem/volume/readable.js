@@ -1,8 +1,6 @@
-import * as filesystem from 'fs';
+import * as realFs from 'fs';
 import { basename, dirname, resolve } from 'path';
 import { calculateHash, INT_SIZE, sanitizePath, unixifyPath } from '../../common';
-
-const fs = { ...filesystem };
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
@@ -39,11 +37,11 @@ export class ReadableStaticVolume {
       isFIFO: () => false,
       isSocket: () => false,
       size: 0,
-      ...fs.statSync(this.sourcePath),
+      ...realFs.statSync(this.sourcePath),
     };
 
     // read the index
-    this.fd = fs.openSync(this.sourcePath, 'r');
+    this.fd = realFs.openSync(this.sourcePath, 'r');
     // close on process exit.
     let dataOffset = this.readInt();
 
@@ -105,17 +103,17 @@ export class ReadableStaticVolume {
   }
 
   readBuffer(buffer, length) {
-    return fs.readSync(this.fd, buffer, 0, length || buffer.length, null);
+    return realFs.readSync(this.fd, buffer, 0, length || buffer.length, null);
   }
 
   readInt() {
-    fs.readSync(this.fd, this.intBuffer, 0, INT_SIZE, null);
+    realFs.readSync(this.fd, this.intBuffer, 0, INT_SIZE, null);
     return this.intBuffer.readIntBE(0, 6);
   }
 
   shutdown() {
     if (this.fd > 0) {
-      fs.closeSync(this.fd);
+      realFs.closeSync(this.fd);
     }
     this.reset();
   }
@@ -195,7 +193,7 @@ export class ReadableStaticVolume {
     }
 
     // read the content and return a string
-    fs.readSync(this.fd, this.buf, 0, item.size, item.ino);
+    realFs.readSync(this.fd, this.buf, 0, item.size, item.ino);
 
     if (!encoding) {
       const buf = Buffer.alloc(item.size);
@@ -247,7 +245,7 @@ export class ReadableStaticVolume {
           consumers: 1,
         });
 
-        fs.read(this.fd, cachedFile.buffer, 0, item.size, item.ino, (err) => {
+        realFs.read(this.fd, cachedFile.buffer, 0, item.size, item.ino, (err) => {
           if (err) {
             callback(err);
           }

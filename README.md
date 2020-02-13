@@ -38,7 +38,7 @@ tool was designed to be used during a build process` under certain assumptions.
 - Pack multiple files into a single one called static filesystem that would 
 mount relatively to the parent directory where it is generated
 
-- Patches `require`, `fs and child_process` to be able to read 
+- Patches `require`, `fs`, `process` and `child_process` to be able to read 
 from the static filesystem
 
 - Run multiple static filesystem per application
@@ -106,7 +106,7 @@ from the generated static filesystem, and any path (folder or file) listed on `e
 would be discarded.
 
 > NOTE: After running that function a folder called `static_fs` would be 
-created inside `mountRootDir` with `static_fs_volume.sfsv` and 
+created inside `mountRootDir` with `static_fs_volume.sfsv`, `static_fs_manifest.json` and 
 `static_fs_runtime.js`.
 
 **Params** 
