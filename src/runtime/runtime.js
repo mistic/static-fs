@@ -87,8 +87,9 @@ export function load(staticFsVolume) {
   }
 }
 
-export function unload(staticFsVolume) {
+export function shutdown() {
   if (global.__STATIC_FS_RUNTIME.undo) {
-    global.__STATIC_FS_RUNTIME.staticfilesystem.unload(staticFsVolume);
+    global.__STATIC_FS_RUNTIME.staticfilesystem.shutdown();
+    global.__STATIC_FS_RUNTIME.staticfilesystem.undo();
   }
 }

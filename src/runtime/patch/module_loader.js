@@ -1,3 +1,6 @@
+// NOTE: this is re-implementation of some core methods of
+// https://github.com/nodejs/node/blob/v10.x/lib/internal/modules/cjs/loader.js
+
 import * as realFs from 'fs';
 import * as Module from 'module';
 import { isAbsolute, resolve, toNamespacedPath } from 'path';

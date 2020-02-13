@@ -66,23 +66,6 @@ export class StaticFilesystem {
     return Object.keys(this.volumes);
   }
 
-  unload(sourcePath) {
-    sourcePath = resolve(sourcePath);
-
-    if (!this.volumes[sourcePath]) {
-      return this;
-    }
-
-    const volumeToUnload = this.volumes[sourcePath];
-    if (volumeToUnload.sourcePath !== sourcePath) {
-      return this;
-    }
-
-    volumeToUnload.shutdown();
-
-    return this;
-  }
-
   get entries() {
     return Object.keys(this.pathVolumeMap);
   }
