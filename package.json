@@ -64,7 +64,7 @@
     "webpack-node-externals": "^1.7.2"
   },
   "engines": {
-    "node": "^10.18.0",
+    "node": "^10.19.0",
     "yarn": "^1.21.1"
   },
   "config": {
