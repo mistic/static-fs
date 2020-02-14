@@ -1,6 +1,6 @@
 steps:
   - bash: |
-      "##vso[task.setvariable variable=NVMRC]$(cat .nvmrc)"
+      echo "##vso[task.setvariable variable=NVMRC]$(cat .nvmrc)"
     displayName: 'Read .nvmrc file into var NVMRC'
   - task: NodeTool@0
     inputs:
