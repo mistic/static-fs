@@ -1,5 +1,13 @@
 # Static-Fs Changelog
 
+# [1.5.0](https://github.com/mistic/static-fs/compare/v1.4.0...v1.5.0) (2020-02-14)
+
+
+### Features
+
+* look into real fs first and then into static fs to allow overrides ([#150](https://github.com/mistic/static-fs/issues/150)) ([b86c49e](https://github.com/mistic/static-fs/commit/b86c49e))
+* sorted manifest file content ([#151](https://github.com/mistic/static-fs/issues/151)) ([e05c8cc](https://github.com/mistic/static-fs/commit/e05c8cc))
+
 # [1.4.0](https://github.com/mistic/static-fs/compare/v1.3.0...v1.4.0) (2020-01-29)
 
 
