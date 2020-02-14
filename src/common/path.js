@@ -38,7 +38,7 @@ export function isWindowsPath(filePath) {
   return false;
 }
 
+// Unixify and resolve path
 export function sanitizePath(...args) {
-  const resolvedPath = resolve(...args);
-  return unixifyPath(resolvedPath);
+  return unixifyPath(resolve(...args));
 }
