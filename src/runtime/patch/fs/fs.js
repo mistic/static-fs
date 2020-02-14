@@ -6,18 +6,9 @@ function patchFn(sfs, realFs, fn) {
   };
 }
 
-function existsInRealFs(realFs, filePath) {
+function existsInFs(fs, filePath) {
   try {
-    return !!realFs.statSync(filePath);
-  } catch {
-    /* no-op */
-  }
-  return false;
-}
-
-function existsInSfs(sfs, filePath) {
-  try {
-    return !!sfs.statSync(filePath);
+    return !!fs.statSync(filePath);
   } catch {
     /* no-op */
   }
@@ -27,13 +18,14 @@ function existsInSfs(sfs, filePath) {
 function existsFdInSfs(sfs, fd) {
   try {
     sfs.getValidatedFD(fd);
-    return existsInSfs(sfs, fd.filePath);
+    return existsInFs(sfs, fd.filePath);
   } catch {
     /* no-op */
   }
   return false;
 }
 
+// Node Fs module patched methods
 function close(sfs, realFs, fd, callback) {
   if (existsFdInSfs(sfs, fd)) {
     return sfs.close(fd, callback);
@@ -44,7 +36,10 @@ function close(sfs, realFs, fd, callback) {
 
 function createReadStream(sfs, realFs, path, options) {
   const optionsFd = options && options.fd;
-  if (existsInSfs(sfs, path) || existsFdInSfs(sfs, optionsFd)) {
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsFdInSfs(sfs, optionsFd) || existsInFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
     return sfs.createReadStream(path, options);
   }
 
@@ -53,8 +48,9 @@ function createReadStream(sfs, realFs, path, options) {
 
 function fstat(sfs, realFs, fd, options, callback) {
   const sanitizedCallback = typeof callback === 'function' ? callback : options;
+  const isOnSfs = existsFdInSfs(sfs, fd);
 
-  if (existsFdInSfs(sfs, fd)) {
+  if (isOnSfs) {
     return sfs.fstat(fd, sanitizedCallback);
   }
 
@@ -65,6 +61,8 @@ function open(sfs, realFs, path, flags, mode, callback) {
   let sanitizedCallback;
   let sanitizedMode;
   let sanitizedFlags;
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
 
   if (callback) {
     sanitizedCallback = callback;
@@ -80,7 +78,7 @@ function open(sfs, realFs, path, flags, mode, callback) {
     sanitizedFlags = 'r';
   }
 
-  if (existsInSfs(sfs, path)) {
+  if (isOnSfs && !isOnRealFs) {
     return sfs.open(path, sanitizedCallback);
   }
 
@@ -96,7 +94,10 @@ function closeSync(sfs, realFs, fd) {
 }
 
 function readFileSync(sfs, realFs, path, options) {
-  if (existsInSfs(sfs, path)) {
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
     return sfs.readFileSync(path, options);
   }
 
@@ -104,7 +105,10 @@ function readFileSync(sfs, realFs, path, options) {
 }
 
 function realpathSync(sfs, realFs, path, options) {
-  if (existsInSfs(sfs, path)) {
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
     return sfs.realpathSync(path);
   }
 
@@ -113,12 +117,14 @@ function realpathSync(sfs, realFs, path, options) {
 
 function readdirSync(sfs, realFs, path, options) {
   const dirContent = [];
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
 
-  if (existsInSfs(sfs, path)) {
+  if (isOnSfs) {
     dirContent.push(...sfs.readdirSync(path));
   }
 
-  if (existsInRealFs(realFs, path)) {
+  if (isOnRealFs) {
     dirContent.push(...realFs.readdirSync(path, options));
   }
 
@@ -126,7 +132,10 @@ function readdirSync(sfs, realFs, path, options) {
 }
 
 function statSync(sfs, realFs, path) {
-  if (existsInSfs(sfs, path)) {
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
     return sfs.statSync(path);
   }
 
@@ -134,14 +143,16 @@ function statSync(sfs, realFs, path) {
 }
 
 function existsSync(sfs, realFs, path) {
-  return existsInSfs(sfs, path) || realFs.existsSync(path);
+  return existsInFs(sfs, path) || existsInFs(realFs, path);
 }
 
 function readFile(sfs, realFs, path, options, callback) {
   const sanitizedCallback = typeof callback === 'function' ? callback : options;
   const sanitizedOptions = typeof options === 'object' || typeof options === 'string' ? options : null;
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
 
-  if (existsInSfs(sfs, path)) {
+  if (isOnSfs && !isOnRealFs) {
     return sfs.readFile(path, sanitizedOptions, sanitizedCallback);
   }
 
@@ -150,8 +161,10 @@ function readFile(sfs, realFs, path, options, callback) {
 
 function realpath(sfs, realFs, path, options, callback) {
   const sanitizedCallback = typeof callback === 'function' ? callback : options;
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
 
-  if (existsInSfs(sfs, path)) {
+  if (isOnSfs && !isOnRealFs) {
     return sfs.realpath(path, sanitizedCallback);
   }
 
@@ -161,10 +174,10 @@ function realpath(sfs, realFs, path, options, callback) {
 function readdir(sfs, realFs, path, options, callback) {
   const sanitizedCallback = typeof callback === 'function' ? callback : options;
   const sanitizedOptions = typeof options === 'object' ? options : { encoding: 'utf8', withFileTypes: false };
-  const pathExistsInRealFs = existsInRealFs(realFs, path);
-  const pathExistsInFs = existsInSfs(sfs, path);
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
 
-  if (pathExistsInRealFs && pathExistsInFs) {
+  if (isOnRealFs && isOnSfs) {
     const dirContent = [];
 
     return sfs.readdir(path, (error, files) => {
@@ -184,17 +197,19 @@ function readdir(sfs, realFs, path, options, callback) {
     });
   }
 
-  if (pathExistsInRealFs) {
-    return realFs.readdir(path, options, callback);
+  if (isOnSfs) {
+    return sfs.readdir(path, sanitizedCallback);
   }
 
-  return sfs.readdir(path, sanitizedCallback);
+  return realFs.readdir(path, options, callback);
 }
 
 function stat(sfs, realFs, path, options, callback) {
   const sanitizedCallback = typeof callback === 'function' ? callback : options;
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
 
-  if (existsInSfs(sfs, path)) {
+  if (isOnSfs && !isOnRealFs) {
     return sfs.stat(path, sanitizedCallback);
   }
 
@@ -202,7 +217,10 @@ function stat(sfs, realFs, path, options, callback) {
 }
 
 function exists(sfs, realFs, path, callback) {
-  if (existsInSfs(sfs, path)) {
+  const isOnRealFs = existsInFs(realFs, path);
+  const isOnSfs = existsInFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
     return process.nextTick(() => callback(true));
   }
 
