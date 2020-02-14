@@ -116,8 +116,8 @@ export class WritableStaticVolume {
       mountingRoot: this.mountingRoot,
       hash: this.hash,
       volume: this.outputFile,
-      directories: Object.keys(this.directoriesIndex),
-      files: Object.keys(this.index),
+      directories: Object.keys(this.directoriesIndex).sort(),
+      files: Object.keys(this.index).sort(),
     };
 
     await writeFile(this.manifestFile, JSON.stringify(manifestContent, null, 2));
