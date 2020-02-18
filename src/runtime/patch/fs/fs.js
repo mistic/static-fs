@@ -198,23 +198,40 @@ function readdir(sfs, realFs, path, options, callback) {
   const isOnSfs = isOnFs(sfs, path);
 
   if (isOnRealFs && isOnSfs) {
-    const dirContent = [];
-
-    return sfs.readdir(path, (error, files) => {
-      if (error) {
-        return sanitizedCallback(error);
-      }
-
-      dirContent.push(...files);
-      return realFs.readdir(path, sanitizedOptions, (realError, realFiles) => {
-        if (realError) {
-          return sanitizedCallback(realError);
+    const sfsReadDir = new Promise((resolve, reject) => {
+      sfs.readdir(path, (error, files) => {
+        if (error) {
+          return reject(error);
         }
 
-        dirContent.push(...realFiles);
-        return sanitizedCallback(null, Array.from(new Set(dirContent).keys()));
+        resolve(files);
       });
     });
+
+    const realFsReadDir = new Promise((resolve, reject) => {
+      realFs.readdir(path, sanitizedOptions, (realError, realFiles) => {
+        if (realError) {
+          return reject(realError);
+        }
+
+        resolve(realFiles);
+      });
+    });
+
+    return Promise.all([sfsReadDir, realFsReadDir])
+      .then(allFiles => {
+        sanitizedCallback(
+          null,
+          Array.from(
+            new Set(
+              [].concat(...allFiles)
+            ).keys()
+          )
+        );
+      })
+      .catch(error => {
+        sanitizedCallback(error);
+      });
   }
 
   if (isOnSfs) {
@@ -240,11 +257,11 @@ function exists(sfs, realFs, path, callback) {
   const isOnRealFs = isOnFs(realFs, path);
   const isOnSfs = isOnFs(sfs, path);
 
-  if (isOnSfs && !isOnRealFs) {
+  if (isOnSfs || isOnRealFs) {
     return callback(true);
   }
 
-  return realFs.exists(path, callback);
+  return callback(false);
 }
 
 export function createPatchedFs(sfsRuntime, originalFs) {

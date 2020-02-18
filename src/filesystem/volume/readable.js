@@ -4,9 +4,10 @@ import { calculateHash, INT_SIZE, sanitizePath, unixifyPath } from '../../common
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
-    this.sourcePath = sourcePath;
     this.moutingRoot = resolve(dirname(this.sourcePath), '../');
     this.runtimePath = resolve(dirname(this.sourcePath), 'static_fs_runtime.js');
+    this.sourcePath = sourcePath;
+
     this.reset();
   }
 
@@ -14,15 +15,16 @@ export class ReadableStaticVolume {
     this.buf = Buffer.alloc(1024 * 16);
     this.directoriesIndex = {};
     this.fd = -1;
+    this.filesBeingRead = {};
     this.hash = '';
     this.intBuffer = Buffer.alloc(INT_SIZE);
     this.index = {};
     this.statData = {};
-    this.filesBeingRead = {};
     this.pathVolumeIndex = {};
   }
 
   load() {
+    // already load?
     if (this.fd >= 0) {
       return;
     }
@@ -112,9 +114,12 @@ export class ReadableStaticVolume {
   }
 
   shutdown() {
+    // In case fd is open close it
+    // to release the file
     if (this.fd > 0) {
       realFs.closeSync(this.fd);
     }
+
     this.reset();
   }
 
@@ -253,7 +258,7 @@ export class ReadableStaticVolume {
         });
       }
     } else {
-      callback(new Error());
+      callback(new Error(`The path you are trying to read is not a file: ${filePath}`));
     }
   }
 }

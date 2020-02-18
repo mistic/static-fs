@@ -5,35 +5,42 @@ import { ReadStream } from './streams';
 import { ReadableStaticVolume } from './volume';
 
 export class StaticFilesystem {
-  static NewError(code, method, filepath) {
+  static NewError(code, method, data) {
     switch (code) {
       case constants.errno.ENOENT:
         return {
-          ...new Error(`ENOENT: no such file or directory, ${method} '${filepath}'`),
+          ...new Error(`ENOENT: no such file or directory, ${method} '${data}'`),
           code: 'ENOENT',
-          path: filepath,
+          path: data,
           errno: constants.errno.ENOENT,
         };
       case constants.errno.EISDIR:
         return {
-          ...new Error(`EISDIR: illegal operation on a directory, ${method} '${filepath}'`),
+          ...new Error(`EISDIR: illegal operation on a directory, ${method} '${data}'`),
           code: 'EISDIR',
-          path: filepath,
+          path: data,
           errno: constants.errno.EISDIR,
+        };
+      case constants.errno.EBADF:
+        return {
+          ...new Error(`EBADF: bad file number, ${method} ${data}`),
+          code: 'EBADF',
+          info: data,
+          errno: constants.errno.EBADF,
         };
     }
     return {
-      ...new Error(`UNKNOWN: Error, ${method} '${filepath}'`),
+      ...new Error(`UNKNOWN: Error, ${method} ${data}`),
       code: 'UNKNOWN',
-      path: filepath,
+      info: data,
       errno: -10000,
     };
   }
 
   constructor() {
-    this.volumes = {};
     this.fds = {};
     this.pathVolumeMap = {};
+    this.volumes = {};
   }
 
   shutdown() {
@@ -68,6 +75,36 @@ export class StaticFilesystem {
 
   get entries() {
     return Object.keys(this.pathVolumeMap);
+  }
+
+  getValidatedFD(fd) {
+    if (!fd || !fd.type || fd.type !== 'static_fs_file_descriptor') {
+      throw StaticFilesystem.NewError(constants.errno.EBADF, 'getValidatedFD', fd);
+    }
+
+    const sfsFd = this.fds[fd.id];
+    if (!sfsFd) {
+      throw StaticFilesystem.NewError(constants.errno.EBADF, 'getValidatedFD', fd);
+    }
+
+    return sfsFd;
+  }
+
+  volumeForFilepathSync(filePath) {
+    const targetPath = sanitizePath(filePath);
+    const volumePathForFilePath = this.pathVolumeMap[targetPath];
+
+    if (!volumePathForFilePath) {
+      return undefined;
+    }
+
+    const volumeForFilePath = this.volumes[volumePathForFilePath];
+
+    if (!volumeForFilePath) {
+      return undefined;
+    }
+
+    return volumeForFilePath;
   }
 
   readFileSync(filePath, options) {
@@ -147,23 +184,6 @@ export class StaticFilesystem {
     });
   }
 
-  volumeForFilepathSync(filePath) {
-    const targetPath = sanitizePath(filePath);
-    const volumePathForFilePath = this.pathVolumeMap[targetPath];
-
-    if (!volumePathForFilePath) {
-      return undefined;
-    }
-
-    const volumeForFilePath = this.volumes[volumePathForFilePath];
-
-    if (!volumeForFilePath) {
-      return undefined;
-    }
-
-    return volumeForFilePath;
-  }
-
   statSync(filePath) {
     const volume = this.volumeForFilepathSync(filePath);
 
@@ -213,19 +233,6 @@ export class StaticFilesystem {
     process.nextTick(() => {
       callback(undefined, Object.keys(volume.getFromDirectoriesIndex(filePath)) || []);
     });
-  }
-
-  getValidatedFD(fd) {
-    if (!fd || !fd.type || fd.type !== 'static_fs_file_descriptor') {
-      throw StaticFilesystem.NewError(constants.errno.EBADF, 'getValidatedFD', fd);
-    }
-
-    const sfsFd = this.fds[fd.id];
-    if (!sfsFd) {
-      throw StaticFilesystem.NewError(constants.errno.EEXIST, 'getValidatedFD', fd);
-    }
-
-    return sfsFd;
   }
 
   open(filePath, callback) {
