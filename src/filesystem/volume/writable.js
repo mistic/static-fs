@@ -4,8 +4,8 @@ import { calculateHash, close, INT_SIZE, mkdir, open, readdir, readFile, stat, w
 export class WritableStaticVolume {
   constructor(mountingRoot) {
     this.mountingRoot = mountingRoot;
-    this.outputFile = resolve(this.mountingRoot, 'static_fs/static_fs_volume.sfsv');
     this.manifestFile = resolve(this.mountingRoot, 'static_fs/static_fs_manifest.json');
+    this.outputFile = resolve(this.mountingRoot, 'static_fs/static_fs_volume.sfsv');
     this.reset();
   }
 

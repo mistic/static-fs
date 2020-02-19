@@ -107,6 +107,19 @@ export class StaticFilesystem {
     return volumeForFilePath;
   }
 
+  wrapAsync(method, args, callback) {
+    if (typeof callback !== 'function') throw new Error('Callback is not a function');
+    process.nextTick(() => {
+      try {
+        callback(null, method.apply(this, args));
+      } catch (err) {
+        err.message = err.message.replace(/Sync/gi, '');
+        callback(err);
+      }
+    });
+  }
+
+  // string, buffer or FD to read file
   readFileSync(filePath, options) {
     const volume = this.volumeForFilepathSync(filePath);
 
@@ -118,46 +131,46 @@ export class StaticFilesystem {
   }
 
   readFile(filePath, options, callback) {
-    const volume = this.volumeForFilepathSync(filePath);
-
-    if (!volume) {
-      process.nextTick(() => {
-        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'readFile', filePath));
-      });
-      return;
-    }
-
-    const foundFile = volume.readFileSync(filePath, options);
-    process.nextTick(() => {
-      callback(undefined, foundFile);
-    });
+    this.wrapAsync(this.readFileSync, [filePath, options], callback);
   }
 
-  read(fd, buffer, offset, length, position, callback) {
+  readSync(fd, buffer, offset, length, position) {
     try {
       this.getValidatedFD(fd);
     } catch (e) {
-      process.nextTick(() => {
-        callback(e);
-      });
-      return;
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'readSync', e);
     }
 
     const filePath = fd.filePath;
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      process.nextTick(() => {
-        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'read', fd));
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'readSync', fd);
+    }
+
+    return volume.readSync(filePath, buffer, offset, length, position);
+  }
+
+  read(fd, buffer, offset, length, position, callback) {
+    // copied from Node implementation
+    if (length === 0) {
+      return process.nextTick(() => {
+        if (callback) callback(null, 0, buffer);
       });
-      return;
     }
 
     process.nextTick(() => {
-      volume.read(filePath, buffer, offset, length, position, callback);
+      try {
+        const readBytes = this.readSync(fd, buffer, offset, length, position);
+        callback(null, readBytes, buffer);
+      } catch (err) {
+        err.message = err.message.replace(/Sync/gi, '');
+        callback(err);
+      }
     });
   }
 
+  // encoding => strToEncoding
   realpathSync(filePath) {
     const volume = this.volumeForFilepathSync(filePath);
 
@@ -169,80 +182,44 @@ export class StaticFilesystem {
   }
 
   realpath(filePath, callback) {
-    const volume = this.volumeForFilepathSync(filePath);
-
-    if (!volume) {
-      process.nextTick(() => {
-        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'realpath', filePath));
-      });
-      return;
-    }
-
-    const foundPath = volume.getFromIndex(filePath) ? sanitizePath(filePath) : undefined;
-    process.nextTick(() => {
-      callback(undefined, foundPath);
-    });
+    this.wrapAsync(this.realpathSync, [filePath], callback);
   }
 
+  // bigint
   statSync(filePath) {
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      StaticFilesystem.NewError(constants.errno.ENOENT, 'statSync', filePath);
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'statSync', filePath);
     }
 
     return volume.getFromIndex(filePath);
   }
 
   stat(filePath, callback) {
-    const volume = this.volumeForFilepathSync(filePath);
-
-    if (!volume) {
-      process.nextTick(() => {
-        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'stat', filePath));
-      });
-      return;
-    }
-
-    const foundStat = volume.getFromIndex(filePath);
-    process.nextTick(() => {
-      callback(undefined, foundStat);
-    });
+    this.wrapAsync(this.statSync, [filePath], callback);
   }
 
+  // encoding, withFileTypes
   readdirSync(filePath) {
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      StaticFilesystem.NewError(constants.errno.ENOENT, 'readdirSync', filePath);
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'readdirSync', filePath);
     }
 
     return Object.keys(volume.getFromDirectoriesIndex(filePath)) || [];
   }
 
   readdir(filePath, callback) {
-    const volume = this.volumeForFilepathSync(filePath);
-
-    if (!volume) {
-      process.nextTick(() => {
-        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'readdir', filePath));
-      });
-      return;
-    }
-
-    process.nextTick(() => {
-      callback(undefined, Object.keys(volume.getFromDirectoriesIndex(filePath)) || []);
-    });
+    this.wrapAsync(this.readdirSync, [filePath], callback);
   }
 
-  open(filePath, callback) {
+  openSync(filePath) {
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
-      process.nextTick(() => {
-        callback(StaticFilesystem.NewError(constants.errno.ENOENT, 'open', filePath));
-      });
-      return;
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'openSync', filePath);
     }
 
     const fdIdentifier = `${volume.sourcePath}#${sanitizePath(filePath)}`;
@@ -253,48 +230,40 @@ export class StaticFilesystem {
       filePath: filePath,
     };
 
-    process.nextTick(() => {
-      callback(undefined, this.fds[fdIdentifier]);
-    });
+    return this.fds[fdIdentifier];
   }
 
-  close(fd, callback) {
-    try {
-      this.getValidatedFD(fd);
-    } catch (e) {
-      process.nextTick(() => {
-        callback(e);
-      });
-      return;
-    }
-
-    delete this.fds[fd.id];
-    process.nextTick(() => {
-      callback();
-    });
+  open(filePath, callback) {
+    this.wrapAsync(this.openSync, [filePath], callback);
   }
 
   closeSync(fd) {
     try {
       this.getValidatedFD(fd);
     } catch (e) {
-      StaticFilesystem.NewError(constants.errno.ENOENT, 'closeSync', e);
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'closeSync', e);
     }
 
     delete this.fds[fd.id];
   }
 
-  fstat(fd, callback) {
+  close(fd, callback) {
+    this.wrapAsync(this.closeSync, [fd], callback);
+  }
+
+  // bigint
+  fstatSync(fd) {
     try {
       this.getValidatedFD(fd);
     } catch (e) {
-      process.nextTick(() => {
-        callback(e);
-      });
-      return;
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'fstatSync', e);
     }
 
-    this.stat(fd.filePath, callback);
+    return this.statSync(fd.filePath);
+  }
+
+  fstat(fd, callback) {
+    this.wrapAsync(this.fstatSync, [fd], callback);
   }
 
   createReadStream(filePath, options) {

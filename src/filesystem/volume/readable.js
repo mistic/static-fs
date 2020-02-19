@@ -4,10 +4,9 @@ import { calculateHash, INT_SIZE, sanitizePath, unixifyPath } from '../../common
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
+    this.sourcePath = sourcePath;
     this.moutingRoot = resolve(dirname(this.sourcePath), '../');
     this.runtimePath = resolve(dirname(this.sourcePath), 'static_fs_runtime.js');
-    this.sourcePath = sourcePath;
-
     this.reset();
   }
 
@@ -221,21 +220,20 @@ export class ReadableStaticVolume {
     }
   }
 
-  _readFromCache(filePath, buffer, offset, length, position, callback) {
+  _readFromCache(filePath, buffer, offset, length, position) {
     const cachedBuffer = this.filesBeingRead[filePath].buffer;
 
     if (position >= cachedBuffer.length) {
       this._deleteReadFileFromCache(filePath, length, position);
-      callback(null, 0, buffer);
-      return;
+      return 0;
     }
 
     const copiedBytes = cachedBuffer.copy(buffer, offset, position, Math.min(position + length, cachedBuffer.length));
     this._deleteReadFileFromCache(filePath, length, position);
-    callback(null, copiedBytes, buffer);
+    return copiedBytes;
   }
 
-  read(filePath, buffer, offset, length, position, callback) {
+  readSync(filePath, buffer, offset, length, position) {
     const sanitizedFilePath = sanitizePath(filePath);
     const item = this.index[sanitizedFilePath];
 
@@ -243,22 +241,18 @@ export class ReadableStaticVolume {
       // read the content and return a string
       if (this.filesBeingRead[filePath]) {
         this.filesBeingRead[filePath].consumers += 1;
-        this._readFromCache(filePath, buffer, offset, length, position, callback);
+        return this._readFromCache(filePath, buffer, offset, length, position);
       } else {
         const cachedFile = (this.filesBeingRead[filePath] = {
           buffer: Buffer.alloc(item.size),
           consumers: 1,
         });
 
-        realFs.read(this.fd, cachedFile.buffer, 0, item.size, item.ino, (err) => {
-          if (err) {
-            callback(err);
-          }
-          this._readFromCache(filePath, buffer, offset, length, position, callback);
-        });
+        realFs.readSync(this.fd, cachedFile.buffer, 0, item.size, item.ino);
+        return this._readFromCache(filePath, buffer, offset, length, position);
       }
     } else {
-      callback(new Error(`The path you are trying to read is not a file: ${filePath}`));
+      throw new Error(`The path you are trying to read is not a file: ${filePath}`);
     }
   }
 }

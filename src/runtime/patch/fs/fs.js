@@ -25,7 +25,8 @@ function existsFdInFs(fs, fd) {
       return false;
     }
 
-    if (typeof fd === 'number') {
+    // check for uint32
+    if (typeof fd === 'number' && fd >>> 0 === fd) {
       return !!fs.fstatSync(fd);
     }
 
@@ -64,6 +65,17 @@ function createReadStream(sfs, realFs, path, options) {
   }
 
   return realFs.createReadStream(path, options);
+}
+
+function exists(sfs, realFs, path, callback) {
+  const isOnRealFs = isOnFs(realFs, path);
+  const isOnSfs = isOnFs(sfs, path);
+
+  if (isOnSfs || isOnRealFs) {
+    return callback(true);
+  }
+
+  return callback(false);
 }
 
 function fstat(sfs, realFs, fd, options, callback) {
@@ -105,90 +117,15 @@ function open(sfs, realFs, path, flags, mode, callback) {
   return realFs.open(path, sanitizedFlags, sanitizedMode, sanitizedCallback);
 }
 
-function closeSync(sfs, realFs, fd) {
-  if (isOnFs(sfs, null, fd)) {
-    return sfs.closeSync(fd);
-  }
-
-  return realFs.closeSync(fd);
-}
-
-function readFileSync(sfs, realFs, path, options) {
-  const isOnRealFs = isOnFs(realFs, path);
-  const isOnSfs = isOnFs(sfs, path);
+function read(sfs, realFs, fd, buffer, offset, length, position, callback) {
+  const isOnRealFs = isOnFs(realFs, null, fd);
+  const isOnSfs = isOnFs(sfs, null, fd);
 
   if (isOnSfs && !isOnRealFs) {
-    return sfs.readFileSync(path, options);
+    return sfs.read(fd, buffer, offset, length, position, callback);
   }
 
-  return realFs.readFileSync(path, options);
-}
-
-function realpathSync(sfs, realFs, path, options) {
-  const isOnRealFs = isOnFs(realFs, path);
-  const isOnSfs = isOnFs(sfs, path);
-
-  if (isOnSfs && !isOnRealFs) {
-    return sfs.realpathSync(path);
-  }
-
-  return realFs.realpathSync(path, options);
-}
-
-function readdirSync(sfs, realFs, path, options) {
-  const dirContent = [];
-  const isOnRealFs = isOnFs(realFs, path);
-  const isOnSfs = isOnFs(sfs, path);
-
-  if (isOnSfs) {
-    dirContent.push(...sfs.readdirSync(path));
-  }
-
-  if (isOnRealFs) {
-    dirContent.push(...realFs.readdirSync(path, options));
-  }
-
-  return Array.from(new Set(dirContent).keys());
-}
-
-function statSync(sfs, realFs, path) {
-  const isOnRealFs = isOnFs(realFs, path);
-  const isOnSfs = isOnFs(sfs, path);
-
-  if (isOnSfs && !isOnRealFs) {
-    return sfs.statSync(path);
-  }
-
-  return realFs.statSync(path);
-}
-
-function existsSync(sfs, realFs, path) {
-  return isOnFs(sfs, path) || isOnFs(realFs, path);
-}
-
-function readFile(sfs, realFs, path, options, callback) {
-  const sanitizedCallback = typeof callback === 'function' ? callback : options;
-  const sanitizedOptions = typeof options === 'object' || typeof options === 'string' ? options : null;
-  const isOnRealFs = isOnFs(realFs, path);
-  const isOnSfs = isOnFs(sfs, path);
-
-  if (isOnSfs && !isOnRealFs) {
-    return sfs.readFile(path, sanitizedOptions, sanitizedCallback);
-  }
-
-  return realFs.readFile(path, options, callback);
-}
-
-function realpath(sfs, realFs, path, options, callback) {
-  const sanitizedCallback = typeof callback === 'function' ? callback : options;
-  const isOnRealFs = isOnFs(realFs, path);
-  const isOnSfs = isOnFs(sfs, path);
-
-  if (isOnSfs && !isOnRealFs) {
-    return sfs.realpath(path, sanitizedCallback);
-  }
-
-  return realFs.realpath(path, options, callback);
+  return realFs.read(fd, buffer, offset, length, position, callback);
 }
 
 function readdir(sfs, realFs, path, options, callback) {
@@ -241,6 +178,31 @@ function readdir(sfs, realFs, path, options, callback) {
   return realFs.readdir(path, options, callback);
 }
 
+function readFile(sfs, realFs, path, options, callback) {
+  const sanitizedCallback = typeof callback === 'function' ? callback : options;
+  const sanitizedOptions = typeof options === 'object' || typeof options === 'string' ? options : null;
+  const isOnRealFs = isOnFs(realFs, path);
+  const isOnSfs = isOnFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
+    return sfs.readFile(path, sanitizedOptions, sanitizedCallback);
+  }
+
+  return realFs.readFile(path, options, callback);
+}
+
+function realpath(sfs, realFs, path, options, callback) {
+  const sanitizedCallback = typeof callback === 'function' ? callback : options;
+  const isOnRealFs = isOnFs(realFs, path);
+  const isOnSfs = isOnFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
+    return sfs.realpath(path, sanitizedCallback);
+  }
+
+  return realFs.realpath(path, options, callback);
+}
+
 function stat(sfs, realFs, path, options, callback) {
   const sanitizedCallback = typeof callback === 'function' ? callback : options;
   const isOnRealFs = isOnFs(realFs, path);
@@ -253,15 +215,110 @@ function stat(sfs, realFs, path, options, callback) {
   return realFs.stat(path, sanitizedCallback);
 }
 
-function exists(sfs, realFs, path, callback) {
+function openSync(sfs, realFs, path, flags, mode) {
+  let sanitizedMode;
+  let sanitizedFlags;
   const isOnRealFs = isOnFs(realFs, path);
   const isOnSfs = isOnFs(sfs, path);
 
-  if (isOnSfs || isOnRealFs) {
-    return callback(true);
+  if (!mode) {
+    sanitizedMode = 0o666;
+    sanitizedFlags = flags;
+  } else if (!flags) {
+    sanitizedMode = 0o666;
+    sanitizedFlags = 'r';
+  } else {
+    sanitizedMode = mode;
+    sanitizedFlags = flags;
   }
 
-  return callback(false);
+  if (isOnSfs && !isOnRealFs) {
+    return sfs.openSync(path);
+  }
+
+  return realFs.openSync(path, sanitizedFlags, sanitizedMode);
+}
+
+function closeSync(sfs, realFs, fd) {
+  if (isOnFs(sfs, null, fd)) {
+    return sfs.closeSync(fd);
+  }
+
+  return realFs.closeSync(fd);
+}
+
+function existsSync(sfs, realFs, path) {
+  return isOnFs(sfs, path) || isOnFs(realFs, path);
+}
+
+function fstatSync(sfs, realFs, fd, options) {
+  const isOnSfs = isOnFs(sfs, null, fd);
+
+  if (isOnSfs) {
+    return sfs.fstatSync(fd);
+  }
+
+  return realFs.fstatSync(fd, options);
+}
+
+function readSync(sfs, realFs, fd, buffer, offset, length, position) {
+  const isOnRealFs = isOnFs(realFs, null, fd);
+  const isOnSfs = isOnFs(sfs, null, fd);
+
+  if (isOnSfs && !isOnRealFs) {
+    return sfs.readSync(fd, buffer, offset, length, position);
+  }
+
+  return realFs.readSync(fd, buffer, offset, length, position);
+}
+
+function readdirSync(sfs, realFs, path, options) {
+  const dirContent = [];
+  const isOnRealFs = isOnFs(realFs, path);
+  const isOnSfs = isOnFs(sfs, path);
+
+  if (isOnSfs) {
+    dirContent.push(...sfs.readdirSync(path));
+  }
+
+  if (isOnRealFs) {
+    dirContent.push(...realFs.readdirSync(path, options));
+  }
+
+  return Array.from(new Set(dirContent).keys());
+}
+
+function readFileSync(sfs, realFs, path, options) {
+  const isOnRealFs = isOnFs(realFs, path);
+  const isOnSfs = isOnFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
+    return sfs.readFileSync(path, options);
+  }
+
+  return realFs.readFileSync(path, options);
+}
+
+function realpathSync(sfs, realFs, path, options) {
+  const isOnRealFs = isOnFs(realFs, path);
+  const isOnSfs = isOnFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
+    return sfs.realpathSync(path);
+  }
+
+  return realFs.realpathSync(path, options);
+}
+
+function statSync(sfs, realFs, path) {
+  const isOnRealFs = isOnFs(realFs, path);
+  const isOnSfs = isOnFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
+    return sfs.statSync(path);
+  }
+
+  return realFs.statSync(path);
 }
 
 export function createPatchedFs(sfsRuntime, originalFs) {
@@ -274,16 +331,20 @@ export function createPatchedFs(sfsRuntime, originalFs) {
     exists: patchFn(sfs, realFs, exists),
     fstat: patchFn(sfs, realFs, fstat),
     open: patchFn(sfs, realFs, open),
-    statSync: patchFn(sfs, realFs, statSync),
+    read: patchFn(sfs, realFs, read),
     readdir: patchFn(sfs, realFs, readdir),
     readFile: patchFn(sfs, realFs, readFile),
     realpath: patchFn(sfs, realFs, realpath),
     stat: patchFn(sfs, realFs, stat),
     closeSync: patchFn(sfs, realFs, closeSync),
     existsSync: patchFn(sfs, realFs, existsSync),
+    fstatSync: patchFn(sfs, realFs, fstatSync),
+    openSync: patchFn(sfs, realFs, openSync),
+    readSync: patchFn(sfs, realFs, readSync),
     readdirSync: patchFn(sfs, realFs, readdirSync),
     readFileSync: patchFn(sfs, realFs, readFileSync),
     realpathSync: patchFn(sfs, realFs, realpathSync),
+    statSync: patchFn(sfs, realFs, statSync),
   };
 
   const patchedPromises = createPatchedFsPromises(basePatchedFs);
