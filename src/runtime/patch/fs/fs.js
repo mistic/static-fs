@@ -156,17 +156,10 @@ function readdir(sfs, realFs, path, options, callback) {
     });
 
     return Promise.all([sfsReadDir, realFsReadDir])
-      .then(allFiles => {
-        sanitizedCallback(
-          null,
-          Array.from(
-            new Set(
-              [].concat(...allFiles)
-            ).keys()
-          )
-        );
+      .then((allFiles) => {
+        sanitizedCallback(null, Array.from(new Set([].concat(...allFiles)).keys()));
       })
-      .catch(error => {
+      .catch((error) => {
         sanitizedCallback(error);
       });
   }
