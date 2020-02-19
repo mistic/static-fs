@@ -1,6 +1,6 @@
 import { resolve } from 'path';
 import { constants } from 'os';
-import { sanitizePath } from '../common';
+import { nodePathToString, sanitizePath } from '../common';
 import { ReadStream } from './streams';
 import { ReadableStaticVolume } from './volume';
 
@@ -77,17 +77,19 @@ export class StaticFilesystem {
     return Object.keys(this.pathVolumeMap);
   }
 
+  isValidFD(fd) {
+    const isCorrectFormat = fd && fd.id && fd.type && fd.type === 'static_fs_file_descriptor';
+    const isPresent = this.fds[fd.id];
+
+    return isCorrectFormat && isPresent;
+  }
+
   getValidatedFD(fd) {
-    if (!fd || !fd.type || fd.type !== 'static_fs_file_descriptor') {
+    if (!this.isValidFD(fd)) {
       throw StaticFilesystem.NewError(constants.errno.EBADF, 'getValidatedFD', fd);
     }
 
-    const sfsFd = this.fds[fd.id];
-    if (!sfsFd) {
-      throw StaticFilesystem.NewError(constants.errno.EBADF, 'getValidatedFD', fd);
-    }
-
-    return sfsFd;
+    return this.fds[fd.id];
   }
 
   volumeForFilepathSync(filePath) {
@@ -119,8 +121,9 @@ export class StaticFilesystem {
     });
   }
 
-  // string, buffer or FD to read file
-  readFileSync(filePath, options) {
+  readFileSync(path, options) {
+    const isFd = this.isValidFD(path);
+    const filePath = isFd ? path.filePath : nodePathToString(path);
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
@@ -171,7 +174,8 @@ export class StaticFilesystem {
   }
 
   // encoding => strToEncoding
-  realpathSync(filePath) {
+  realpathSync(path) {
+    const filePath = nodePathToString(path);
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
@@ -186,7 +190,8 @@ export class StaticFilesystem {
   }
 
   // bigint
-  statSync(filePath) {
+  statSync(path) {
+    const filePath = nodePathToString(path);
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
@@ -201,7 +206,8 @@ export class StaticFilesystem {
   }
 
   // encoding, withFileTypes
-  readdirSync(filePath) {
+  readdirSync(path) {
+    const filePath = nodePathToString(path);
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
@@ -215,7 +221,8 @@ export class StaticFilesystem {
     this.wrapAsync(this.readdirSync, [filePath], callback);
   }
 
-  openSync(filePath) {
+  openSync(path) {
+    const filePath = nodePathToString(path);
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
