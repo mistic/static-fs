@@ -1,6 +1,6 @@
 import * as realFs from 'fs';
 import { basename, dirname, resolve } from 'path';
-import { calculateHash, INT_SIZE, sanitizePath, unixifyPath } from '../../common';
+import {calculateHash, INT_SIZE, sanitizePath, stat, unixifyPath} from '../../common';
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
@@ -128,6 +128,39 @@ export class ReadableStaticVolume {
 
   getFromIndex(filePath) {
     return this.index[sanitizePath(filePath)];
+  }
+
+  getStatsFromFilepath(filePath, bigInt = false) {
+    const baseStats = this.index[sanitizePath(filePath)];
+
+    if (!bigInt) {
+      return baseStats;
+    }
+
+    const getBigInt = (num) => {
+      if (typeof BigInt !== 'function') {
+        throw new Error('BigInt is not supported.');
+      }
+
+     return BigInt(num);
+    };
+
+    const bigIntStats = [
+      'size', 'dev', 'mode', 'nlink', 'uid', 'gid',
+      'rdev', 'blksize', 'ino', 'blocks', 'atimeMs',
+      'mtimeMs', 'ctimeMs', 'birthtimeMs'
+    ].reduce((newStats, statVal) => {
+      if (baseStats.hasOwnProperty(statVal)) {
+        newStats[statVal] = getBigInt(baseStats[statVal]);
+      }
+
+      return newStats;
+    }, {});
+
+    return {
+      ...baseStats,
+      ...bigIntStats()
+    }
   }
 
   addParentFolders(name) {

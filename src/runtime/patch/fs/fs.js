@@ -79,11 +79,12 @@ function exists(sfs, realFs, path, callback) {
 }
 
 function fstat(sfs, realFs, fd, options, callback) {
+  const sanitizedOptions = typeof options === 'function' ? { bigint: false } : options;
   const sanitizedCallback = typeof callback === 'function' ? callback : options;
   const isOnSfs = isOnFs(sfs, null, fd);
 
   if (isOnSfs) {
-    return sfs.fstat(fd, sanitizedCallback);
+    return sfs.fstat(fd, sanitizedOptions, sanitizedCallback);
   }
 
   return realFs.fstat(fd, options, callback);
@@ -197,15 +198,16 @@ function realpath(sfs, realFs, path, options, callback) {
 }
 
 function stat(sfs, realFs, path, options, callback) {
+  const sanitizedOptions = typeof options === 'function' ? { bigint: false } : options;
   const sanitizedCallback = typeof callback === 'function' ? callback : options;
   const isOnRealFs = isOnFs(realFs, path);
   const isOnSfs = isOnFs(sfs, path);
 
   if (isOnSfs && !isOnRealFs) {
-    return sfs.stat(path, sanitizedCallback);
+    return sfs.stat(path, sanitizedOptions, sanitizedCallback);
   }
 
-  return realFs.stat(path, sanitizedCallback);
+  return realFs.stat(path, options, callback);
 }
 
 function openSync(sfs, realFs, path, flags, mode) {
@@ -245,10 +247,11 @@ function existsSync(sfs, realFs, path) {
 }
 
 function fstatSync(sfs, realFs, fd, options) {
+  const sanitizedOptions = options || { bigint: false };
   const isOnSfs = isOnFs(sfs, null, fd);
 
   if (isOnSfs) {
-    return sfs.fstatSync(fd);
+    return sfs.fstatSync(fd, sanitizedOptions);
   }
 
   return realFs.fstatSync(fd, options);
@@ -303,15 +306,16 @@ function realpathSync(sfs, realFs, path, options) {
   return realFs.realpathSync(path, options);
 }
 
-function statSync(sfs, realFs, path) {
+function statSync(sfs, realFs, path, options) {
+  const sanitizedOptions = options || { bigint: false };
   const isOnRealFs = isOnFs(realFs, path);
   const isOnSfs = isOnFs(sfs, path);
 
   if (isOnSfs && !isOnRealFs) {
-    return sfs.statSync(path);
+    return sfs.statSync(path, sanitizedOptions);
   }
 
-  return realFs.statSync(path);
+  return realFs.statSync(path, options);
 }
 
 export function createPatchedFs(sfsRuntime, originalFs) {

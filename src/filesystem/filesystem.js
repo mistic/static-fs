@@ -133,8 +133,8 @@ export class StaticFilesystem {
     return volume.readFileSync(filePath, options);
   }
 
-  readFile(filePath, options, callback) {
-    this.wrapAsync(this.readFileSync, [filePath, options], callback);
+  readFile(path, options, callback) {
+    this.wrapAsync(this.readFileSync, [path, options], callback);
   }
 
   readSync(fd, buffer, offset, length, position) {
@@ -185,24 +185,24 @@ export class StaticFilesystem {
     return volume.getFromIndex(filePath) ? sanitizePath(filePath) : undefined;
   }
 
-  realpath(filePath, callback) {
-    this.wrapAsync(this.realpathSync, [filePath], callback);
+  realpath(path, callback) {
+    this.wrapAsync(this.realpathSync, [path], callback);
   }
 
-  // bigint
-  statSync(path) {
+  statSync(path, options) {
     const filePath = nodePathToString(path);
+    const bigInt = options && options.bigint;
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
       throw StaticFilesystem.NewError(constants.errno.ENOENT, 'statSync', filePath);
     }
 
-    return volume.getFromIndex(filePath);
+    return volume.getStatsFromFilepath(filePath, bigInt);
   }
 
-  stat(filePath, callback) {
-    this.wrapAsync(this.statSync, [filePath], callback);
+  stat(path, options, callback) {
+    this.wrapAsync(this.statSync, [path, options], callback);
   }
 
   // encoding, withFileTypes
@@ -217,8 +217,8 @@ export class StaticFilesystem {
     return Object.keys(volume.getFromDirectoriesIndex(filePath)) || [];
   }
 
-  readdir(filePath, callback) {
-    this.wrapAsync(this.readdirSync, [filePath], callback);
+  readdir(path, callback) {
+    this.wrapAsync(this.readdirSync, [path], callback);
   }
 
   openSync(path) {
@@ -240,8 +240,8 @@ export class StaticFilesystem {
     return this.fds[fdIdentifier];
   }
 
-  open(filePath, callback) {
-    this.wrapAsync(this.openSync, [filePath], callback);
+  open(path, callback) {
+    this.wrapAsync(this.openSync, [path], callback);
   }
 
   closeSync(fd) {
@@ -258,22 +258,21 @@ export class StaticFilesystem {
     this.wrapAsync(this.closeSync, [fd], callback);
   }
 
-  // bigint
-  fstatSync(fd) {
+  fstatSync(fd, options) {
     try {
       this.getValidatedFD(fd);
     } catch (e) {
       throw StaticFilesystem.NewError(constants.errno.ENOENT, 'fstatSync', e);
     }
 
-    return this.statSync(fd.filePath);
+    return this.statSync(fd.filePath, options);
   }
 
-  fstat(fd, callback) {
-    this.wrapAsync(this.fstatSync, [fd], callback);
+  fstat(fd, options, callback) {
+    this.wrapAsync(this.fstatSync, [fd, options], callback);
   }
 
-  createReadStream(filePath, options) {
-    return new ReadStream(this, filePath, options);
+  createReadStream(path, options) {
+    return new ReadStream(this, path, options);
   }
 }
