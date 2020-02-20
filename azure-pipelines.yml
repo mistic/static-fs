@@ -56,7 +56,7 @@ stages:
           - template: azure_pipelines_templates/steps_setup_tools.yml
           - script: yarn test --reporters=jest-junit
             env:
-              JEST_JUNIT_OUTPUT: ./junit-$(imageName).xml
+              JEST_JUNIT_OUTPUT_NAME: ./junit-$(imageName).xml
             displayName: Run tests on $(imageName)
           - task: PublishTestResults@2
             condition: succeededOrFailed()
