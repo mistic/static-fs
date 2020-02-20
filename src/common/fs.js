@@ -1,44 +1,96 @@
 import * as realFs from 'fs';
 import { dirname, normalize } from 'path';
+import { promisify } from 'util';
 
-// promisify async functions.
-export function readdir(path) {
-  return new Promise((r, j) => realFs.readdir(path, (err, files) => (err ? j(err) : r(files))));
-}
-export function stat(path) {
-  return new Promise((r, j) => realFs.stat(path, (err, files) => (err ? j(err) : r(files))));
-}
-export function lstat(path) {
-  return new Promise((r, j) => realFs.lstat(path, (err, files) => (err ? j(err) : r(files))));
-}
-export function open(path, flags, mode) {
-  return new Promise((r, j) => realFs.open(path, flags, mode, (err, descriptor) => (err ? j(err) : r(descriptor))));
-}
-export function close(fd) {
-  return new Promise((r, j) => realFs.close(fd, (err) => (err ? j(err) : r())));
-}
-export function write(fd, buffer, offset, length, position) {
-  return new Promise((r, j) =>
-    realFs.write(fd, buffer, offset || 0, length || buffer.length, position || undefined, (err, written) =>
-      err ? j(err) : r(written),
-    ),
-  );
-}
-export function read(fd, buffer, offset, length, position) {
-  return new Promise((r, j) =>
-    realFs.read(fd, buffer, offset, length, position || null, (err, bytes) => (err ? j(err) : r(bytes))),
-  );
-}
-export function readFile(path, options) {
-  return new Promise((r, j) => realFs.readFile(path, options, (err, data) => (err ? j(err) : r(data))));
+// promisify async functions from real fs
+export async function readdir(path) {
+  return promisify(realFs.readdir)(path);
 }
 
-function fs_mkdir(path) {
-  return new Promise((r, j) => realFs.mkdir(path, (err) => (err ? j(err) : r())));
+export async function stat(path) {
+  return promisify(realFs.stat)(path);
 }
 
-export function writeFile(filename, content) {
-  return new Promise((r, j) => realFs.writeFile(filename, content, (err) => (err ? j(err) : r())));
+export async function lstat(path) {
+  return promisify(realFs.lstat)(path);
+}
+
+export async function open(path, flags, mode) {
+  return promisify(realFs.open)(path, flags, mode);
+}
+
+export async function close(fd) {
+  return promisify(realFs.close)(fd);
+}
+
+export async function write(fd, buffer, offset, length, position) {
+  return promisify(realFs.write)(fd, buffer, offset || 0, length || buffer.length, position || undefined);
+}
+
+export async function read(fd, buffer, offset, length, position) {
+  return promisify(realFs.read)(fd, buffer, offset, length, position || null);
+}
+
+export async function readFile(path, options) {
+  return promisify(realFs.readFile)(path, options);
+}
+
+export async function writeFile(filename, content) {
+  return promisify(realFs.writeFile)(filename, content);
+}
+
+// custom functions
+
+export async function exists(path) {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    // don't throw!
+  }
+  return false;
+}
+
+export async function isDirectory(dirPath) {
+  try {
+    if (await exists(dirPath)) {
+      return (await lstat(dirPath)).isDirectory();
+    }
+  } catch {
+    // don't throw!
+  }
+  return false;
+}
+
+export async function isFile(filePath) {
+  try {
+    if (await exists(filePath)) {
+      return !(await lstat(filePath)).isDirectory();
+    }
+  } catch {
+    // don't throw!
+  }
+
+  return false;
+}
+
+export async function mkdir(dirPath) {
+  if (!(await isDirectory(dirPath))) {
+    const p = normalize(dirPath + '/');
+    const parent = dirname(dirPath);
+    if (!(await isDirectory(parent))) {
+      if (p !== parent) {
+        await mkdir(parent);
+      }
+    }
+    try {
+      await promisify(realFs.mkdir)(p);
+    } catch (e) {
+      if (!(await isDirectory(p))) {
+        throw new Error(e);
+      }
+    }
+  }
 }
 
 export async function copyFile(source, target) {
@@ -62,50 +114,7 @@ export async function copyFile(source, target) {
       wr.close();
       resolve();
     });
+
     rd.pipe(wr);
   });
-}
-
-export const exists = (path) => new Promise((r) => realFs.stat(path, (err) => (err ? r(false) : r(true))));
-
-export async function isDirectory(dirPath) {
-  try {
-    if (await exists(dirPath)) {
-      return (await lstat(dirPath)).isDirectory();
-    }
-  } catch (e) {
-    // don't throw!
-  }
-  return false;
-}
-
-export async function isFile(filePath) {
-  try {
-    if (await exists(filePath)) {
-      return !(await lstat(filePath)).isDirectory();
-    }
-  } catch (e) {
-    // don't throw!
-  }
-
-  return false;
-}
-
-export async function mkdir(dirPath) {
-  if (!(await isDirectory(dirPath))) {
-    const p = normalize(dirPath + '/');
-    const parent = dirname(dirPath);
-    if (!(await isDirectory(parent))) {
-      if (p !== parent) {
-        await mkdir(parent);
-      }
-    }
-    try {
-      await fs_mkdir(p);
-    } catch (e) {
-      if (!(await isDirectory(p))) {
-        throw new Error(e);
-      }
-    }
-  }
 }

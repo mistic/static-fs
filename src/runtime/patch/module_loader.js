@@ -134,7 +134,8 @@ export function patchModuleLoader(staticFsRuntime) {
     const isRelative =
       request.startsWith('./') ||
       request.startsWith('../') ||
-      ((isWindows && request.startsWith('.\\')) || request.startsWith('..\\'));
+      (isWindows && request.startsWith('.\\')) ||
+      request.startsWith('..\\');
 
     let result = Module._alternateFindPath(request, paths, isMain);
 

@@ -1,12 +1,11 @@
 'use strict';
 
-const { resolve } = require('path');
 const { patchModuleLoader } = require('static-fs/dist/runtime');
-const { unixifyPath } = require('static-fs/dist/common');
+const { sanitizePath } = require('static-fs/dist/common');
 
 const mockFs = {
   readFileSync: (path) => {
-    if (path === unixifyPath(resolve('./static_fs_mock/patched/path/file.js'))) {
+    if (path === sanitizePath('./static_fs_mock/patched/path/file.js')) {
       return 'module.exports = 1';
     }
     throw new Error();
@@ -15,7 +14,7 @@ const mockFs = {
     return path;
   },
   statSync: (path) => {
-    if (path === unixifyPath(resolve('.'))) {
+    if (path === sanitizePath('.')) {
       return {
         isFile: () => false,
         isDirectory: () => true,
@@ -27,7 +26,7 @@ const mockFs = {
       }
     }
 
-    if (path === unixifyPath(resolve('./static_fs_mock/patched/path/file.js'))) {
+    if (path === sanitizePath('./static_fs_mock/patched/path/file.js')) {
       return {
         isFile: () => true,
         isDirectory: () => false,
