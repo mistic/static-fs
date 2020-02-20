@@ -179,7 +179,7 @@ export class ReadableStaticVolume {
       return undefined;
     }
 
-     return strToEncoding(sanitizePath(filePath), encoding);
+    return strToEncoding(sanitizePath(filePath), encoding);
   }
 
   getDirInfo(dirPath, encoding = 'utf8', withFileTypes = false) {
@@ -189,7 +189,7 @@ export class ReadableStaticVolume {
     }
 
     const baseDirInfo = Object.keys(dirIdxData);
-    return baseDirInfo.sort().map(dirInfoElem => {
+    return baseDirInfo.sort().map((dirInfoElem) => {
       const encodedDirInfoElem = strToEncoding(dirInfoElem, encoding);
 
       if (!withFileTypes) {
@@ -206,7 +206,7 @@ export class ReadableStaticVolume {
         isCharacterDevice: () => false,
         isSymbolicLink: () => false,
         isFIFO: () => false,
-        isSocket: () => false
+        isSocket: () => false,
       };
     });
   }
