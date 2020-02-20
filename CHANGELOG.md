@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+# [1.6.0](https://github.com/mistic/static-fs/compare/v1.5.0...v1.6.0) (2020-02-20)
+
+
+### Features
+
+* apply options on readdir,stat and realpath ([#155](https://github.com/mistic/static-fs/issues/155)) ([e47abe8](https://github.com/mistic/static-fs/commit/e47abe8))
+
 # [1.5.0](https://github.com/mistic/static-fs/compare/v1.4.0...v1.5.0) (2020-02-14)
 
 
