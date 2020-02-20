@@ -38,7 +38,43 @@ export function isWindowsPath(filePath) {
   return false;
 }
 
+// Unixify and resolve path
 export function sanitizePath(...args) {
-  const resolvedPath = resolve(...args);
-  return unixifyPath(resolvedPath);
+  return unixifyPath(resolve(...args));
+}
+
+function getPathFromURLPosix(url) {
+  if (url.hostname !== '') {
+    throw new Error(`file URL host must be "localhost" or empty on ${process.platform}`);
+  }
+  const pathname = url.pathname;
+  for (let n = 0; n < pathname.length; n++) {
+    if (pathname[n] === '%') {
+      const third = pathname.codePointAt(n + 2) | 0x20;
+      if (pathname[n + 1] === '2' && third === 102) {
+        throw new Error(`file URL path must not include encoded / characters`);
+      }
+    }
+  }
+  return decodeURIComponent(pathname);
+}
+
+export function nodePathToString(path) {
+  if (typeof path !== 'string' && !Buffer.isBuffer(path)) {
+    if (!(path instanceof require('url').URL)) throw new Error('path must be a string or Buffer');
+
+    path = getPathFromURLPosix(path);
+  }
+
+  // in case it is a buffer convert
+  const pathString = String(path);
+
+  // null check
+  if (('' + pathString).indexOf('\u0000') !== -1) {
+    const er = new Error('path must be a string without null bytes');
+    er.code = 'ENOENT';
+    throw er;
+  }
+
+  return pathString;
 }
