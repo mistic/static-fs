@@ -66,6 +66,7 @@ export function nodePathToString(path) {
     path = getPathFromURLPosix(path);
   }
 
+  // in case it is a buffer convert
   const pathString = String(path);
 
   // null check

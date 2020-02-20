@@ -192,7 +192,7 @@ function realpath(sfs, realFs, path, options, callback) {
   const isOnSfs = isOnFs(sfs, path);
 
   if (isOnSfs && !isOnRealFs) {
-    return sfs.realpath(path, sanitizedCallback);
+    return sfs.realpath(path, sanitizedOptions, sanitizedCallback);
   }
 
   return realFs.realpath(path, sanitizedOptions, sanitizedCallback);
@@ -303,7 +303,7 @@ function realpathSync(sfs, realFs, path, options) {
   const isOnSfs = isOnFs(sfs, path);
 
   if (isOnSfs && !isOnRealFs) {
-    return sfs.realpathSync(path);
+    return sfs.realpathSync(path, sanitizedOptions);
   }
 
   return realFs.realpathSync(path, sanitizedOptions);

@@ -1,6 +1,6 @@
 import * as realFs from 'fs';
 import { basename, dirname, resolve } from 'path';
-import { calculateHash, INT_SIZE, sanitizePath, unixifyPath } from '../../common';
+import { calculateHash, INT_SIZE, sanitizePath, strToEncoding, unixifyPath } from '../../common';
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
@@ -131,7 +131,7 @@ export class ReadableStaticVolume {
   }
 
   getStatsFromFilepath(filePath, bigInt = false) {
-    const baseStats = this.index[sanitizePath(filePath)];
+    const baseStats = this.getFromIndex(filePath);
 
     if (!bigInt) {
       return baseStats;
@@ -172,6 +172,14 @@ export class ReadableStaticVolume {
       ...baseStats,
       ...bigIntStats(),
     };
+  }
+
+  getRealpath(filePath, encoding = 'utf8') {
+    if (!this.getFromIndex(filePath)) {
+      return undefined;
+    }
+
+     return strToEncoding(sanitizePath(filePath), encoding);
   }
 
   addParentFolders(name) {

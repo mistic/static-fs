@@ -173,20 +173,20 @@ export class StaticFilesystem {
     });
   }
 
-  // encoding => strToEncoding
-  realpathSync(path) {
+  realpathSync(path, options) {
     const filePath = nodePathToString(path);
+    const encoding = options && options.encoding;
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
       throw StaticFilesystem.NewError(constants.errno.ENOENT, 'realpathSync', filePath);
     }
 
-    return volume.getFromIndex(filePath) ? sanitizePath(filePath) : undefined;
+    return volume.getRealpath(filePath, encoding);
   }
 
-  realpath(path, callback) {
-    this.wrapAsync(this.realpathSync, [path], callback);
+  realpath(path, options, callback) {
+    this.wrapAsync(this.realpathSync, [path, options], callback);
   }
 
   statSync(path, options) {
