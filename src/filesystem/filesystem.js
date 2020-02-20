@@ -28,6 +28,13 @@ export class StaticFilesystem {
           info: data,
           errno: constants.errno.EBADF,
         };
+      case constants.errno.ENOTDIR:
+        return {
+          ...new Error(`ENOTDIR: not a directory, ${method} '${data}'`),
+          code: 'ENOTDIR',
+          path: data,
+          errno: constants.errno.ENOTDIR,
+        };
     }
     return {
       ...new Error(`UNKNOWN: Error, ${method} ${data}`),
@@ -205,20 +212,26 @@ export class StaticFilesystem {
     this.wrapAsync(this.statSync, [path, options], callback);
   }
 
-  // encoding, withFileTypes
-  readdirSync(path) {
-    const filePath = nodePathToString(path);
-    const volume = this.volumeForFilepathSync(filePath);
+  readdirSync(path, options) {
+    const dirPath = nodePathToString(path);
+    const encoding = options && options.encoding;
+    const withFileTypes = options && options.withFileTypes;
+    const volume = this.volumeForFilepathSync(dirPath);
 
     if (!volume) {
-      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'readdirSync', filePath);
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'readdirSync', dirPath);
     }
 
-    return Object.keys(volume.getFromDirectoriesIndex(filePath)) || [];
+    const dirInfo = volume.getDirInfo(dirPath, encoding, withFileTypes);
+    if (!dirInfo) {
+      throw StaticFilesystem.NewError(constants.errno.ENOTDIR, 'readdirSync', dirPath);
+    }
+
+    return dirInfo;
   }
 
-  readdir(path, callback) {
-    this.wrapAsync(this.readdirSync, [path], callback);
+  readdir(path, options, callback) {
+    this.wrapAsync(this.readdirSync, [path, options], callback);
   }
 
   openSync(path) {

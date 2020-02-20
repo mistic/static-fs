@@ -122,8 +122,8 @@ export class ReadableStaticVolume {
     this.reset();
   }
 
-  getFromDirectoriesIndex(filePath) {
-    return this.directoriesIndex[sanitizePath(filePath)];
+  getFromDirectoriesIndex(dirPath) {
+    return this.directoriesIndex[sanitizePath(dirPath)];
   }
 
   getFromIndex(filePath) {
@@ -180,6 +180,35 @@ export class ReadableStaticVolume {
     }
 
      return strToEncoding(sanitizePath(filePath), encoding);
+  }
+
+  getDirInfo(dirPath, encoding = 'utf8', withFileTypes = false) {
+    const dirIdxData = this.getFromDirectoriesIndex(dirPath);
+    if (!dirIdxData) {
+      return undefined;
+    }
+
+    const baseDirInfo = Object.keys(dirIdxData);
+    return baseDirInfo.sort().map(dirInfoElem => {
+      const encodedDirInfoElem = strToEncoding(dirInfoElem, encoding);
+
+      if (!withFileTypes) {
+        return encodedDirInfoElem;
+      }
+
+      const isElemDir = !!this.getFromDirectoriesIndex(dirInfoElem);
+
+      return {
+        name: encodedDirInfoElem,
+        isDirectory: () => isElemDir,
+        isFile: () => !isElemDir,
+        isBlockDevice: () => false,
+        isCharacterDevice: () => false,
+        isSymbolicLink: () => false,
+        isFIFO: () => false,
+        isSocket: () => false
+      };
+    });
   }
 
   addParentFolders(name) {

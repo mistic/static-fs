@@ -137,7 +137,7 @@ function readdir(sfs, realFs, path, options, callback) {
 
   if (isOnRealFs && isOnSfs) {
     const sfsReadDir = new Promise((resolve, reject) => {
-      sfs.readdir(path, (error, files) => {
+      sfs.readdir(path, sanitizedOptions, (error, files) => {
         if (error) {
           return reject(error);
         }
@@ -166,7 +166,7 @@ function readdir(sfs, realFs, path, options, callback) {
   }
 
   if (isOnSfs) {
-    return sfs.readdir(path, sanitizedCallback);
+    return sfs.readdir(path, sanitizedOptions, sanitizedCallback);
   }
 
   return realFs.readdir(path, sanitizedOptions, sanitizedCallback);
@@ -276,7 +276,7 @@ function readdirSync(sfs, realFs, path, options) {
   const isOnSfs = isOnFs(sfs, path);
 
   if (isOnSfs) {
-    dirContent.push(...sfs.readdirSync(path));
+    dirContent.push(...sfs.readdirSync(path, sanitizedOptions));
   }
 
   if (isOnRealFs) {
