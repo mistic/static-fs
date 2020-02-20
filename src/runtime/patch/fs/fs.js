@@ -87,7 +87,7 @@ function fstat(sfs, realFs, fd, options, callback) {
     return sfs.fstat(fd, sanitizedOptions, sanitizedCallback);
   }
 
-  return realFs.fstat(fd, options, callback);
+  return realFs.fstat(fd, sanitizedOptions, sanitizedCallback);
 }
 
 function open(sfs, realFs, path, flags, mode, callback) {
@@ -97,11 +97,7 @@ function open(sfs, realFs, path, flags, mode, callback) {
   const isOnRealFs = isOnFs(realFs, path);
   const isOnSfs = isOnFs(sfs, path);
 
-  if (callback) {
-    sanitizedCallback = callback;
-    sanitizedMode = mode;
-    sanitizedFlags = flags;
-  } else if (typeof mode === 'function') {
+  if (typeof mode === 'function') {
     sanitizedCallback = mode;
     sanitizedMode = 0o666;
     sanitizedFlags = flags;
@@ -109,6 +105,10 @@ function open(sfs, realFs, path, flags, mode, callback) {
     sanitizedCallback = flags;
     sanitizedMode = 0o666;
     sanitizedFlags = 'r';
+  } else {
+    sanitizedCallback = callback;
+    sanitizedMode = mode;
+    sanitizedFlags = flags;
   }
 
   if (isOnSfs && !isOnRealFs) {
@@ -169,7 +169,7 @@ function readdir(sfs, realFs, path, options, callback) {
     return sfs.readdir(path, sanitizedCallback);
   }
 
-  return realFs.readdir(path, options, callback);
+  return realFs.readdir(path, sanitizedOptions, sanitizedCallback);
 }
 
 function readFile(sfs, realFs, path, options, callback) {
@@ -182,11 +182,12 @@ function readFile(sfs, realFs, path, options, callback) {
     return sfs.readFile(path, sanitizedOptions, sanitizedCallback);
   }
 
-  return realFs.readFile(path, options, callback);
+  return realFs.readFile(path, sanitizedOptions, sanitizedCallback);
 }
 
 function realpath(sfs, realFs, path, options, callback) {
   const sanitizedCallback = typeof callback === 'function' ? callback : options;
+  const sanitizedOptions = typeof options === 'object' ? options : { encoding: 'utf8' };
   const isOnRealFs = isOnFs(realFs, path);
   const isOnSfs = isOnFs(sfs, path);
 
@@ -194,7 +195,7 @@ function realpath(sfs, realFs, path, options, callback) {
     return sfs.realpath(path, sanitizedCallback);
   }
 
-  return realFs.realpath(path, options, callback);
+  return realFs.realpath(path, sanitizedOptions, sanitizedCallback);
 }
 
 function stat(sfs, realFs, path, options, callback) {
@@ -207,7 +208,7 @@ function stat(sfs, realFs, path, options, callback) {
     return sfs.stat(path, sanitizedOptions, sanitizedCallback);
   }
 
-  return realFs.stat(path, options, callback);
+  return realFs.stat(path, sanitizedOptions, sanitizedCallback);
 }
 
 function openSync(sfs, realFs, path, flags, mode) {
@@ -254,7 +255,7 @@ function fstatSync(sfs, realFs, fd, options) {
     return sfs.fstatSync(fd, sanitizedOptions);
   }
 
-  return realFs.fstatSync(fd, options);
+  return realFs.fstatSync(fd, sanitizedOptions);
 }
 
 function readSync(sfs, realFs, fd, buffer, offset, length, position) {
@@ -269,6 +270,7 @@ function readSync(sfs, realFs, fd, buffer, offset, length, position) {
 }
 
 function readdirSync(sfs, realFs, path, options) {
+  const sanitizedOptions = typeof options === 'object' ? options : { encoding: 'utf8', withFileTypes: false };
   const dirContent = [];
   const isOnRealFs = isOnFs(realFs, path);
   const isOnSfs = isOnFs(sfs, path);
@@ -278,7 +280,7 @@ function readdirSync(sfs, realFs, path, options) {
   }
 
   if (isOnRealFs) {
-    dirContent.push(...realFs.readdirSync(path, options));
+    dirContent.push(...realFs.readdirSync(path, sanitizedOptions));
   }
 
   return Array.from(new Set(dirContent).keys());
@@ -296,6 +298,7 @@ function readFileSync(sfs, realFs, path, options) {
 }
 
 function realpathSync(sfs, realFs, path, options) {
+  const sanitizedOptions = typeof options === 'object' ? options : { encoding: 'utf8' };
   const isOnRealFs = isOnFs(realFs, path);
   const isOnSfs = isOnFs(sfs, path);
 
@@ -303,7 +306,7 @@ function realpathSync(sfs, realFs, path, options) {
     return sfs.realpathSync(path);
   }
 
-  return realFs.realpathSync(path, options);
+  return realFs.realpathSync(path, sanitizedOptions);
 }
 
 function statSync(sfs, realFs, path, options) {
@@ -315,7 +318,7 @@ function statSync(sfs, realFs, path, options) {
     return sfs.statSync(path, sanitizedOptions);
   }
 
-  return realFs.statSync(path, options);
+  return realFs.statSync(path, sanitizedOptions);
 }
 
 export function createPatchedFs(sfsRuntime, originalFs) {
