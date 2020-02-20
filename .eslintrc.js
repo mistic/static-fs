@@ -18,9 +18,13 @@ module.exports = {
     jest: true
   },
 
+  globals: {
+    'BigInt': true
+  },
+
   parserOptions: {
     sourceType: 'module',
-    ecmaVersion: 10
+    ecmaVersion: 11
   },
   rules: {
     'no-constant-condition': [

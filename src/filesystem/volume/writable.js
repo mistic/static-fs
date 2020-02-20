@@ -4,16 +4,16 @@ import { calculateHash, close, INT_SIZE, mkdir, open, readdir, readFile, stat, w
 export class WritableStaticVolume {
   constructor(mountingRoot) {
     this.mountingRoot = mountingRoot;
-    this.outputFile = resolve(this.mountingRoot, 'static_fs/static_fs_volume.sfsv');
     this.manifestFile = resolve(this.mountingRoot, 'static_fs/static_fs_manifest.json');
+    this.outputFile = resolve(this.mountingRoot, 'static_fs/static_fs_volume.sfsv');
     this.reset();
   }
 
   reset() {
+    this.directoriesIndex = {};
     this.hash = '';
     this.hashBuffer = Buffer.allocUnsafe(0);
-    this.index = [];
-    this.directoriesIndex = {};
+    this.index = {};
     this.intBuffer = Buffer.alloc(INT_SIZE);
   }
 
@@ -34,6 +34,8 @@ export class WritableStaticVolume {
       throw new Error(`The given path ${sourceFolder} is not a folder.`);
     }
 
+    // mark folder without native modules by default
+    // it would be updated in the next walk update function
     this.directoriesIndex[calculatedTargetFolder] = {
       hasNativeModules: false,
     };
@@ -111,6 +113,7 @@ export class WritableStaticVolume {
   }
 
   async writeManifest() {
+    // gather useful info
     const manifestContent = {
       manifest: basename(this.manifestFile),
       mountingRoot: this.mountingRoot,
@@ -149,9 +152,10 @@ export class WritableStaticVolume {
         continue;
       }
 
+      // add native module metadata to folders index
       const isNativeModuleFile = file.endsWith('.node');
       if (isNativeModuleFile) {
-        this.directoriesIndex[targetPath] = {
+        this.directoriesIndex[targetFolder] = {
           hasNativeModules: true,
         };
         continue;
@@ -168,6 +172,8 @@ export class WritableStaticVolume {
   }
 
   getAddedFilesAndFolders() {
+    // Recursive help function to build the parent
+    // hierarchy for a given folder
     const addParentsForFolder = (folderPath, accum) => {
       const calculatedParent = dirname(resolve(this.mountingRoot, folderPath));
       const parent = dirname(folderPath);
@@ -177,6 +183,8 @@ export class WritableStaticVolume {
       }
     };
 
+    // Get the base folders with native modules files on it
+    // and build the complete path with parents
     const foldersWithNativeModulesIndex = Object.keys(this.directoriesIndex).reduce((accum, folderPath) => {
       if (this.directoriesIndex[folderPath].hasNativeModules && !accum[folderPath]) {
         accum[folderPath] = true;
@@ -186,12 +194,17 @@ export class WritableStaticVolume {
       return accum;
     }, {});
 
+    // To the entire list of added folders
+    // remove the entire hierarchy for the ones
+    // with native modules
     const addedFolders = Object.keys(this.directoriesIndex)
       .filter((folderPath) => !foldersWithNativeModulesIndex[folderPath])
       .map((folderPath) => resolve(this.mountingRoot, folderPath));
 
     const addedFiles = Object.keys(this.index).map((filePath) => resolve(this.mountingRoot, filePath));
 
+    // Finally return the curated list of filtered folders
+    // and added files
     return addedFiles.concat(addedFolders).sort((a, b) => b.localeCompare(a));
   }
 }
