@@ -30,7 +30,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm i -g yarn@${{ env.YARN_VERSION }}
-      - run: yarn install
+      # Uses yarn install --frozen-lockfile with cache
+      - uses: bahmutov/npm-install@v1
       - name: 'Assert conventional commits format'
         uses: wagoid/commitlint-github-action@v1
         with:
@@ -52,7 +53,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm i -g yarn@${{ env.YARN_VERSION }}
-      - run: yarn install
+      - uses: bahmutov/npm-install@v1
       - name: 'Run tests on ${{runner.os}}'
         run: yarn test
 
@@ -67,7 +68,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm i -g yarn@${{ env.YARN_VERSION }}
-      - run: yarn install
+      - uses: bahmutov/npm-install@v1
       - name: 'Run script yarn script to release new version'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
