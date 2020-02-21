@@ -13,29 +13,25 @@ on:
     - cron:  '0 12 1-7 * Sun'
 
 env:
-  NODE_VERSION: '10.19.0'
   YARN_VERSION: '1.21.1'
 
 jobs:
-  skip_ci:
-    name: 'Skip CI Check'
+  setup_tools:
+    name: 'Setup tools'
     runs-on: 'ubuntu-18.04'
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: 'Get commit message'
-        run: |
-          echo ::set-env name=commitmsg::$(git log --format=%B -n 1 ${{ github.event.after }})
-      - name: 'Print commit message'
-        run: echo "${{env.commitmsg}}"
-      - run: echo "[Skip CI] ${{ contains(env.commitmsg, '[skip ci]') }}"
+      - name: 'Read node version from .nvmrc and store in env'
+        run: echo ::set-env name=NODE_VERSION::$(cat .nvmrc)
+      - name: 'Print node version'
+        run: echo "${{env.NODE_VERSION}}"
+      - name: 'Print yarn version'
+        run: echo "${{env.YARN_VERSION}}"
 
   lint:
     name: 'Lint'
     needs: skip_ci
     runs-on: 'ubuntu-18.04'
-    if: contains($commitmsg, '[skip ci]') == false
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
