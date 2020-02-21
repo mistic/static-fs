@@ -35,7 +35,7 @@ jobs:
     name: 'Lint'
     needs: skip_ci
     runs-on: 'ubuntu-18.04'
-    if: contains(${{env.commitmsg}}, '[skip ci]') == false
+    if: contains($commitmsg, '[skip ci]') == false
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
