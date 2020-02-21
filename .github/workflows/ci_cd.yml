@@ -30,7 +30,7 @@ jobs:
 
   lint:
     name: 'Lint'
-    needs: skip_ci
+    needs: setup_tools
     runs-on: 'ubuntu-18.04'
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
