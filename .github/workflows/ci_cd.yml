@@ -56,7 +56,7 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        os: [${{ env.UBUNTU_VERSION }}, ${{ env.MACOS_VERSION }}, ${{ env.WINDOWS_VERSION }}]
+        os: ['${{ env.UBUNTU_VERSION }}', '${{ env.MACOS_VERSION }}', '${{ env.WINDOWS_VERSION }}']
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
