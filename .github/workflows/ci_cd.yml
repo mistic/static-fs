@@ -1,0 +1,75 @@
+name: 'CI & CD'
+
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+    branches:
+      - master
+
+  schedule:
+    - cron:  '0 12 1-7 * Sun'
+
+env:
+  NODE_VERSION: '10.19.0'
+  YARN_VERSION: '1.21.1'
+
+jobs:
+  lint:
+    name: 'Lint'
+    runs-on: 'ubuntu-18.04'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: $NODE_VERSION
+      - run: npm i -g yarn@$NODE_VERSION
+      - run: yarn install
+      - name: 'Assert conventional commits format'
+        uses: wagoid/commitlint-github-action@v1
+        with:
+          configFile: '.commitlintrc.js'
+      - name: 'Run eslint'
+        run: yarn lint
+
+  test_for_platform:
+    name: 'Test for platform'
+    needs: lint
+    runs-on: ${{matrix.os}}
+      strategy:
+        max-parallel: 3
+        matrix:
+          os: ['ubuntu-18.04', 'macos-10.15', 'windows-2019']
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-node@v1
+          with:
+            node-version: $NODE_VERSION
+        - run: npm i -g yarn@$NODE_VERSION
+        - run: yarn install
+        - name: 'Run tests on ${{runner.os}}'
+          env:
+            JEST_JUNIT_OUTPUT_NAME: ./junit-${{runner.os}}.xml
+          run: yarn test --reporters=jest-junit
+
+  release_npm_github:
+    name: 'Release on npm and github'
+    needs: test_for_platform
+    runs-on: 'ubuntu-18.04'
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v1
+        with:
+          node-version: $NODE_VERSION
+      - run: npm i -g yarn@$NODE_VERSION
+      - run: yarn install
+      - name: 'Run script yarn script to release new version'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: yarn release:dryRun
