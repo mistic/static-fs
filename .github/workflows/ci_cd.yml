@@ -27,16 +27,15 @@ jobs:
       - name: 'Get commit message'
         run: |
           echo ::set-env name=commitmsg::$(git log --format=%B -n 1 ${{ github.event.after }})
-      - name: show commit message
-        run : echo $commitmsg
-      - run: echo "${{env.commitmsg}}"
+      - name: 'Print commit message'
+        run: echo "${{env.commitmsg}}"
       - run: echo "[Skip CI] ${{ contains(env.commitmsg, '[skip ci]') }}"
 
   lint:
     name: 'Lint'
     needs: skip_ci
     runs-on: 'ubuntu-18.04'
-    if: contains(github.event.head_commit.message, '[skip ci]') == false
+    if: contains(env.commitmsg, '[skip ci]') == false
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
