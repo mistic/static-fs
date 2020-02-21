@@ -2710,13 +2710,6 @@ commitizen@^4.0.3:
     strip-bom "4.0.0"
     strip-json-comments "3.0.1"
 
-commitlint-azure-pipelines-cli@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/commitlint-azure-pipelines-cli/-/commitlint-azure-pipelines-cli-1.0.2.tgz#75ae58420173095180e4fe73dc943fc08746aec7"
-  integrity sha512-Uj5QatjR1HAifoJI7ZjNx3O8iuH0lUnTmja9jGIA4KjEPLfbyctob4i1JgOZ7tGQK918n1uoolyZBjbQ7h/WSw==
-  dependencies:
-    execa "^1.0.0"
-
 commondir@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/commondir/-/commondir-1.0.1.tgz#ddd800da0c66127393cca5950ea968a3aaf1253b"
