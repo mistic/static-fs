@@ -24,8 +24,6 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v1
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -65,8 +63,6 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v1
         with:
           node-version: ${{ env.NODE_VERSION }}
