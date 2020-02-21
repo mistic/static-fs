@@ -15,11 +15,22 @@ on:
 env:
   NODE_VERSION: '10.19.0'
   YARN_VERSION: '1.21.1'
+  UBUNTU_VERSION: 'ubuntu-18.04'
+  MACOS_VERSION: 'macos-10.15'
+  WINDOWS_VERSION: 'windows-2019'
 
 jobs:
+  skip_ci:
+    name: 'Skip CI Check'
+    runs-on: ${{ env.UBUNTU_VERSION }}
+    steps:
+      - run: echo "[Skip CI] ${{ contains(github.event.head_commit.message, '[skip ci]') }}"
+
   lint:
     name: 'Lint'
-    runs-on: 'ubuntu-18.04'
+    needs: skip_ci
+    runs-on: ${{ env.UBUNTU_VERSION }}
+    if: contains(github.event.head_commit.message, '[skip ci]') == false
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -45,7 +56,7 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        os: ['ubuntu-18.04', 'macos-10.15', 'windows-2019']
+        os: [${{ env.UBUNTU_VERSION }}, ${{ env.MACOS_VERSION }}, ${{ env.WINDOWS_VERSION }}]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
@@ -59,7 +70,7 @@ jobs:
   release_npm_github:
     name: 'Release on npm and github'
     needs: test_for_platform
-    runs-on: 'ubuntu-18.04'
+    runs-on: ${{ env.UBUNTU_VERSION }}
     if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v2
