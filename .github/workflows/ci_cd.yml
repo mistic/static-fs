@@ -22,7 +22,7 @@ jobs:
     runs-on: 'ubuntu-18.04'
     steps:
       - run: echo "[Skip CI] ${{ github.event.head_commit.message }}"
-      - run: echo "[Skip CI] ${{ github.event }}"
+      - run: echo "[Skip CI] ${{ toJson(github.event) }}"
       - run: echo "[Skip CI] ${{ github.event.head_commit.added.message }}"
       - run: echo "[Skip CI] ${{ contains(github.event.head_commit.message, '[skip ci]') }}"
 
