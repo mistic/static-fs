@@ -54,9 +54,7 @@ jobs:
       - run: npm i -g yarn@${{ env.YARN_VERSION }}
       - run: yarn install
       - name: 'Run tests on ${{runner.os}}'
-        env:
-          JEST_JUNIT_OUTPUT_NAME: ./junit-${{runner.os}}.xml
-        run: yarn test --reporters=jest-junit
+        run: yarn test
 
   release_npm_github:
     name: 'Release on npm and github'
