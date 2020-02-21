@@ -170,8 +170,8 @@ See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
   of that project it was curious to understand how both projects share some of the same ideas,
   however still capable of achieving different results and different implementations.
   
-[ci-build-status-image]: https://dev.azure.com/static-fs/static-fs/_apis/build/status/mistic.static-fs?branchName=master 
-[ci-build-status-url]: https://dev.azure.com/static-fs/static-fs/_build/latest?definitionId=1&branchName=master
+[ci-build-status-image]: https://github.com/mistic/static-fs/workflows/CI.CD/badge.svg?branch=master 
+[ci-build-status-url]: https://github.com/mistic/static-fs/actions?query=workflow%3ACI.CD+branch%3Amaster
 [commitizen-friendly-image]: https://img.shields.io/badge/commitizen-friendly-brightgreen.svg
 [commitizen-friendly-url]: http://commitizen.github.io/cz-cli
 [npm-version-image]: https://img.shields.io/npm/v/static-fs
