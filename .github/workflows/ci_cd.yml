@@ -21,10 +21,9 @@ jobs:
     name: 'Skip CI Check'
     runs-on: 'ubuntu-18.04'
     steps:
-      - run: echo "[Skip CI] ${{ github.event.head_commit.message }}"
-      - run: echo "[Skip CI] ${{ toJson(github.event) }}"
-      - run: echo "[Skip CI] ${{ github.event.head_commit.added.message }}"
-      - run: echo "[Skip CI] ${{ contains(github.event.head_commit.message, '[skip ci]') }}"
+      - name: 'Get commit message'
+        run: echo ::set-env name=commitmsg::$(git log --format=%B -n 1 ${{ github.event.after }})
+      - run: echo "[Skip CI] ${{ contains(env.commitmsg, '[skip ci]') }}"
 
   lint:
     name: 'Lint'
