@@ -65,4 +65,8 @@ describe('Static Fs Runtime Patch', () => {
 
     expect(specificErrorCount).toEqual(1);
   });
+
+  test('it will fail', async () => {
+    expect(true).toEqual(false);
+  });
 });
