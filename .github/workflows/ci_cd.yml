@@ -21,6 +21,9 @@ jobs:
     name: 'Skip CI Check'
     runs-on: 'ubuntu-18.04'
     steps:
+      - run: echo "[Skip CI] ${{ github.event.head_commit.message }}"
+      - run: echo "[Skip CI] ${{ github.event.head_commit }}"
+      - run: echo "[Skip CI] ${{ github.event.head_commit.added.message }}"
       - run: echo "[Skip CI] ${{ contains(github.event.head_commit.message, '[skip ci]') }}"
 
   lint:
