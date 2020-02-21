@@ -23,7 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: 'Get commit message'
-        run: echo ::set-env name=commitmsg::$(git log --format=%B -n 1 ${{ github.event.after }} | cat -)
+        run: |
+          echo ::set-env name=commitmsg::$(git log --format=%B -n 1 ${{ github.event.after }})
+      - name: show commit message
+        run : echo $commitmsg
       - run: echo "${{env.commitmsg}}"
       - run: echo "[Skip CI] ${{ contains(env.commitmsg, '[skip ci]') }}"
 
