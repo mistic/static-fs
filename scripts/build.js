@@ -5,12 +5,12 @@ const execa = require('execa');
     console.log('Start building process');
 
     console.log('Cleaning old dist folder');
-    await execa.shell('rm -rf dist');
+    await execa.command('rm -rf dist');
 
-    const transpileResult = await execa.shell('node scripts/transpile_node_api_code');
+    const transpileResult = await execa.command('node scripts/transpile_node_api_code');
     console.log(transpileResult.stdout);
 
-    const bundleResult = await execa.shell('node scripts/bundle_runtime');
+    const bundleResult = await execa.command('node scripts/bundle_runtime');
     console.log(bundleResult.stdout);
 
     console.log('End building process');
