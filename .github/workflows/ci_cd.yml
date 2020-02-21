@@ -13,24 +13,12 @@ on:
     - cron:  '0 12 1-7 * Sun'
 
 env:
+  NODE_VERSION: '10.19.0'
   YARN_VERSION: '1.21.1'
 
 jobs:
-  setup_tools:
-    name: 'Setup tools'
-    runs-on: 'ubuntu-18.04'
-    steps:
-      - uses: actions/checkout@v2
-      - name: 'Read node version from .nvmrc and store in env'
-        run: echo ::set-env name=NODE_VERSION::$(cat .nvmrc)
-      - name: 'Print node version'
-        run: echo "${{env.NODE_VERSION}}"
-      - name: 'Print yarn version'
-        run: echo "${{env.YARN_VERSION}}"
-
   lint:
     name: 'Lint'
-    needs: setup_tools
     runs-on: 'ubuntu-18.04'
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
