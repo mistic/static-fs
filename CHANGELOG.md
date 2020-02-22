@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.6.1](https://github.com/mistic/static-fs/compare/v1.6.0...v1.6.1) (2020-02-22)
+
+
+### Bug Fixes
+
+* update deps causing random errors ([#160](https://github.com/mistic/static-fs/issues/160)) ([a7e8c57](https://github.com/mistic/static-fs/commit/a7e8c57))
+
 # [1.6.0](https://github.com/mistic/static-fs/compare/v1.5.0...v1.6.0) (2020-02-20)
 
 
