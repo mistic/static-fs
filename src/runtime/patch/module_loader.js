@@ -13,7 +13,6 @@ export function patchModuleLoader(staticFsRuntime) {
   const moduleCache = { ...Module._cache };
   const modulePathCache = { ...Module._pathCache };
 
-  const preserveSymlinks = false;
   const statCache = {};
   const packageMainCache = {};
   const sfs = staticFsRuntime.staticfilesystem;
@@ -77,7 +76,7 @@ export function patchModuleLoader(staticFsRuntime) {
   }
 
   function tryFile(requestPath, isMain) {
-    if (preserveSymlinks && !isMain) {
+    if (!isMain) {
       return stat(requestPath) === 0 ? resolve(requestPath) : undefined;
     }
 
@@ -208,7 +207,7 @@ export function patchModuleLoader(staticFsRuntime) {
       if (!trailingSlash) {
         switch (rc) {
           case 0:
-            filename = preserveSymlinks && !isMain ? resolve(basePath) : sfs.realpathSync(basePath);
+            filename = !isMain ? resolve(basePath) : sfs.realpathSync(basePath);
             break;
           case 1:
             filename = tryPackage(basePath, exts, isMain);
