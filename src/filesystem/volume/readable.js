@@ -41,25 +41,24 @@ export class ReadableStaticVolume {
     // read the index
     this.fd = realFs.openSync(this.sourcePath, 'r');
 
-    // init buffers
-    let buf = Buffer.alloc(1024 * 16);
-    const intBuffer = Buffer.alloc(INT_SIZE);
-
     // read first int into int buffer
+    const intBuffer = Buffer.alloc(INT_SIZE);
     let dataOffset = this.readInt(intBuffer);
 
     // read hash
     let hashSize = this.readInt(intBuffer);
-    if (hashSize > buf.length) {
-      buf = Buffer.alloc(hashSize);
-    }
-    this.readBuffer(buf, hashSize);
-    this.hash = buf.toString('utf8', 0, hashSize);
+    let hashBuffer = Buffer.alloc(hashSize);
+
+    this.readBuffer(hashBuffer, hashSize);
+    this.hash = hashBuffer.toString('utf8', 0, hashSize);
 
     const hashCheckIndex = {};
 
     // this stores an index (every_path) -> (sourcePath)
     const pathVolumeIndex = {};
+
+    // create buffer for name
+    let nameBuffer = Buffer.alloc(1024 * 16);
 
     do {
       const nameSz = this.readInt(intBuffer);
@@ -67,11 +66,11 @@ export class ReadableStaticVolume {
         break;
       }
       const dataSz = this.readInt(intBuffer);
-      if (nameSz > buf.length) {
-        buf = Buffer.alloc(nameSz);
+      if (nameSz > nameBuffer.length) {
+        nameBuffer = Buffer.alloc(nameSz);
       }
-      this.readBuffer(buf, nameSz);
-      const name = buf.toString('utf8', 0, nameSz);
+      this.readBuffer(nameBuffer, nameSz);
+      const name = nameBuffer.toString('utf8', 0, nameSz);
       const mountedName = this._resolveMountedPath(name);
 
       hashCheckIndex[name] = true;
@@ -230,11 +229,15 @@ export class ReadableStaticVolume {
       return;
     }
 
-    const item = this.getFromIndex(name);
     const parent = dirname(name);
+    const fileName = basename(name);
+    // already built? skip
+    if (this.directoriesIndex[parent] && this.directoriesIndex[parent][fileName]) {
+      return;
+    }
 
+    const item = this.getFromIndex(name);
     if (item.isFile() || item.isDirectory()) {
-      const fileName = basename(name);
       if (!this.directoriesIndex[parent]) {
         this.directoriesIndex[parent] = {};
         pathVolumeIndex[parent] = this.sourcePath;
