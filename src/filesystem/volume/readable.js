@@ -300,11 +300,15 @@ export class ReadableStaticVolume {
   _deleteReadFileFromCache(filePath, length, position) {
     const cachedBuffer = this.filesBeingRead[filePath].buffer;
 
+    // always decrease consumers
+    this.filesBeingRead[filePath].consumers -= 1;
+
+    // In case it is the last time a consumer is reading, decrease to < 0 to delete from cache
     if (position >= cachedBuffer.length || position + length >= cachedBuffer.length) {
       this.filesBeingRead[filePath].consumers -= 1;
     }
 
-    if (this.filesBeingRead[filePath].consumers <= 0) {
+    if (this.filesBeingRead[filePath].consumers < 0) {
       delete this.filesBeingRead[filePath];
     }
   }
