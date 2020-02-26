@@ -10,8 +10,6 @@ export function patchModuleLoader(staticFsRuntime) {
   const moduleExtensionsJS = Module._extensions['.js'];
   const moduleExtensionsJSON = Module._extensions['.json'];
   const moduleFindPath = Module._findPath;
-  const moduleCache = { ...Module._cache };
-  const modulePathCache = { ...Module._pathCache };
 
   const statCache = {};
   const packageMainCache = {};
@@ -238,7 +236,7 @@ export function patchModuleLoader(staticFsRuntime) {
     Module._extensions['.js'] = moduleExtensionsJS;
     Module._extensions['.json'] = moduleExtensionsJSON;
     Module._findPath = moduleFindPath;
-    Module._cache = moduleCache;
-    Module._pathCache = modulePathCache;
+    Module._cache = {};
+    Module._pathCache = {};
   };
 }
