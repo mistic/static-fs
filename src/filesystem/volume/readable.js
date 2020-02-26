@@ -15,11 +15,10 @@ export class ReadableStaticVolume {
     this.directoriesIndex = {};
     this.fd = -1;
     this.filesBeingRead = {};
+    this.filesIndex = {};
     this.hash = '';
     this.intBuffer = Buffer.alloc(INT_SIZE);
-    this.filesIndex = {};
     this.statData = {};
-    this.pathVolumeIndex = {};
   }
 
   load() {
@@ -56,6 +55,9 @@ export class ReadableStaticVolume {
 
     const hashCheckIndex = {};
 
+    // this stores an index (every_path) -> (sourcePath)
+    const pathVolumeIndex = {};
+
     do {
       const nameSz = this.readInt();
       if (nameSz === 0) {
@@ -75,15 +77,13 @@ export class ReadableStaticVolume {
       this.filesIndex[mountedName] = {
         ino: dataOffset, // the location in the static fs
         size: dataSz, // the size of the file
-        isFile: () => true
       };
 
-      // this creates an index (every_path) -> (sourcePath)
-      // it also needs to assign inside addParentFolders
-      this.pathVolumeIndex[mountedName] = this.sourcePath;
+      pathVolumeIndex[mountedName] = this.sourcePath;
 
       // build our directories index
-      this.updateDirectoriesIndex(mountedName);
+      // also update pathVolumeIndex for every folder and its parent
+      this.updateDirectoriesIndex(mountedName, pathVolumeIndex);
 
       dataOffset += dataSz;
     } while (true);
@@ -95,7 +95,7 @@ export class ReadableStaticVolume {
       );
     }
 
-    return this.pathVolumeIndex;
+    return pathVolumeIndex;
   }
 
   readBuffer(buffer, length) {
@@ -129,7 +129,9 @@ export class ReadableStaticVolume {
       return null;
     }
 
-    const item = fileItem ? fileItem : { isDirectory : () => true, isFile: () => false };
+    const item = fileItem
+      ?  Object.assign({}, fileItem, { isDirectory : () => false, isFile: () => true })
+      : { isDirectory : () => true, isFile: () => false };
 
     return {
       ...this.statData,
@@ -220,7 +222,7 @@ export class ReadableStaticVolume {
     });
   }
 
-  updateDirectoriesIndex(name) {
+  updateDirectoriesIndex(name, pathVolumeIndex) {
     if (unixifyPath(this.moutingRoot) === name) {
       return;
     }
@@ -232,13 +234,13 @@ export class ReadableStaticVolume {
       const fileName = basename(name);
       if (!this.directoriesIndex[parent]) {
         this.directoriesIndex[parent] = {};
-        this.pathVolumeIndex[parent] = this.sourcePath;
+        pathVolumeIndex[parent] = this.sourcePath;
       }
 
       this.directoriesIndex[parent][fileName] = true;
     }
 
-    this.updateDirectoriesIndex(parent);
+    this.updateDirectoriesIndex(parent, pathVolumeIndex);
   }
 
   _resolveMountedPath(unmountedPath) {
@@ -250,8 +252,7 @@ export class ReadableStaticVolume {
   }
 
   readFileSync(filePath, options) {
-    const sanitizedFilePath = sanitizePath(filePath);
-    const item = this.filesIndex[sanitizedFilePath];
+    const item = this.getFromIndex(filePath);
 
     if (!item || !item.isFile()) {
       return undefined;
@@ -308,8 +309,7 @@ export class ReadableStaticVolume {
   }
 
   readSync(filePath, buffer, offset, length, position) {
-    const sanitizedFilePath = sanitizePath(filePath);
-    const item = this.filesIndex[sanitizedFilePath];
+    const item = this.getFromIndex(filePath);
 
     if (item && item.isFile()) {
       // read the content and return a string
