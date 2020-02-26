@@ -80,10 +80,6 @@ export class StaticFilesystem {
     return Object.keys(this.volumes);
   }
 
-  get entries() {
-    return Object.keys(this.pathVolumeMap);
-  }
-
   isValidFD(fd) {
     const isCorrectFormat = fd && fd.id && fd.type && fd.type === 'static_fs_file_descriptor';
     const isPresent = this.fds[fd.id];
@@ -99,9 +95,12 @@ export class StaticFilesystem {
     return this.fds[fd.id];
   }
 
-  volumeForFilepathSync(filePath) {
-    const targetPath = sanitizePath(filePath);
-    const volumePathForFilePath = this.pathVolumeMap[targetPath];
+  getPathVolumeMap(itemPath) {
+    return this.pathVolumeMap[sanitizePath(itemPath)];
+  }
+
+  volumeForFilepathSync(itemPath) {
+    const volumePathForFilePath = this.getPathVolumeMap(itemPath);
 
     if (!volumePathForFilePath) {
       return undefined;

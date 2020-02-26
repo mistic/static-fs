@@ -1,6 +1,6 @@
 import * as realFs from 'fs';
-import { basename, dirname, resolve } from 'path';
-import { calculateHash, INT_SIZE, sanitizePath, strToEncoding, unixifyPath } from '../../common';
+import { basename, dirname, resolve, sep } from 'path';
+import { calculateHash, INT_SIZE, sanitizePath, strToEncoding } from '../../common';
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
@@ -71,21 +71,20 @@ export class ReadableStaticVolume {
       }
       this.readBuffer(nameBuffer, nameSz);
       const name = nameBuffer.toString('utf8', 0, nameSz);
-      const mountedName = this._resolveMountedPath(name);
 
       hashCheckIndex[name] = true;
 
       // add entry for file into index
-      this.filesIndex[mountedName] = {
+      this.filesIndex[name] = {
         ino: dataOffset, // the location in the static fs
         size: dataSz, // the size of the file
       };
 
-      pathVolumeIndex[mountedName] = this.sourcePath;
+      pathVolumeIndex[this._resolveAndMountPath(name)] = this.sourcePath;
 
       // build our directories index
       // also update pathVolumeIndex for every folder and its parent
-      this.updateDirectoriesIndex(mountedName, pathVolumeIndex);
+      this.updateDirectoriesIndex(name, pathVolumeIndex);
 
       dataOffset += dataSz;
     } while (true);
@@ -119,13 +118,17 @@ export class ReadableStaticVolume {
     this.reset();
   }
 
-  getFromDirectoriesIndex(dirPath) {
-    return this.directoriesIndex[sanitizePath(dirPath)];
+  getFromFilesIndex(filePath) {
+    return this.filesIndex[this._resolveAndUnmountPath(filePath)];
   }
 
-  getFromIndex(filePath) {
-    const fileItem = this.filesIndex[sanitizePath(filePath)];
-    const dirItem = this.directoriesIndex[sanitizePath(filePath)];
+  getFromDirectoriesIndex(dirPath) {
+    return this.directoriesIndex[this._resolveAndUnmountPath(dirPath)];
+  }
+
+  getFromIndex(itemPath) {
+    const fileItem = this.getFromFilesIndex(itemPath);
+    const dirItem = this.getFromDirectoriesIndex(itemPath);
 
     if (!fileItem && !dirItem) {
       return null;
@@ -225,7 +228,7 @@ export class ReadableStaticVolume {
   }
 
   updateDirectoriesIndex(name, pathVolumeIndex) {
-    if (unixifyPath(this.moutingRoot) === name) {
+    if (name === '.') {
       return;
     }
 
@@ -240,7 +243,7 @@ export class ReadableStaticVolume {
     if (item.isFile() || item.isDirectory()) {
       if (!this.directoriesIndex[parent]) {
         this.directoriesIndex[parent] = {};
-        pathVolumeIndex[parent] = this.sourcePath;
+        pathVolumeIndex[this._resolveAndMountPath(parent)] = this.sourcePath;
       }
 
       this.directoriesIndex[parent][fileName] = true;
@@ -249,12 +252,21 @@ export class ReadableStaticVolume {
     this.updateDirectoriesIndex(parent, pathVolumeIndex);
   }
 
-  _resolveMountedPath(unmountedPath) {
+  _resolveAndMountPath(unmountedPath) {
     if (unmountedPath.includes(this.moutingRoot)) {
       return unmountedPath;
     }
 
     return sanitizePath(this.moutingRoot, unmountedPath);
+  }
+
+  _resolveAndUnmountPath(mountedPath) {
+    if (!mountedPath.includes(this.moutingRoot)) {
+      return mountedPath;
+    }
+
+    // mountRoot path + slash
+    return mountedPath.slice(this.moutingRoot.length + sep.length);
   }
 
   readFileSync(filePath, options) {
