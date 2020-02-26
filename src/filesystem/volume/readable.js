@@ -329,22 +329,21 @@ export class ReadableStaticVolume {
   readSync(filePath, buffer, offset, length, position) {
     const item = this.getFromIndex(filePath);
 
-    if (item && item.isFile()) {
-      // read the content and return a string
-      if (this.filesBeingRead[filePath]) {
-        this.filesBeingRead[filePath].consumers += 1;
-        return this._readFromCache(filePath, buffer, offset, length, position);
-      } else {
-        const cachedFile = (this.filesBeingRead[filePath] = {
-          buffer: Buffer.alloc(item.size),
-          consumers: 1,
-        });
+    if (!item || !item.isFile()) {
+      return undefined;
+    }
 
-        realFs.readSync(this.fd, cachedFile.buffer, 0, item.size, item.ino);
-        return this._readFromCache(filePath, buffer, offset, length, position);
-      }
+    if (this.filesBeingRead[filePath]) {
+      this.filesBeingRead[filePath].consumers += 1;
+      return this._readFromCache(filePath, buffer, offset, length, position);
     } else {
-      throw new Error(`The path you are trying to read is not a file: ${filePath}`);
+      const cachedFile = (this.filesBeingRead[filePath] = {
+        buffer: Buffer.alloc(item.size),
+        consumers: 1,
+      });
+
+      realFs.readSync(this.fd, cachedFile.buffer, 0, item.size, item.ino);
+      return this._readFromCache(filePath, buffer, offset, length, position);
     }
   }
 }
