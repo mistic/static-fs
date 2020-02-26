@@ -11,13 +11,11 @@ export class ReadableStaticVolume {
   }
 
   reset() {
-    this.buf = Buffer.alloc(1024 * 16);
     this.directoriesIndex = {};
     this.fd = -1;
     this.filesBeingRead = {};
     this.filesIndex = {};
     this.hash = '';
-    this.intBuffer = Buffer.alloc(INT_SIZE);
     this.statData = {};
   }
 
@@ -42,16 +40,21 @@ export class ReadableStaticVolume {
 
     // read the index
     this.fd = realFs.openSync(this.sourcePath, 'r');
-    // close on process exit.
-    let dataOffset = this.readInt();
+
+    // init buffers
+    let buf = Buffer.alloc(1024 * 16);
+    const intBuffer = Buffer.alloc(INT_SIZE);
+
+    // read first int into int buffer
+    let dataOffset = this.readInt(intBuffer);
 
     // read hash
-    let hashSize = this.readInt();
-    if (hashSize > this.buf.length) {
-      this.buf = Buffer.alloc(hashSize);
+    let hashSize = this.readInt(intBuffer);
+    if (hashSize > buf.length) {
+      buf = Buffer.alloc(hashSize);
     }
-    this.readBuffer(this.buf, hashSize);
-    this.hash = this.buf.toString('utf8', 0, hashSize);
+    this.readBuffer(buf, hashSize);
+    this.hash = buf.toString('utf8', 0, hashSize);
 
     const hashCheckIndex = {};
 
@@ -59,16 +62,16 @@ export class ReadableStaticVolume {
     const pathVolumeIndex = {};
 
     do {
-      const nameSz = this.readInt();
+      const nameSz = this.readInt(intBuffer);
       if (nameSz === 0) {
         break;
       }
-      const dataSz = this.readInt();
-      if (nameSz > this.buf.length) {
-        this.buf = Buffer.alloc(nameSz);
+      const dataSz = this.readInt(intBuffer);
+      if (nameSz > buf.length) {
+        buf = Buffer.alloc(nameSz);
       }
-      this.readBuffer(this.buf, nameSz);
-      const name = this.buf.toString('utf8', 0, nameSz);
+      this.readBuffer(buf, nameSz);
+      const name = buf.toString('utf8', 0, nameSz);
       const mountedName = this._resolveMountedPath(name);
 
       hashCheckIndex[name] = true;
@@ -102,9 +105,9 @@ export class ReadableStaticVolume {
     return realFs.readSync(this.fd, buffer, 0, length || buffer.length, null);
   }
 
-  readInt() {
-    realFs.readSync(this.fd, this.intBuffer, 0, INT_SIZE, null);
-    return this.intBuffer.readIntBE(0, 6);
+  readInt(intBuffer) {
+    realFs.readSync(this.fd, intBuffer, 0, INT_SIZE, null);
+    return intBuffer.readIntBE(0, 6);
   }
 
   shutdown() {
@@ -266,21 +269,17 @@ export class ReadableStaticVolume {
         : null
       : null;
 
-    // re-alloc if necessary
-    if (this.buf.length < item.size) {
-      this.buf = Buffer.alloc(item.size);
-    }
+    // alloc buffer
+    const buf = Buffer.alloc(item.size);
 
     // read the content and return a string
-    realFs.readSync(this.fd, this.buf, 0, item.size, item.ino);
+    realFs.readSync(this.fd, buf, 0, item.size, item.ino);
 
     if (!encoding) {
-      const buf = Buffer.alloc(item.size);
-      this.buf.copy(buf);
       return buf;
     }
 
-    return this.buf.toString(encoding, 0, item.size);
+    return buf.toString(encoding, 0, item.size);
   }
 
   _deleteReadFileFromCache(filePath, length, position) {
