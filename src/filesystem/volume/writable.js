@@ -13,7 +13,7 @@ export class WritableStaticVolume {
     this.directoriesIndex = {};
     this.hash = '';
     this.hashBuffer = Buffer.allocUnsafe(0);
-    this.index = {};
+    this.filesIndex = {};
     this.intBuffer = Buffer.alloc(INT_SIZE);
   }
 
@@ -52,13 +52,13 @@ export class WritableStaticVolume {
     size += INT_SIZE;
     size += this.hashBuffer.byteLength;
 
-    const filePaths = Object.keys(this.index);
+    const filePaths = Object.keys(this.filesIndex);
     for (const each of filePaths) {
       size += INT_SIZE; // name size
       size += INT_SIZE; // data size
 
       const filenameBuffer = Buffer.from(each, 'utf-8');
-      this.index[each].filename = filenameBuffer;
+      this.filesIndex[each].filename = filenameBuffer;
       size += filenameBuffer.byteLength; // name itself.
     }
 
@@ -73,7 +73,7 @@ export class WritableStaticVolume {
 
   async write() {
     await mkdir(dirname(this.outputFile));
-    this.hash = calculateHash(Object.keys(this.index).sort());
+    this.hash = calculateHash(Object.keys(this.filesIndex).sort());
     let dataOffset = this.headerLength;
     const fd = await open(this.outputFile, 'w');
     let headerPosition = await this.writeInt(fd, dataOffset);
@@ -82,14 +82,14 @@ export class WritableStaticVolume {
     headerPosition += await write(fd, this.hashBuffer, 0, this.hashBuffer.byteLength, headerPosition);
 
     const all = [];
-    const filePaths = Object.keys(this.index);
+    const filePaths = Object.keys(this.filesIndex);
 
     // start writing out the data
     for (const each of filePaths) {
-      const entry = this.index[each];
+      const entry = this.filesIndex[each];
       const position = dataOffset;
       dataOffset += entry.size;
-      const buf = await this.index[each].getBuffer();
+      const buf = await this.filesIndex[each].getBuffer();
       await write(fd, buf, 0, buf.length, position);
     }
 
@@ -98,7 +98,7 @@ export class WritableStaticVolume {
 
     // write the header
     for (const each of filePaths) {
-      const entry = this.index[each];
+      const entry = this.filesIndex[each];
       headerPosition += await this.writeInt(fd, entry.filename.length, headerPosition);
       headerPosition += await this.writeInt(fd, entry.size, headerPosition);
       headerPosition += await write(fd, entry.filename, 0, entry.filename.length, headerPosition);
@@ -120,7 +120,7 @@ export class WritableStaticVolume {
       hash: this.hash,
       volume: this.outputFile,
       directories: Object.keys(this.directoriesIndex).sort(),
-      files: Object.keys(this.index).sort(),
+      files: Object.keys(this.filesIndex).sort(),
     };
 
     await writeFile(this.manifestFile, JSON.stringify(manifestContent, null, 2));
@@ -162,7 +162,7 @@ export class WritableStaticVolume {
       }
 
       // it's a file. capture the details.
-      this.index[targetPath] = {
+      this.filesIndex[targetPath] = {
         size: ss.size,
         getBuffer: () => readFile(sourcePath),
       };
@@ -201,7 +201,7 @@ export class WritableStaticVolume {
       .filter((folderPath) => !foldersWithNativeModulesIndex[folderPath])
       .map((folderPath) => resolve(this.mountingRoot, folderPath));
 
-    const addedFiles = Object.keys(this.index).map((filePath) => resolve(this.mountingRoot, filePath));
+    const addedFiles = Object.keys(this.filesIndex).map((filePath) => resolve(this.mountingRoot, filePath));
 
     // Finally return the curated list of filtered folders
     // and added files

@@ -17,7 +17,7 @@ export class ReadableStaticVolume {
     this.filesBeingRead = {};
     this.hash = '';
     this.intBuffer = Buffer.alloc(INT_SIZE);
-    this.index = {};
+    this.filesIndex = {};
     this.statData = {};
     this.pathVolumeIndex = {};
   }
@@ -72,20 +72,15 @@ export class ReadableStaticVolume {
       hashCheckIndex[name] = true;
 
       // add entry for file into index
-      this.index[mountedName] = Object.assign({}, this.statData, {
+      this.filesIndex[mountedName] = {
         ino: dataOffset, // the location in the static fs
         size: dataSz, // the size of the file
-        blocks: 1, // one block
-        blksize: dataSz, // of file size size.
-        isFile: () => true, // it's a file!
-      });
+        isFile: () => true
+      };
 
       // this creates an index (every_path) -> (sourcePath)
       // it also needs to assign inside addParentFolders
       this.pathVolumeIndex[mountedName] = this.sourcePath;
-
-      // ensure parent path has a directory entry
-      this.addParentFolders(mountedName);
 
       // build our directories index
       this.updateDirectoriesIndex(mountedName);
@@ -127,7 +122,21 @@ export class ReadableStaticVolume {
   }
 
   getFromIndex(filePath) {
-    return this.index[sanitizePath(filePath)];
+    const fileItem = this.filesIndex[sanitizePath(filePath)];
+    const dirItem = this.directoriesIndex[sanitizePath(filePath)];
+
+    if (!fileItem && !dirItem) {
+      return null;
+    }
+
+    const item = fileItem ? fileItem : { isDirectory : () => true, isFile: () => false };
+
+    return {
+      ...this.statData,
+      ...item,
+      blocks: fileItem ? 1 : 0,
+      blksize: fileItem ? fileItem.size : this.statData.blksize
+    };
   }
 
   getStatsFromFilepath(filePath, bigInt = false) {
@@ -211,35 +220,19 @@ export class ReadableStaticVolume {
     });
   }
 
-  addParentFolders(name) {
-    const parent = dirname(name);
-    if (parent && !this.index[parent] && parent.includes(unixifyPath(this.moutingRoot))) {
-      this.index[parent] = Object.assign({}, this.statData, { isDirectory: () => true });
-
-      this.pathVolumeIndex[parent] = this.sourcePath;
-
-      return this.addParentFolders(parent);
-    }
-  }
-
   updateDirectoriesIndex(name) {
-    if (!this.index[name] || unixifyPath(this.moutingRoot) === name) {
+    if (unixifyPath(this.moutingRoot) === name) {
       return;
     }
 
-    const directoryAlreadyExists = this.directoriesIndex[name];
-    if (!directoryAlreadyExists) {
-      this.directoriesIndex[name] = {};
-    }
-
-    const isFile = this.index[name].isFile();
-    const isDirectory = this.index[name].isDirectory();
+    const item = this.getFromIndex(name);
     const parent = dirname(name);
 
-    if (isFile || isDirectory) {
+    if (item.isFile() || item.isDirectory()) {
       const fileName = basename(name);
       if (!this.directoriesIndex[parent]) {
         this.directoriesIndex[parent] = {};
+        this.pathVolumeIndex[parent] = this.sourcePath;
       }
 
       this.directoriesIndex[parent][fileName] = true;
@@ -258,7 +251,7 @@ export class ReadableStaticVolume {
 
   readFileSync(filePath, options) {
     const sanitizedFilePath = sanitizePath(filePath);
-    const item = this.index[sanitizedFilePath];
+    const item = this.filesIndex[sanitizedFilePath];
 
     if (!item || !item.isFile()) {
       return undefined;
@@ -316,7 +309,7 @@ export class ReadableStaticVolume {
 
   readSync(filePath, buffer, offset, length, position) {
     const sanitizedFilePath = sanitizePath(filePath);
-    const item = this.index[sanitizedFilePath];
+    const item = this.filesIndex[sanitizedFilePath];
 
     if (item && item.isFile()) {
       // read the content and return a string
