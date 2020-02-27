@@ -1,6 +1,6 @@
 import { resolve } from 'path';
 import { constants } from 'os';
-import { nodePathToString, sanitizePath } from '../common';
+import {nodePathToString, unixifyPath} from '../common';
 import { ReadStream } from './streams';
 import { ReadableStaticVolume } from './volume';
 
@@ -238,7 +238,7 @@ export class StaticFilesystem {
       throw StaticFilesystem.NewError(constants.errno.ENOENT, 'openSync', filePath);
     }
 
-    const fdIdentifier = `${volume.sourcePath}#${sanitizePath(filePath)}`;
+    const fdIdentifier = `${volume.sourcePath}#${unixifyPath(filePath)}`;
     this.fds[fdIdentifier] = {
       type: 'static_fs_file_descriptor',
       id: fdIdentifier,
