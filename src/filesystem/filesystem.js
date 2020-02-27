@@ -46,7 +46,6 @@ export class StaticFilesystem {
 
   constructor() {
     this.fds = {};
-    this.pathVolumeMap = {};
     this.volumes = {};
   }
 
@@ -65,14 +64,9 @@ export class StaticFilesystem {
     }
 
     const volume = new ReadableStaticVolume(sourcePath);
-    const pathVolumeIndex = volume.load();
-
-    this.pathVolumeMap = {
-      ...this.pathVolumeMap,
-      ...pathVolumeIndex,
-    };
-
+    volume.load();
     this.volumes[volume.sourcePath] = volume;
+
     return this;
   }
 
@@ -95,12 +89,15 @@ export class StaticFilesystem {
     return this.fds[fd.id];
   }
 
-  getPathVolumeMap(itemPath) {
-    return this.pathVolumeMap[sanitizePath(itemPath)];
+  getVolumeForPath(itemPath) {
+    return Object.keys(this.volumes).find(volKey => {
+      const vol = this.volumes[volKey];
+      return vol.getRealpath(itemPath);
+    });
   }
 
   volumeForFilepathSync(itemPath) {
-    const volumePathForFilePath = this.getPathVolumeMap(itemPath);
+    const volumePathForFilePath = this.getVolumeForPath(itemPath);
 
     if (!volumePathForFilePath) {
       return undefined;

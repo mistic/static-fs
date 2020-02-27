@@ -1,6 +1,6 @@
 import * as realFs from 'fs';
 import { basename, dirname, resolve, sep } from 'path';
-import { calculateHash, INT_SIZE, sanitizePath, strToEncoding } from '../../common';
+import {calculateHash, INT_SIZE, strToEncoding, unixifyPath} from '../../common';
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
@@ -54,9 +54,6 @@ export class ReadableStaticVolume {
 
     const hashCheckIndex = {};
 
-    // this stores an index (every_path) -> (sourcePath)
-    const pathVolumeIndex = {};
-
     // create buffer for name
     let nameBuffer = Buffer.alloc(1024 * 16);
 
@@ -80,11 +77,9 @@ export class ReadableStaticVolume {
         size: dataSz, // the size of the file
       };
 
-      pathVolumeIndex[this._resolveAndMountPath(name)] = this.sourcePath;
-
       // build our directories index
       // also update pathVolumeIndex for every folder and its parent
-      this.updateDirectoriesIndex(name, pathVolumeIndex);
+      this.updateDirectoriesIndex(name);
 
       dataOffset += dataSz;
     } while (true);
@@ -95,8 +90,6 @@ export class ReadableStaticVolume {
         `Something went wrong loading the volume ${this.sourcePath}. Check hash after loading is different from the one stored in the volume.`,
       );
     }
-
-    return pathVolumeIndex;
   }
 
   readBuffer(buffer, length) {
@@ -195,7 +188,7 @@ export class ReadableStaticVolume {
       return undefined;
     }
 
-    return strToEncoding(sanitizePath(filePath), encoding);
+    return strToEncoding(filePath, encoding);
   }
 
   getDirInfo(dirPath, encoding = 'utf8', withFileTypes = false) {
@@ -227,7 +220,7 @@ export class ReadableStaticVolume {
     });
   }
 
-  updateDirectoriesIndex(name, pathVolumeIndex) {
+  updateDirectoriesIndex(name) {
     if (name === '.') {
       return;
     }
@@ -243,21 +236,12 @@ export class ReadableStaticVolume {
     if (item.isFile() || item.isDirectory()) {
       if (!this.directoriesIndex[parent]) {
         this.directoriesIndex[parent] = {};
-        pathVolumeIndex[this._resolveAndMountPath(parent)] = this.sourcePath;
       }
 
       this.directoriesIndex[parent][fileName] = true;
     }
 
-    this.updateDirectoriesIndex(parent, pathVolumeIndex);
-  }
-
-  _resolveAndMountPath(unmountedPath) {
-    if (unmountedPath.includes(this.moutingRoot)) {
-      return unmountedPath;
-    }
-
-    return sanitizePath(this.moutingRoot, unmountedPath);
+    this.updateDirectoriesIndex(parent);
   }
 
   _resolveAndUnmountPath(mountedPath) {
@@ -266,7 +250,7 @@ export class ReadableStaticVolume {
     }
 
     // mountRoot path + slash
-    return mountedPath.slice(this.moutingRoot.length + sep.length);
+    return unixifyPath(mountedPath.slice(this.moutingRoot.length + sep.length));
   }
 
   readFileSync(filePath, options) {
