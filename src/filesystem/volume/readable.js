@@ -189,7 +189,7 @@ export class ReadableStaticVolume {
       return undefined;
     }
 
-    return strToEncoding(unixifyPath(filePath), encoding);
+    return strToEncoding(filePath, encoding);
   }
 
   getDirInfo(dirPath, encoding = 'utf8', withFileTypes = false) {
