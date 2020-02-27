@@ -1,6 +1,6 @@
 import * as realFs from 'fs';
 import { basename, dirname, resolve, sep } from 'path';
-import { calculateHash, INT_SIZE, strToEncoding, unixifyPath } from '../../common';
+import { calculateHash, INT_SIZE, strToEncoding, sanitizePath, unixifyPath } from '../../common';
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
@@ -188,7 +188,7 @@ export class ReadableStaticVolume {
       return undefined;
     }
 
-    return strToEncoding(filePath, encoding);
+    return strToEncoding(sanitizePath(filePath), encoding);
   }
 
   getDirInfo(dirPath, encoding = 'utf8', withFileTypes = false) {
