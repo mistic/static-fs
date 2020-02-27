@@ -1,6 +1,6 @@
 import * as realFs from 'fs';
-import { basename, dirname, resolve, sep } from 'path';
-import { calculateHash, INT_SIZE, strToEncoding, sanitizePath, unixifyPath } from '../../common';
+import { basename, dirname, resolve } from 'path';
+import { calculateHash, INT_SIZE, strToEncoding, unixifyPath } from '../../common';
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
@@ -68,18 +68,19 @@ export class ReadableStaticVolume {
       }
       this.readBuffer(nameBuffer, nameSz);
       const name = nameBuffer.toString('utf8', 0, nameSz);
+      const unixifiedPath = unixifyPath(name);
 
       hashCheckIndex[name] = true;
 
       // add entry for file into index
-      this.filesIndex[name] = {
+      this.filesIndex[unixifiedPath] = {
         ino: dataOffset, // the location in the static fs
         size: dataSz, // the size of the file
       };
 
       // build our directories index
       // also update pathVolumeIndex for every folder and its parent
-      this.updateDirectoriesIndex(name);
+      this.updateDirectoriesIndex(unixifiedPath);
 
       dataOffset += dataSz;
     } while (true);
@@ -188,7 +189,7 @@ export class ReadableStaticVolume {
       return undefined;
     }
 
-    return strToEncoding(sanitizePath(filePath), encoding);
+    return strToEncoding(filePath, encoding);
   }
 
   getDirInfo(dirPath, encoding = 'utf8', withFileTypes = false) {
@@ -250,7 +251,7 @@ export class ReadableStaticVolume {
     }
 
     // mountRoot path + slash
-    return unixifyPath(mountedPath.slice(this.moutingRoot.length + sep.length));
+    return unixifyPath(mountedPath).slice(unixifyPath(this.moutingRoot).length + 1);
   }
 
   readFileSync(filePath, options) {
