@@ -1,6 +1,6 @@
 import * as realFs from 'fs';
 import { basename, dirname, resolve, sep } from 'path';
-import {calculateHash, INT_SIZE, strToEncoding, unixifyPath} from '../../common';
+import { calculateHash, INT_SIZE, strToEncoding, unixifyPath } from '../../common';
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
@@ -128,14 +128,14 @@ export class ReadableStaticVolume {
     }
 
     const item = fileItem
-      ?  Object.assign({}, fileItem, { isDirectory : () => false, isFile: () => true })
-      : { isDirectory : () => true, isFile: () => false };
+      ? Object.assign({}, fileItem, { isDirectory: () => false, isFile: () => true })
+      : { isDirectory: () => true, isFile: () => false };
 
     return {
       ...this.statData,
       ...item,
       blocks: fileItem ? 1 : 0,
-      blksize: fileItem ? fileItem.size : this.statData.blksize
+      blksize: fileItem ? fileItem.size : this.statData.blksize,
     };
   }
 

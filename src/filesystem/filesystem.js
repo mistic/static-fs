@@ -90,7 +90,7 @@ export class StaticFilesystem {
   }
 
   getVolumeForPath(itemPath) {
-    return Object.keys(this.volumes).find(volKey => {
+    return Object.keys(this.volumes).find((volKey) => {
       const vol = this.volumes[volKey];
       return vol.getRealpath(itemPath);
     });
