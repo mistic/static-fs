@@ -1,6 +1,6 @@
 import { resolve } from 'path';
 import { constants } from 'os';
-import {nodePathToString, unixifyPath} from '../common';
+import { nodePathToString, unixifyPath } from '../common';
 import { ReadStream } from './streams';
 import { ReadableStaticVolume } from './volume';
 
