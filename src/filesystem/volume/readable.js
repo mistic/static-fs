@@ -1,10 +1,11 @@
 import * as realFs from 'fs';
-import { basename, dirname, resolve } from 'path';
+import { dirname, resolve } from 'path';
 import { calculateHash, INT_SIZE, strToEncoding, unixifyPath } from '../../common';
 
 export class ReadableStaticVolume {
   constructor(sourcePath) {
     this.sourcePath = sourcePath;
+    this.indexPath = resolve(dirname(this.sourcePath), 'static_fs_index.json');
     this.moutingRoot = resolve(dirname(this.sourcePath), '../');
     this.runtimePath = resolve(dirname(this.sourcePath), 'static_fs_runtime.js');
     this.reset();
@@ -12,38 +13,24 @@ export class ReadableStaticVolume {
 
   reset() {
     this.directoriesIndex = {};
-    this.fd = -1;
     this.filesBeingRead = {};
     this.filesIndex = {};
     this.hash = '';
-    this.statData = {};
+    this.volumeFd = -1;
+    this.volumeStats = {};
   }
 
   load() {
     // already load?
-    if (this.fd >= 0) {
+    if (this.volumeFd >= 0) {
       return;
     }
 
-    // clone the original static fs values and set some defaults
-    this.statData = {
-      isDirectory: () => false,
-      isSymbolicLink: () => false,
-      isBlockDevice: () => false,
-      isCharacterDevice: () => false,
-      isFile: () => false,
-      isFIFO: () => false,
-      isSocket: () => false,
-      size: 0,
-      ...realFs.statSync(this.sourcePath),
-    };
-
     // read the index
-    this.fd = realFs.openSync(this.sourcePath, 'r');
+    this.volumeFd = realFs.openSync(this.sourcePath, 'r');
 
     // read first int into int buffer
     const intBuffer = Buffer.alloc(INT_SIZE);
-    let dataOffset = this.readInt(intBuffer);
 
     // read hash
     let hashSize = this.readInt(intBuffer);
@@ -52,40 +39,16 @@ export class ReadableStaticVolume {
     this.readBuffer(hashBuffer, hashSize);
     this.hash = hashBuffer.toString('utf8', 0, hashSize);
 
-    const hashCheckIndex = {};
+    const indexContent = JSON.parse(realFs.readFileSync(this.indexPath, 'utf8'));
+    this.volumeStats = this.buildVolumeStatsFromJSON(indexContent.volumeStats);
+    this.directoriesIndex = indexContent.directoriesIndex;
+    this.filesIndex = indexContent.filesIndex;
 
-    // create buffer for name
-    let nameBuffer = Buffer.alloc(1024 * 16);
+    // verify hash
+    const hashCheckIndex = new Set();
+    Object.keys(this.filesIndex).forEach((filePath) => hashCheckIndex.add(filePath));
 
-    do {
-      const nameSz = this.readInt(intBuffer);
-      if (nameSz === 0) {
-        break;
-      }
-      const dataSz = this.readInt(intBuffer);
-      if (nameSz > nameBuffer.length) {
-        nameBuffer = Buffer.alloc(nameSz);
-      }
-      this.readBuffer(nameBuffer, nameSz);
-      const name = nameBuffer.toString('utf8', 0, nameSz);
-      const unixifiedPath = unixifyPath(name);
-
-      hashCheckIndex[name] = true;
-
-      // add entry for file into index
-      this.filesIndex[unixifiedPath] = {
-        ino: dataOffset, // the location in the static fs
-        size: dataSz, // the size of the file
-      };
-
-      // build our directories index
-      // also update pathVolumeIndex for every folder and its parent
-      this.updateDirectoriesIndex(unixifiedPath);
-
-      dataOffset += dataSz;
-    } while (true);
-
-    const hashCheck = calculateHash(Object.keys(hashCheckIndex).sort());
+    const hashCheck = calculateHash(Array.from(hashCheckIndex.values()).sort());
     if (hashCheck !== this.hash) {
       throw new Error(
         `Something went wrong loading the volume ${this.sourcePath}. Check hash after loading is different from the one stored in the volume.`,
@@ -93,20 +56,37 @@ export class ReadableStaticVolume {
     }
   }
 
+  buildVolumeStatsFromJSON(jsonVolumeStats) {
+    return {
+      isDirectory: () => false,
+      isSymbolicLink: () => false,
+      isBlockDevice: () => false,
+      isCharacterDevice: () => false,
+      isFile: () => true,
+      isFIFO: () => false,
+      isSocket: () => false,
+      ...jsonVolumeStats,
+      atime: new Date(jsonVolumeStats.atime),
+      mtime: new Date(jsonVolumeStats.mtime),
+      ctime: new Date(jsonVolumeStats.ctime),
+      birthtime: new Date(jsonVolumeStats.birthtime),
+    };
+  }
+
   readBuffer(buffer, length) {
-    return realFs.readSync(this.fd, buffer, 0, length || buffer.length, null);
+    return realFs.readSync(this.volumeFd, buffer, 0, length || buffer.length, null);
   }
 
   readInt(intBuffer) {
-    realFs.readSync(this.fd, intBuffer, 0, INT_SIZE, null);
+    realFs.readSync(this.volumeFd, intBuffer, 0, INT_SIZE, null);
     return intBuffer.readIntBE(0, 6);
   }
 
   shutdown() {
     // In case fd is open close it
     // to release the file
-    if (this.fd > 0) {
-      realFs.closeSync(this.fd);
+    if (this.volumeFd > 0) {
+      realFs.closeSync(this.volumeFd);
     }
 
     this.reset();
@@ -133,10 +113,10 @@ export class ReadableStaticVolume {
       : { isDirectory: () => true, isFile: () => false };
 
     return {
-      ...this.statData,
+      ...this.volumeStats,
       ...item,
       blocks: fileItem ? 1 : 0,
-      blksize: fileItem ? fileItem.size : this.statData.blksize,
+      blksize: fileItem ? fileItem.size : this.volumeStats.blksize,
     };
   }
 
@@ -198,8 +178,7 @@ export class ReadableStaticVolume {
       return undefined;
     }
 
-    const baseDirInfo = Object.keys(dirIdxData);
-    return baseDirInfo.sort().map((dirInfoElem) => {
+    return dirIdxData.sort().map((dirInfoElem) => {
       const encodedDirInfoElem = strToEncoding(dirInfoElem, encoding);
 
       if (!withFileTypes) {
@@ -219,30 +198,6 @@ export class ReadableStaticVolume {
         isSocket: () => false,
       };
     });
-  }
-
-  updateDirectoriesIndex(name) {
-    if (name === '.') {
-      return;
-    }
-
-    const parent = dirname(name);
-    const fileName = basename(name);
-    // already built? skip
-    if (this.directoriesIndex[parent] && this.directoriesIndex[parent][fileName]) {
-      return;
-    }
-
-    const item = this.getFromIndex(name);
-    if (item.isFile() || item.isDirectory()) {
-      if (!this.directoriesIndex[parent]) {
-        this.directoriesIndex[parent] = {};
-      }
-
-      this.directoriesIndex[parent][fileName] = true;
-    }
-
-    this.updateDirectoriesIndex(parent);
   }
 
   _resolveAndUnmountPath(mountedPath) {
@@ -273,7 +228,7 @@ export class ReadableStaticVolume {
     const buf = Buffer.alloc(item.size);
 
     // read the content and return a string
-    realFs.readSync(this.fd, buf, 0, item.size, item.ino);
+    realFs.readSync(this.volumeFd, buf, 0, item.size, item.ino);
 
     if (!encoding) {
       return buf;
@@ -327,7 +282,7 @@ export class ReadableStaticVolume {
         consumers: 1,
       });
 
-      realFs.readSync(this.fd, cachedFile.buffer, 0, item.size, item.ino);
+      realFs.readSync(this.volumeFd, cachedFile.buffer, 0, item.size, item.ino);
       return this._readFromCache(filePath, buffer, offset, length, position);
     }
   }

@@ -106,7 +106,7 @@ from the generated static filesystem, and any path (folder or file) listed on `e
 would be discarded.
 
 > NOTE: After running that function a folder called `static_fs` would be 
-created inside `mountRootDir` with `static_fs_volume.sfsv`, `static_fs_manifest.json` and 
+created inside `mountRootDir` with `static_fs_volume.sfsv`, `static_fs_index.json`, `static_fs_manifest.json` and 
 `static_fs_runtime.js`.
 
 **Params** 

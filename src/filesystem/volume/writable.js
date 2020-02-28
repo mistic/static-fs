@@ -4,6 +4,7 @@ import { calculateHash, close, INT_SIZE, mkdir, open, readdir, readFile, stat, w
 export class WritableStaticVolume {
   constructor(mountingRoot) {
     this.mountingRoot = mountingRoot;
+    this.indexFile = resolve(this.mountingRoot, 'static_fs/static_fs_index.json');
     this.manifestFile = resolve(this.mountingRoot, 'static_fs/static_fs_manifest.json');
     this.outputFile = resolve(this.mountingRoot, 'static_fs/static_fs_volume.sfsv');
     this.reset();
@@ -38,29 +39,18 @@ export class WritableStaticVolume {
     // it would be updated in the next walk update function
     this.directoriesIndex[calculatedTargetFolder] = {
       hasNativeModules: false,
+      content: new Set(),
     };
 
     await this.getFileNames(sourceFolder, calculatedTargetFolder, exclusions);
   }
 
   get headerLength() {
-    let size = INT_SIZE; // start of data
-
     // put hash size in header
     this.hashBuffer = Buffer.from(this.hash, 'utf-8');
 
-    size += INT_SIZE;
+    let size = INT_SIZE;
     size += this.hashBuffer.byteLength;
-
-    const filePaths = Object.keys(this.filesIndex);
-    for (const each of filePaths) {
-      size += INT_SIZE; // name size
-      size += INT_SIZE; // data size
-
-      const filenameBuffer = Buffer.from(each, 'utf-8');
-      this.filesIndex[each].filename = filenameBuffer;
-      size += filenameBuffer.byteLength; // name itself.
-    }
 
     size += INT_SIZE; // trailing zero.
     return size;
@@ -74,12 +64,54 @@ export class WritableStaticVolume {
   async write() {
     await mkdir(dirname(this.outputFile));
     this.hash = calculateHash(Object.keys(this.filesIndex).sort());
-    let dataOffset = this.headerLength;
-    const fd = await open(this.outputFile, 'w');
-    let headerPosition = await this.writeInt(fd, dataOffset);
 
-    headerPosition += await this.writeInt(fd, this.hashBuffer.byteLength);
-    headerPosition += await write(fd, this.hashBuffer, 0, this.hashBuffer.byteLength, headerPosition);
+    // write the main volume
+    await this.writeVolume();
+
+    // write the index file
+    await this.writeIndex();
+
+    // write the manifest file
+    await this.writeManifest();
+
+    return this.hash;
+  }
+
+  async writeIndex() {
+    const directoriesIndex = Object.keys(this.directoriesIndex).reduce((dirsIdx, dirPath) => {
+      dirsIdx[dirPath] = Array.from(this.directoriesIndex[dirPath].content.values());
+      return dirsIdx;
+    }, {});
+
+    let totalDataSize = this.headerLength;
+    const filesIndex = Object.keys(this.filesIndex).reduce((filesIdx, filePath) => {
+      filesIdx[filePath] = {
+        ino: totalDataSize,
+        size: this.filesIndex[filePath].size,
+      };
+
+      totalDataSize += this.filesIndex[filePath].size;
+      return filesIdx;
+    }, {});
+
+    const volumeStats = await stat(this.outputFile);
+
+    await writeFile(
+      this.indexFile,
+      JSON.stringify({
+        directoriesIndex,
+        filesIndex,
+        volumeStats,
+      }),
+    );
+  }
+
+  async writeVolume() {
+    const volumeFd = await open(this.outputFile, 'w');
+    let dataOffset = this.headerLength;
+
+    let headerPosition = await this.writeInt(volumeFd, this.hashBuffer.byteLength);
+    await write(volumeFd, this.hashBuffer, 0, this.hashBuffer.byteLength, headerPosition);
 
     const all = [];
     const filePaths = Object.keys(this.filesIndex);
@@ -90,26 +122,13 @@ export class WritableStaticVolume {
       const position = dataOffset;
       dataOffset += entry.size;
       const buf = await this.filesIndex[each].getBuffer();
-      await write(fd, buf, 0, buf.length, position);
+      await write(volumeFd, buf, 0, buf.length, position);
     }
 
     // finish writing all the buffers.
     await Promise.all(all);
 
-    // write the header
-    for (const each of filePaths) {
-      const entry = this.filesIndex[each];
-      headerPosition += await this.writeInt(fd, entry.filename.length, headerPosition);
-      headerPosition += await this.writeInt(fd, entry.size, headerPosition);
-      headerPosition += await write(fd, entry.filename, 0, entry.filename.length, headerPosition);
-    }
-
-    await close(fd);
-
-    // write the manifest file
-    await this.writeManifest();
-
-    return this.hash;
+    await close(volumeFd);
   }
 
   async writeManifest() {
@@ -146,6 +165,7 @@ export class WritableStaticVolume {
       if (ss.isDirectory()) {
         this.directoriesIndex[targetPath] = {
           hasNativeModules: false,
+          content: new Set(),
         };
 
         all.push(this.getFileNames(sourcePath, targetPath, exclusions));
@@ -155,11 +175,12 @@ export class WritableStaticVolume {
       // add native module metadata to folders index
       const isNativeModuleFile = file.endsWith('.node');
       if (isNativeModuleFile) {
-        this.directoriesIndex[targetFolder] = {
-          hasNativeModules: true,
-        };
+        this.directoriesIndex[targetFolder].hasNativeModules = true;
         continue;
       }
+
+      // adds file to the content
+      this.directoriesIndex[targetFolder].content.add(file);
 
       // it's a file. capture the details.
       this.filesIndex[targetPath] = {
