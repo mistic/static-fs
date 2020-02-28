@@ -1,5 +1,17 @@
 import { basename, dirname, relative, resolve, sep } from 'path';
-import { calculateHash, close, INT_SIZE, mkdir, open, readdir, readFile, stat, write, writeFile } from '../../common';
+import {
+  calculateHash,
+  close,
+  INT_SIZE,
+  mkdir,
+  open,
+  readdir,
+  readFile,
+  stat,
+  unixifyPath,
+  write,
+  writeFile,
+} from '../../common';
 
 export class WritableStaticVolume {
   constructor(mountingRoot) {
@@ -79,13 +91,15 @@ export class WritableStaticVolume {
 
   async writeIndex() {
     const directoriesIndex = Object.keys(this.directoriesIndex).reduce((dirsIdx, dirPath) => {
-      dirsIdx[dirPath] = Array.from(this.directoriesIndex[dirPath].content.values());
+      const unixifiedDirPath = unixifyPath(dirPath);
+      dirsIdx[unixifiedDirPath] = Array.from(this.directoriesIndex[dirPath].content.values());
       return dirsIdx;
     }, {});
 
     let totalDataSize = this.headerLength;
     const filesIndex = Object.keys(this.filesIndex).reduce((filesIdx, filePath) => {
-      filesIdx[filePath] = {
+      const unixifiedFilePath = unixifyPath(filePath);
+      filesIdx[unixifiedFilePath] = {
         ino: totalDataSize,
         size: this.filesIndex[filePath].size,
       };
