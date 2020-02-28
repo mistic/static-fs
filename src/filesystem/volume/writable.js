@@ -75,7 +75,11 @@ export class WritableStaticVolume {
 
   async write() {
     await mkdir(dirname(this.outputFile));
-    this.hash = calculateHash(Object.keys(this.filesIndex).sort());
+    this.hash = calculateHash(
+      Object.keys(this.filesIndex)
+        .map((filePath) => unixifyPath(filePath))
+        .sort(),
+    );
 
     // write the main volume
     await this.writeVolume();
