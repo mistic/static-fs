@@ -44,12 +44,13 @@ describe('Static Fs Generator', () => {
     const sfsBaseFolderFiles = getDirContent(baseSFSFolder);
     const expectedFilesOnBaseSFSFolder = [
       resolve(baseSFSFolder, 'static_fs_volume.sfsv'),
+      resolve(baseSFSFolder, 'static_fs_index.json'),
       resolve(baseSFSFolder, 'static_fs_runtime.js'),
       resolve(baseSFSFolder, 'static_fs_manifest.json')
     ];
 
     expect(existsBaseSFSFolder).toBeTruthy();
-    expect(sfsBaseFolderFiles.length).toBe(3);
+    expect(sfsBaseFolderFiles.length).toBe(4);
     expect(sfsBaseFolderFiles).toEqual(expect.arrayContaining(expectedFilesOnBaseSFSFolder));
   });
 
@@ -70,14 +71,14 @@ describe('Static Fs Generator', () => {
   });
 
   test('if the entry points were patched', async () => {
-    const entryPointContent = readFileSync(entryPoint, { encoding: 'utf8' }).toString();
+    const entryPointContent = readFileSync(entryPoint, 'utf8').toString();
 
     expect(entryPointContent.includes('// load static_fs_volume:')).toBeTruthy();
   });
 
   test('if static fs manifest file have the expected keys', async () => {
     const sfsManifestFileContent = JSON.parse(
-      readFileSync(resolve(mountRoot, 'static_fs', 'static_fs_manifest.json'), { encoding: 'utf8' }).toString()
+      readFileSync(resolve(mountRoot, 'static_fs', 'static_fs_manifest.json'), 'utf8').toString()
     );
 
     expect(sfsManifestFileContent).toHaveProperty('manifest');
@@ -86,5 +87,15 @@ describe('Static Fs Generator', () => {
     expect(sfsManifestFileContent).toHaveProperty('volume');
     expect(sfsManifestFileContent).toHaveProperty('directories');
     expect(sfsManifestFileContent).toHaveProperty('files');
+  });
+
+  test('if static fs index file have the expected keys', async () => {
+    const sfsIndexFileContent = JSON.parse(
+      readFileSync(resolve(mountRoot, 'static_fs', 'static_fs_index.json'), 'utf8').toString()
+    );
+
+    expect(sfsIndexFileContent).toHaveProperty('directoriesIndex');
+    expect(sfsIndexFileContent).toHaveProperty('filesIndex');
+    expect(sfsIndexFileContent).toHaveProperty('volumeStats');
   });
 });

@@ -1,6 +1,6 @@
 import { resolve } from 'path';
 import { constants } from 'os';
-import { nodePathToString, sanitizePath } from '../common';
+import { nodePathToString, unixifyPath } from '../common';
 import { ReadStream } from './streams';
 import { ReadableStaticVolume } from './volume';
 
@@ -46,7 +46,6 @@ export class StaticFilesystem {
 
   constructor() {
     this.fds = {};
-    this.pathVolumeMap = {};
     this.volumes = {};
   }
 
@@ -65,23 +64,14 @@ export class StaticFilesystem {
     }
 
     const volume = new ReadableStaticVolume(sourcePath);
-    const pathVolumeIndex = volume.load();
-
-    this.pathVolumeMap = {
-      ...this.pathVolumeMap,
-      ...pathVolumeIndex,
-    };
-
+    volume.load();
     this.volumes[volume.sourcePath] = volume;
+
     return this;
   }
 
   get loadedVolumes() {
     return Object.keys(this.volumes);
-  }
-
-  get entries() {
-    return Object.keys(this.pathVolumeMap);
   }
 
   isValidFD(fd) {
@@ -99,9 +89,22 @@ export class StaticFilesystem {
     return this.fds[fd.id];
   }
 
-  volumeForFilepathSync(filePath) {
-    const targetPath = sanitizePath(filePath);
-    const volumePathForFilePath = this.pathVolumeMap[targetPath];
+  getVolumeForPath(itemPath) {
+    const volKeys = Object.keys(this.volumes);
+    for (let i = 0; i < volKeys.length; i++) {
+      const vol = this.volumes[volKeys[i]];
+      const exists = vol.getRealpath(itemPath);
+
+      if (exists) {
+        return volKeys[i];
+      }
+    }
+
+    return undefined;
+  }
+
+  volumeForFilepathSync(itemPath) {
+    const volumePathForFilePath = this.getVolumeForPath(itemPath);
 
     if (!volumePathForFilePath) {
       return undefined;
@@ -242,7 +245,7 @@ export class StaticFilesystem {
       throw StaticFilesystem.NewError(constants.errno.ENOENT, 'openSync', filePath);
     }
 
-    const fdIdentifier = `${volume.sourcePath}#${sanitizePath(filePath)}`;
+    const fdIdentifier = `${volume.sourcePath}#${unixifyPath(filePath)}`;
     this.fds[fdIdentifier] = {
       type: 'static_fs_file_descriptor',
       id: fdIdentifier,
