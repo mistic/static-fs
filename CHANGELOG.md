@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.6.3](https://github.com/mistic/static-fs/compare/v1.6.2...v1.6.3) (2020-03-11)
+
+
+### Bug Fixes
+
+* call promisify once in promises patch api and apply correct handling for process exit ([#172](https://github.com/mistic/static-fs/issues/172)) ([495b804](https://github.com/mistic/static-fs/commit/495b804))
+
 ## [1.6.2](https://github.com/mistic/static-fs/compare/v1.6.1...v1.6.2) (2020-02-28)
 
 
