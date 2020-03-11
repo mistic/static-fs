@@ -1,37 +1,43 @@
 import { promisify } from 'util';
 
-function patchFn(patchedFs, fn) {
+function patchFn(asyncPatchedFsFn) {
   return (...args) => {
-    return fn(patchedFs, ...args);
+    return asyncPatchedFsFn(...args);
   };
 }
 
-function open(patchedFs, path, flag, modes) {
-  return promisify(patchedFs.open)(path, flag, modes);
+function open(patchedFsPromisifiedOpen, path, flag, modes) {
+  return patchedFsPromisifiedOpen(path, flag, modes);
 }
 
-function readdir(patchedFs, path, options) {
-  return promisify(patchedFs.readdir)(path, options);
+function readdir(patchedFsPromisifiedReaddir, path, options) {
+  return patchedFsPromisifiedReaddir(path, options);
 }
 
-function readFile(patchedFs, path, options) {
-  return promisify(patchedFs.readFile)(path, options);
+function readFile(patchedFsPromisifiedReadFile, path, options) {
+  return patchedFsPromisifiedReadFile(path, options);
 }
 
-function realpath(patchedFs, path, options) {
-  return promisify(patchedFs.realpath)(path, options);
+function realpath(patchedFsPromisifiedRealpath, path, options) {
+  return patchedFsPromisifiedRealpath(path, options);
 }
 
-function stat(patchedFs, path, options) {
-  return promisify(patchedFs.stat)(path, options);
+function stat(patchedFsPromisifiedStat, path, options) {
+  return patchedFsPromisifiedStat(path, options);
 }
 
 export function createPatchedFsPromises(patchedFs) {
+  const asyncPatchedFsOpen = promisify(patchedFs.open);
+  const asyncPatchedFsReaddir = promisify(patchedFs.readdir);
+  const asyncPatchedFsReadFile = promisify(patchedFs.readFile);
+  const asyncPatchedFsRealpath = promisify(patchedFs.realpath);
+  const asyncPatchedFsStat = promisify(patchedFs.stat);
+
   return {
-    open: patchFn(patchedFs, open),
-    readdir: patchFn(patchedFs, readdir),
-    readFile: patchFn(patchedFs, readFile),
-    realpath: patchFn(patchedFs, realpath),
-    stat: patchFn(patchedFs, stat),
+    open: patchFn(asyncPatchedFsOpen, open),
+    readdir: patchFn(asyncPatchedFsReaddir, readdir),
+    readFile: patchFn(asyncPatchedFsReadFile, readFile),
+    realpath: patchFn(asyncPatchedFsRealpath, realpath),
+    stat: patchFn(asyncPatchedFsStat, stat),
   };
 }
