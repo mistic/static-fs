@@ -237,32 +237,25 @@ export class ReadableStaticVolume {
     return buf.toString(encoding, 0, item.size);
   }
 
-  _deleteReadFileFromCache(filePath, length, position) {
-    const cachedBuffer = this.filesBeingRead[filePath].buffer;
-
-    // always decrease consumers
-    this.filesBeingRead[filePath].consumers -= 1;
-
-    // In case it is the last time a consumer is reading, decrease to < 0 to delete from cache
-    if (position >= cachedBuffer.length || position + length >= cachedBuffer.length) {
-      this.filesBeingRead[filePath].consumers -= 1;
-    }
-
-    if (this.filesBeingRead[filePath].consumers < 0) {
+  _deleteReadFileFromCache(filePath) {
+    if (this.filesBeingRead[filePath]) {
       delete this.filesBeingRead[filePath];
     }
   }
 
   _readFromCache(filePath, buffer, offset, length, position) {
-    const cachedBuffer = this.filesBeingRead[filePath].buffer;
+    const cachedBuffer = this.filesBeingRead[filePath];
 
     if (position >= cachedBuffer.length) {
-      this._deleteReadFileFromCache(filePath, length, position);
+      this._deleteReadFileFromCache(filePath);
       return 0;
     }
 
     const copiedBytes = cachedBuffer.copy(buffer, offset, position, Math.min(position + length, cachedBuffer.length));
-    this._deleteReadFileFromCache(filePath, length, position);
+    if (copiedBytes + position === cachedBuffer.length) {
+      this._deleteReadFileFromCache(filePath);
+    }
+
     return copiedBytes;
   }
 
@@ -273,16 +266,18 @@ export class ReadableStaticVolume {
       return undefined;
     }
 
+    if (position >= item.size) {
+      // it is not possible to read
+      // more than the file size
+      return 0;
+    }
+
     if (this.filesBeingRead[filePath]) {
-      this.filesBeingRead[filePath].consumers += 1;
       return this._readFromCache(filePath, buffer, offset, length, position);
     } else {
-      const cachedFile = (this.filesBeingRead[filePath] = {
-        buffer: Buffer.alloc(item.size),
-        consumers: 1,
-      });
+      const cachedFileBuffer = (this.filesBeingRead[filePath] = Buffer.alloc(item.size));
 
-      realFs.readSync(this.volumeFd, cachedFile.buffer, 0, item.size, item.ino);
+      realFs.readSync(this.volumeFd, cachedFileBuffer, 0, item.size, item.ino);
       return this._readFromCache(filePath, buffer, offset, length, position);
     }
   }
