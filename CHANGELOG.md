@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.6.4](https://github.com/mistic/static-fs/compare/v1.6.3...v1.6.4) (2020-03-12)
+
+
+### Bug Fixes
+
+* readable volume readSync cache ([#173](https://github.com/mistic/static-fs/issues/173)) ([31f8995](https://github.com/mistic/static-fs/commit/31f8995f218380e97fb5e2a6b21f0cf3e46c439b))
+
 ## [1.6.3](https://github.com/mistic/static-fs/compare/v1.6.2...v1.6.3) (2020-03-11)
 
 
