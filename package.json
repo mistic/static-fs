@@ -35,6 +35,9 @@
     "url": "https://github.com/mistic/static-fs/issues"
   },
   "homepage": "https://github.com/mistic/static-fs#readme",
+  "resolutions": {
+    "**/minimist": "^1.2.2"
+  },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.8.4",
