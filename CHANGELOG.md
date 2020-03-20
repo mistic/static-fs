@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.6.5](https://github.com/mistic/static-fs/compare/v1.6.4...v1.6.5) (2020-03-20)
+
+
+### Bug Fixes
+
+* use relative paths in the manifest file ([#177](https://github.com/mistic/static-fs/issues/177)) ([366701d](https://github.com/mistic/static-fs/commit/366701d3728dd210815eff1e2066bc0d5f07c7ad))
+
 ## [1.6.4](https://github.com/mistic/static-fs/compare/v1.6.3...v1.6.4) (2020-03-12)
 
 
