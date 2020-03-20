@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.6.6](https://github.com/mistic/static-fs/compare/v1.6.5...v1.6.6) (2020-03-20)
+
+
+### Bug Fixes
+
+* preserve use strict on patches applied by generator ([#178](https://github.com/mistic/static-fs/issues/178)) ([7e5acc9](https://github.com/mistic/static-fs/commit/7e5acc9c31412270cf28d9e36b4ca3e796f91c3f))
+
 ## [1.6.5](https://github.com/mistic/static-fs/compare/v1.6.4...v1.6.5) (2020-03-20)
 
 
