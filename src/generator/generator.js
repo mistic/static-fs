@@ -28,19 +28,32 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
 
       let content = await readFile(entryPoint, { encoding: 'utf8' });
       const patchLine = `require('${loaderPath}')\n.load(require.resolve(\`${fsPath}\`));\n`;
-      let prefix = '';
+      let shebangPrefix = '';
+      let useStrictPrefix = '';
       if (content.indexOf(patchLine) === -1) {
-        const rx = /^#!.*$/gm.exec(content.toString());
-        if (rx && rx.index === 0) {
-          prefix = `${rx[0]}\n`;
-          // remove prefix
-          content = content.replace(prefix, '');
+        // #! shebang
+        const shebangRx = /^#!.*$/gm.exec(content.toString());
+        if (shebangRx && shebangRx.index === 0) {
+          shebangPrefix = `${shebangRx[0]}\n`;
+          // remove shebangPrefix
+          content = content.replace(shebangPrefix, '');
         }
+
+        // use strict instruction
+        const useStrictRx = /^["']use strict["'];$/gm.exec(content.toString());
+        if (useStrictRx && useStrictRx.index === 0) {
+          useStrictPrefix = `${useStrictRx[0]}\n`;
+          // remove  useStrictPrefix
+          content = content.replace(useStrictPrefix, '');
+        }
+
         // strip existing loader
         content = content.replace(/^require.*static_fs_runtime.js.*$/gm, '');
         content = content.replace(/\/\/ load static_fs_volume: .*$/gm, '');
         content = content.trim();
-        content = `${prefix}// load static_fs_volume: ${fsPath}\n${patchLine}\n${content}`;
+
+        const additionalNLSeparator = shebangPrefix || useStrictPrefix ? '\n' : '';
+        content = `${shebangPrefix}${useStrictPrefix}${additionalNLSeparator}// load static_fs_volume: ${fsPath}\n${patchLine}\n${content}`;
 
         await writeFile(entryPoint, content);
       }
