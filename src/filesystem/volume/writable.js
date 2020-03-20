@@ -150,12 +150,14 @@ export class WritableStaticVolume {
   }
 
   async writeManifest() {
+    const baseManifestFileDir = dirname(this.manifestFile);
+
     // gather useful info
     const manifestContent = {
       manifest: basename(this.manifestFile),
-      mountingRoot: this.mountingRoot,
+      mountingRoot: relative(baseManifestFileDir, this.mountingRoot),
       hash: this.hash,
-      volume: this.outputFile,
+      volume: relative(baseManifestFileDir, this.outputFile),
       directories: Object.keys(this.directoriesIndex).sort(),
       files: Object.keys(this.filesIndex).sort(),
     };
