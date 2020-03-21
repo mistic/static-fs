@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.8.1](https://github.com/mistic/static-fs/compare/v1.8.0...v1.8.1) (2020-03-21)
+
+
+### Bug Fixes
+
+* createReadStream path processing ([#182](https://github.com/mistic/static-fs/issues/182)) ([bcc0a16](https://github.com/mistic/static-fs/commit/bcc0a1688beb7946a276fd8be90df961c8dbd4ca))
+
 # [1.8.0](https://github.com/mistic/static-fs/compare/v1.7.0...v1.8.0) (2020-03-21)
 
 
