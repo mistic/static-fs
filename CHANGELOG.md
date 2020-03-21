@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+# [1.8.0](https://github.com/mistic/static-fs/compare/v1.7.0...v1.8.0) (2020-03-21)
+
+
+### Features
+
+* throw error when non read flags are used ([#181](https://github.com/mistic/static-fs/issues/181)) ([61921f1](https://github.com/mistic/static-fs/commit/61921f1bbc9f880164f23bb2f6cf491775c80cd0))
+
 # [1.7.0](https://github.com/mistic/static-fs/compare/v1.6.7...v1.7.0) (2020-03-21)
 
 
