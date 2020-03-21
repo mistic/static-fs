@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.6.7](https://github.com/mistic/static-fs/compare/v1.6.6...v1.6.7) (2020-03-21)
+
+
+### Bug Fixes
+
+* correctly process child_process env vars ([#179](https://github.com/mistic/static-fs/issues/179)) ([620c971](https://github.com/mistic/static-fs/commit/620c9710102c2ca504476c7d14a9fb1ca6cd15a3))
+
 ## [1.6.6](https://github.com/mistic/static-fs/compare/v1.6.5...v1.6.6) (2020-03-20)
 
 
