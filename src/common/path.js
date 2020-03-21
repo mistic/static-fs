@@ -61,7 +61,8 @@ function getPathFromURLPosix(url) {
 
 export function nodePathToString(path) {
   if (typeof path !== 'string' && !Buffer.isBuffer(path)) {
-    if (!(path instanceof require('url').URL)) throw new Error('path must be a string or Buffer');
+    if (!(path instanceof require('url').URL))
+      throw new Error(`The "path" argument must be one of type string, Buffer, or URL. Received type ${typeof path}`);
 
     path = getPathFromURLPosix(path);
   }
