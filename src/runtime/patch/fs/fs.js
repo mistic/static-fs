@@ -112,7 +112,7 @@ function open(sfs, realFs, path, flags, mode, callback) {
   }
 
   if (isOnSfs && !isOnRealFs) {
-    return sfs.open(path, sanitizedCallback);
+    return sfs.open(path, sanitizedFlags, sanitizedCallback);
   }
 
   return realFs.open(path, sanitizedFlags, sanitizedMode, sanitizedCallback);
@@ -229,7 +229,7 @@ function openSync(sfs, realFs, path, flags, mode) {
   }
 
   if (isOnSfs && !isOnRealFs) {
-    return sfs.openSync(path);
+    return sfs.openSync(path, sanitizedFlags);
   }
 
   return realFs.openSync(path, sanitizedFlags, sanitizedMode);
