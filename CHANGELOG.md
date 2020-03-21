@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+# [1.7.0](https://github.com/mistic/static-fs/compare/v1.6.7...v1.7.0) (2020-03-21)
+
+
+### Features
+
+* patch execFile and execFileSync ([#180](https://github.com/mistic/static-fs/issues/180)) ([c0926c7](https://github.com/mistic/static-fs/commit/c0926c723739ab0c058f6425bda72a268ed1a26d))
+
 ## [1.6.7](https://github.com/mistic/static-fs/compare/v1.6.6...v1.6.7) (2020-03-21)
 
 
