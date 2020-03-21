@@ -35,6 +35,13 @@ export class StaticFilesystem {
           path: data,
           errno: constants.errno.ENOTDIR,
         };
+      case constants.errno.EROFS:
+        return {
+          ...new Error(`EROFS: static-fs is a read-only filesystem, ${method} '${data}'`),
+          code: 'EROFS',
+          path: data,
+          errno: constants.errno.EROFS,
+        };
     }
     return {
       ...new Error(`UNKNOWN: Error, ${method} ${data}`),
@@ -72,6 +79,10 @@ export class StaticFilesystem {
 
   get loadedVolumes() {
     return Object.keys(this.volumes);
+  }
+
+  areFlagsValid(flags) {
+    return !(flags && flags !== 'r');
   }
 
   isValidFD(fd) {
@@ -237,12 +248,16 @@ export class StaticFilesystem {
     this.wrapAsync(this.readdirSync, [path, options], callback);
   }
 
-  openSync(path) {
+  openSync(path, flags) {
     const filePath = nodePathToString(path);
     const volume = this.volumeForFilepathSync(filePath);
 
     if (!volume) {
       throw StaticFilesystem.NewError(constants.errno.ENOENT, 'openSync', filePath);
+    }
+
+    if (!this.areFlagsValid(flags)) {
+      throw StaticFilesystem.NewError(constants.errno.EROFS, 'openSync', filePath);
     }
 
     const fdIdentifier = `${volume.sourcePath}#${unixifyPath(filePath)}`;
@@ -256,8 +271,8 @@ export class StaticFilesystem {
     return this.fds[fdIdentifier];
   }
 
-  open(path, callback) {
-    this.wrapAsync(this.openSync, [path], callback);
+  open(path, flags, callback) {
+    this.wrapAsync(this.openSync, [path, flags], callback);
   }
 
   closeSync(fd) {
@@ -289,6 +304,13 @@ export class StaticFilesystem {
   }
 
   createReadStream(path, options) {
-    return new ReadStream(this, path, options);
+    const filePath = nodePathToString(path);
+    const optionsFlags = options && options.flags;
+
+    if (!this.areFlagsValid(optionsFlags)) {
+      throw StaticFilesystem.NewError(constants.errno.EROFS, 'createReadStream', filePath);
+    }
+
+    return new ReadStream(this, filePath, options);
   }
 }
