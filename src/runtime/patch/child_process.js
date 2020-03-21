@@ -105,6 +105,23 @@ function startsWithNode(command) {
   return -1;
 }
 
+function getEnvFromSanitizedOptions(sanitizedOptions) {
+  const staticFsRequiredEnv = {
+    STATIC_FS_ENV: process.env.STATIC_FS_ENV,
+    STATIC_FS_MAIN_RUNTIME_PATH: process.env.STATIC_FS_MAIN_RUNTIME_PATH,
+  };
+
+  if (!sanitizedOptions) {
+    return staticFsRequiredEnv;
+  }
+
+  if (sanitizedOptions.env) {
+    return Object.assign(staticFsRequiredEnv, sanitizedOptions.env);
+  }
+
+  return process.env;
+}
+
 export function patchChildProcess(sfsRuntime) {
   const sfs = sfsRuntime.staticfilesystem;
   const fork = child_process.fork;
@@ -117,25 +134,24 @@ export function patchChildProcess(sfsRuntime) {
   child_process.fork = (modulePath, args, options) => {
     const sanitizedOptions = args && typeof args === 'object' && args.constructor === Object ? args : options || {};
     const sanitizedArgs = Array.isArray(args) ? args : [];
-    const optsEnv = Object.assign(process.env, sanitizedOptions.env || {});
+    const optsEnv = getEnvFromSanitizedOptions(sanitizedOptions);
     // Note: the mainStaticFsRuntimePath is null because fork is a special case of spawn
     // that would get added as the first argument
     const builtArgs = buildStaticFsArgs(sanitizedArgs, null, sfs.loadedVolumes, modulePath);
     if (args && optsEnv.STATIC_FS_ENV) {
       assureCwdOnSanitizedOptions(sanitizedOptions, sfs, realFs.existsSync);
-      return fork(process.env.STATIC_FS_MAIN_RUNTIME_PATH, builtArgs, { ...sanitizedOptions, env: optsEnv });
-    } else {
-      return fork(modulePath, args, options);
+      return fork(optsEnv.STATIC_FS_MAIN_RUNTIME_PATH, builtArgs, { ...sanitizedOptions, env: optsEnv });
     }
+    return fork(modulePath, args, options);
   };
 
   // hot-patch spawn so we can patch if you're actually calling node.
   child_process.spawn = (command, args, options) => {
     const sanitizedOptions = args && typeof args === 'object' && args.constructor === Object ? args : options || {};
-    const optsEnv = Object.assign(process.env, sanitizedOptions.env || {});
+    const optsEnv = getEnvFromSanitizedOptions(sanitizedOptions);
     // Note: the mainEntry is null because that would be automatically
     // add in the new process as the first real argument of the new process
-    const builtArgs = buildStaticFsArgs(args, process.env.STATIC_FS_MAIN_RUNTIME_PATH, sfs.loadedVolumes);
+    const builtArgs = buildStaticFsArgs(args, optsEnv.STATIC_FS_MAIN_RUNTIME_PATH, sfs.loadedVolumes);
     if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
       // NOTE: that  assureCwdOnSanitizedOptions is needed as it is reasonable
       // to declare cwd for the spawn that is bundled inside the static-fs volumes
@@ -150,8 +166,8 @@ export function patchChildProcess(sfsRuntime) {
 
   child_process.spawnSync = (command, args, options) => {
     const sanitizedOptions = args && typeof args === 'object' && args.constructor === Object ? args : options || {};
-    const optsEnv = Object.assign(process.env, sanitizedOptions.env || {});
-    const builtArgs = buildStaticFsArgs(args, process.env.STATIC_FS_MAIN_RUNTIME_PATH, sfs.loadedVolumes);
+    const optsEnv = getEnvFromSanitizedOptions(sanitizedOptions);
+    const builtArgs = buildStaticFsArgs(args, optsEnv.STATIC_FS_MAIN_RUNTIME_PATH, sfs.loadedVolumes);
     if (args && (Array.isArray(args) || typeof args !== 'object') && isNode(command) && optsEnv.STATIC_FS_ENV) {
       assureCwdOnSanitizedOptions(sanitizedOptions, sfs, realFs.existsSync);
       return spawnSync(command, builtArgs, { ...sanitizedOptions, env: optsEnv });
@@ -161,12 +177,12 @@ export function patchChildProcess(sfsRuntime) {
 
   child_process.exec = (command, options, callback) => {
     const sanitizedOptions = options && typeof options === 'object' ? options : {};
-    const optsEnv = Object.assign(process.env, sanitizedOptions.env || {});
+    const optsEnv = getEnvFromSanitizedOptions(sanitizedOptions);
     const pos = startsWithNode(command);
     if (pos > -1 && optsEnv.STATIC_FS_ENV) {
       const builtArgs = buildStaticFsArgs(
         command.substring(pos),
-        process.env.STATIC_FS_MAIN_RUNTIME_PATH,
+        optsEnv.STATIC_FS_MAIN_RUNTIME_PATH,
         sfs.loadedVolumes,
       ).join(' ');
 
@@ -178,12 +194,12 @@ export function patchChildProcess(sfsRuntime) {
 
   child_process.execSync = (command, options) => {
     const sanitizedOptions = options && typeof options === 'object' ? options : {};
-    const optsEnv = Object.assign(process.env, sanitizedOptions.env || {});
+    const optsEnv = getEnvFromSanitizedOptions(sanitizedOptions);
     const pos = startsWithNode(command);
     if (pos > -1 && optsEnv.STATIC_FS_ENV) {
       const builtArgs = buildStaticFsArgs(
         command.substring(pos),
-        process.env.STATIC_FS_MAIN_RUNTIME_PATH,
+        optsEnv.STATIC_FS_MAIN_RUNTIME_PATH,
         sfs.loadedVolumes,
       ).join(' ');
 
