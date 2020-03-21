@@ -304,8 +304,9 @@ export class StaticFilesystem {
   }
 
   createReadStream(path, options) {
-    const filePath = nodePathToString(path);
     const optionsFlags = options && options.flags;
+    const optionsFd = options && options.fd;
+    const filePath = optionsFd ? path : nodePathToString(path);
 
     if (!this.areFlagsValid(optionsFlags)) {
       throw StaticFilesystem.NewError(constants.errno.EROFS, 'createReadStream', filePath);
