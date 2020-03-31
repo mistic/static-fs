@@ -11,16 +11,12 @@
 [![NPM Install Size][npm-install-size-image]][npm-install-size-url]
 
 
-A static filesystem to bundle multiple files into one that are lately
+A static filesystem to bundle multiple files into one that are
 able to be read by Node.js through `require` or the [fs module](https://nodejs.org/api/fs.html).
 
 ## Why
 
-There are a lot of use cases when we have the need to ship the `node_modules` 
-along with the distribution files of our code in order to achieve a `zero install` 
-workflow for our end users. As the application evolves so the `node_modules` number 
-of files which would cause a lot of problems specially on `windows` environments 
-(bad performance unzipping, bad performance through an installer,  max file path length, etc).
+There are a lot of use cases which require shipping `node_modules` along with the distribution in order to achieve a `zero install` workflow for our end users. Given the nature of node_modules, this directory ends up containing a magnitude of files resulting in a degraded experience, especially on Windows environments (bad performance unzipping, bad performance through an installer,  max file path length, etc).
 
 That was the first motivation and the main use case for the static filesystem: 
 allow to bundle all the files from the `node_modules` during the build process into a single file 
@@ -47,9 +43,9 @@ from the static filesystem
 
 ## Getting Started
 
-Remember, that is a development tool intended to be used during your 
+Remember, that this is a development tool intended to be used during your 
 build process, so install it as `development dependency` and run it as 
-a one final step once your build produce the raw distributable artifacts.
+a final step once your build produce the raw build artifacts.
 
 ### Install
 
@@ -150,15 +146,15 @@ they should not be included inside the static filesystem during the generation p
 here: any write operation is not supported against the static filesystem during runtime.
 It would mimic the file state at the time it was generated.
 
-Let us know if you found other unknown limitations [opening an issue](https://github.com/mistic/static-fs/issues/new).
+Let us know if you found other unknown limitations [opening an issue](https://github.com/elastic/static-fs/issues/new).
 
 ## Contributing
 
-If you wanna contribute please read [CONTRIBUTING.md](https://github.com/mistic/static-fs/blob/master/CONTRIBUTING.md).
+If you would like to contribute, please read [CONTRIBUTING.md](https://github.com/elastic/static-fs/blob/master/CONTRIBUTING.md).
 
 ## License
 
-See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
+See [LICENSE](https://github.com/elastic/static-fs/blob/master/LICENSE).
 
 ## Thanks To
 
@@ -170,17 +166,17 @@ See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
   of that project it was curious to understand how both projects share some of the same ideas,
   however still capable of achieving different results and different implementations.
   
-[ci-build-status-image]: https://github.com/mistic/static-fs/workflows/CI.CD/badge.svg?branch=master 
-[ci-build-status-url]: https://github.com/mistic/static-fs/actions?query=workflow%3ACI.CD+branch%3Amaster
+[ci-build-status-image]: https://github.com/elastic/static-fs/workflows/CI.CD/badge.svg?branch=master 
+[ci-build-status-url]: https://github.com/elastic/static-fs/actions?query=workflow%3ACI.CD+branch%3Amaster
 [commitizen-friendly-image]: https://img.shields.io/badge/commitizen-friendly-brightgreen.svg
 [commitizen-friendly-url]: http://commitizen.github.io/cz-cli
 [npm-version-image]: https://img.shields.io/npm/v/static-fs
 [npm-version-url]: https://www.npmjs.com/package/static-fs
 [node-version-image]: https://img.shields.io/node/v/static-fs
 [node-version-url]: https://nodejs.org/download/release/v10.19.0
-[david-node-deps-manager-image]: https://img.shields.io/david/mistic/static-fs
-[david-node-deps-manager-url]: https://david-dm.org/mistic/static-fs
-[david-node-deps-manager-dev-image]: https://img.shields.io/david/dev/mistic/static-fs
-[david-node-deps-manager-dev-url]: https://david-dm.org/mistic/static-fs?type=dev
-[npm-install-size-image]: https://packagephobia.now.sh/badge?p=static-fs
-[npm-install-size-url]: https://packagephobia.now.sh/result?p=static-fs
+[david-node-deps-manager-image]: https://img.shields.io/david/elastic/static-fs
+[david-node-deps-manager-url]: https://david-dm.org/elastic/static-fs
+[david-node-deps-manager-dev-image]: https://img.shields.io/david/dev/elastic/static-fs
+[david-node-deps-manager-dev-url]: https://david-dm.org/elastic/static-fs?type=dev
+[npm-install-size-image]: https://packagephobia.now.sh/badge?p=@elastic/static-fs
+[npm-install-size-url]: https://packagephobia.now.sh/result?p=@elastic/static-fs
