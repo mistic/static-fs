@@ -224,10 +224,9 @@ export class ReadableStaticVolume {
         : null
       : null;
 
-    // alloc buffer
     const buf = Buffer.alloc(item.size);
 
-    // read the content and return a string
+    // read the content into the created buffer
     realFs.readSync(this.volumeFd, buf, 0, item.size, item.ino);
 
     if (!encoding) {

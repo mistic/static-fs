@@ -146,37 +146,31 @@ they should not be included inside the static filesystem during the generation p
 here: any write operation is not supported against the static filesystem during runtime.
 It would mimic the file state at the time it was generated.
 
-Let us know if you found other unknown limitations [opening an issue](https://github.com/elastic/static-fs/issues/new).
+Let us know if you found other unknown limitations [opening an issue](https://github.com/mistic/static-fs/issues/new).
 
 ## Contributing
 
-If you would like to contribute, please read [CONTRIBUTING.md](https://github.com/elastic/static-fs/blob/master/CONTRIBUTING.md).
+If you would like to contribute, please read [CONTRIBUTING.md](https://github.com/mistic/static-fs/blob/master/CONTRIBUTING.md).
 
 ## License
 
-See [LICENSE](https://github.com/elastic/static-fs/blob/master/LICENSE).
+See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
 
-## Thanks To
+## Thanks
 
-- @zeit for [Pkg](https://github.com/zeit/pkg) as it was the first project we 
-  start investigate in order to solve that problem and was also source of some ideas.
-- @fearthecowboy for [static-link](https://github.com/fearthecowboy/static-link) as 
-  it was the main inspiration for that project (it's codebase was used as the starting point for the current project).
-- @electron for [asar](https://github.com/electron/asar). While we found it in a later stage 
-  of that project it was curious to understand how both projects share some of the same ideas,
-  however still capable of achieving different results and different implementations.
+Our thanks can be read at [THANKS.md](https://github.com/mistic/blob/master/THANKS.md).
   
-[ci-build-status-image]: https://github.com/elastic/static-fs/workflows/CI.CD/badge.svg?branch=master 
-[ci-build-status-url]: https://github.com/elastic/static-fs/actions?query=workflow%3ACI.CD+branch%3Amaster
+[ci-build-status-image]: https://github.com/mistic/static-fs/workflows/CI.CD/badge.svg?branch=master 
+[ci-build-status-url]: https://github.com/mistic/static-fs/actions?query=workflow%3ACI.CD+branch%3Amaster
 [commitizen-friendly-image]: https://img.shields.io/badge/commitizen-friendly-brightgreen.svg
 [commitizen-friendly-url]: http://commitizen.github.io/cz-cli
 [npm-version-image]: https://img.shields.io/npm/v/static-fs
 [npm-version-url]: https://www.npmjs.com/package/static-fs
 [node-version-image]: https://img.shields.io/node/v/static-fs
 [node-version-url]: https://nodejs.org/download/release/v10.19.0
-[david-node-deps-manager-image]: https://img.shields.io/david/elastic/static-fs
-[david-node-deps-manager-url]: https://david-dm.org/elastic/static-fs
-[david-node-deps-manager-dev-image]: https://img.shields.io/david/dev/elastic/static-fs
-[david-node-deps-manager-dev-url]: https://david-dm.org/elastic/static-fs?type=dev
-[npm-install-size-image]: https://packagephobia.now.sh/badge?p=@elastic/static-fs
-[npm-install-size-url]: https://packagephobia.now.sh/result?p=@elastic/static-fs
+[david-node-deps-manager-image]: https://img.shields.io/david/mistic/static-fs
+[david-node-deps-manager-url]: https://david-dm.org/mistic/static-fs
+[david-node-deps-manager-dev-image]: https://img.shields.io/david/dev/mistic/static-fs
+[david-node-deps-manager-dev-url]: https://david-dm.org/mistic/static-fs?type=dev
+[npm-install-size-image]: https://packagephobia.now.sh/badge?p=static-fs
+[npm-install-size-url]: https://packagephobia.now.sh/result?p=static-fs

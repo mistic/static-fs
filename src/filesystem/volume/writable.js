@@ -57,14 +57,13 @@ export class WritableStaticVolume {
     await this.getFileNames(sourceFolder, calculatedTargetFolder, exclusions);
   }
 
-  get headerLength() {
-    // put hash size in header
+  getHeaderLength() {
     this.hashBuffer = Buffer.from(this.hash, 'utf-8');
 
-    let size = INT_SIZE;
-    size += this.hashBuffer.byteLength;
+    let size = INT_SIZE; // hashSize integer
+    size += this.hashBuffer.byteLength; // hashString
 
-    size += INT_SIZE; // trailing zero.
+    size += INT_SIZE; // end of header with a control zero
     return size;
   }
 
@@ -100,7 +99,7 @@ export class WritableStaticVolume {
       return dirsIdx;
     }, {});
 
-    let totalDataSize = this.headerLength;
+    let totalDataSize = this.getHeaderLength();
     const filesIndex = Object.keys(this.filesIndex).reduce((filesIdx, filePath) => {
       const unixifiedFilePath = unixifyPath(filePath);
       filesIdx[unixifiedFilePath] = {
@@ -126,15 +125,14 @@ export class WritableStaticVolume {
 
   async writeVolume() {
     const volumeFd = await open(this.outputFile, 'w');
-    let dataOffset = this.headerLength;
+    let dataOffset = this.getHeaderLength();
 
     let headerPosition = await this.writeInt(volumeFd, this.hashBuffer.byteLength);
     await write(volumeFd, this.hashBuffer, 0, this.hashBuffer.byteLength, headerPosition);
 
-    const all = [];
     const filePaths = Object.keys(this.filesIndex);
 
-    // start writing out the data
+    // write the data
     for (const each of filePaths) {
       const entry = this.filesIndex[each];
       const position = dataOffset;
@@ -142,9 +140,6 @@ export class WritableStaticVolume {
       const buf = await this.filesIndex[each].getBuffer();
       await write(volumeFd, buf, 0, buf.length, position);
     }
-
-    // finish writing all the buffers.
-    await Promise.all(all);
 
     await close(volumeFd);
   }

@@ -27,10 +27,10 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
       fsPath = `\${__dirname }/${fsPath}`;
 
       let content = await readFile(entryPoint, { encoding: 'utf8' });
-      const patchLine = `require('${loaderPath}')\n.load(require.resolve(\`${fsPath}\`));\n`;
+      const staticFsPatch = `require('${loaderPath}')\n.load(require.resolve(\`${fsPath}\`));\n`;
       let shebangPrefix = '';
       let useStrictPrefix = '';
-      if (content.indexOf(patchLine) === -1) {
+      if (content.indexOf(staticFsPatch) === -1) {
         // #! shebang
         const shebangRx = /^#!.*$/gm.exec(content.toString());
         if (shebangRx && shebangRx.index === 0) {
@@ -47,13 +47,13 @@ const patchEntryPoints = async (entryPoints, staticFSRuntimeFile, staticFsVolume
           content = content.replace(useStrictPrefix, '');
         }
 
-        // strip existing loader
+        // remove previous loader
         content = content.replace(/^require.*static_fs_runtime.js.*$/gm, '');
         content = content.replace(/\/\/ load static_fs_volume: .*$/gm, '');
         content = content.trim();
 
         const additionalNLSeparator = shebangPrefix || useStrictPrefix ? '\n' : '';
-        content = `${shebangPrefix}${useStrictPrefix}${additionalNLSeparator}// load static_fs_volume: ${fsPath}\n${patchLine}\n${content}`;
+        content = `${shebangPrefix}${useStrictPrefix}${additionalNLSeparator}// load static_fs_volume: ${fsPath}\n${staticFsPatch}\n${content}`;
 
         await writeFile(entryPoint, content);
       }
