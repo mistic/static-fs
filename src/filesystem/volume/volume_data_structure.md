@@ -9,17 +9,20 @@ It is composed in 2 main parts:
 That data structure could be summarized as the following
 
 ```javascript
-// all integers are six-byte-big-endian values
+//
+// Integers are 6B Big-Endian
+//
 
-// header information 
-int hashSize;              // number of bytes in the hashString
-byte[hashSize] hashString; // utf-8 encoded string for configuration file hashing
+// Header 
+int hashSize;              // Number of bytes in the hash
+byte[hashSize] hashString; // Hash value for this volume (utf-8 encoded string)
 
-int zero;                  // 0 -- indicating the end of the header
+// End of header
+int zero;                  // Control value (zero) for the end of the header
 
-// starting after the header, the data streams are laid out one after another 
-// the loader took care of interpret the index  and load the needed data as requested.
+// All the data for on this volume are stored here starting after the header in sequence. 
+// The loader took care of interpret the index and load the needed data as requested.
 {
- byte[dataSize];          // each file data
+ byte[dataSize];          // Data for a given file
 }
 ```

@@ -1,7 +1,7 @@
 'use strict';
 
 const { patchModuleLoader } = require('static-fs/dist/runtime');
-const { sanitizePath } = require('static-fs/dist/common');
+const { sanitizePath } = require('../../utils');
 
 const mockFs = {
   readFileSync: (path) => {
@@ -22,8 +22,8 @@ const mockFs = {
         isCharacterDevice: () => false,
         isSymbolicLink: () => false,
         isFIFO: () => false,
-        isSocket: () => false
-      }
+        isSocket: () => false,
+      };
     }
 
     if (sanitizePath(path) === sanitizePath('./static_fs_mock/patched/path/file.js')) {
@@ -34,15 +34,15 @@ const mockFs = {
         isCharacterDevice: () => false,
         isSymbolicLink: () => false,
         isFIFO: () => false,
-        isSocket: () => false
-      }
+        isSocket: () => false,
+      };
     }
     throw new Error();
-  }
+  },
 };
 
 const mockStaticFsRuntime = {
-  staticfilesystem: mockFs
+  staticfilesystem: mockFs,
 };
 
 const undo_module_loader_patch = patchModuleLoader(mockStaticFsRuntime);

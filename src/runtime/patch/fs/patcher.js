@@ -58,7 +58,6 @@ function applyPatchFs(patchedFs, originalFs) {
     }
   }
 
-  // return a delegate to undo those changes.
   return () => applyPatchFs(backupFs, originalFs);
 }
 

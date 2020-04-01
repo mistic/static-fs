@@ -4,7 +4,6 @@ export function patchProcess(sfsRuntime) {
   const process_exit = process.exit;
 
   // setup exit fn
-  // inspired on: // https://github.com/sindresorhus/exit-hook
   let exitWasCalled = false;
   const exitFn = (n) => {
     if (!exitWasCalled) {

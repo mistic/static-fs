@@ -4,9 +4,7 @@ import { StaticFilesystem } from '../filesystem';
 import { patchChildProcess, patchFilesystem, patchModuleLoader, patchProcess } from './patch';
 
 if (isRunningAsEntry()) {
-  // this is for "fork mode" where we are forking a child process.
-  // the first parameter should be this file.
-  // the following parameter should be the static module file.
+  // this is used when we are forking a child process
   const currentRuntimePath = process.env.STATIC_FS_MAIN_RUNTIME_PATH || module.filename;
   let startPath = null;
 
@@ -31,19 +29,25 @@ if (isRunningAsEntry()) {
   for (let i = 0; i < process.argv.length; i++) {
     if (realFs.realpathSync(process.argv[i]) === startPath) {
       process.argv.splice(i, 1);
+
+      // Load volumes in the argument
       while (i < process.argv.length && process.argv[i].startsWith('--static-fs-volumes=')) {
         const staticFsVolume = process.argv[i].split('=')[1];
         process.argv.splice(i, 1);
         load(staticFsVolume);
       }
+
+      // exit when arguments are missing
       if (process.argv.length < 2) {
         // eslint-disable-next-line no-console
-        console.log('Missing the module name to start.');
+        console.log('Missing the module name to start with');
         process.exit(1);
       }
-      // load the main module as if it were the real deal
+
+      // Load the main module
       Module._load(process.argv[1], null, true);
-      // Handle any nextTicks added in the first tick of the program
+
+      // Handle any pending ticks
       process._tickCallback();
       break;
     }

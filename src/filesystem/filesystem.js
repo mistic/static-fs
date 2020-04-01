@@ -44,10 +44,10 @@ export class StaticFilesystem {
         };
     }
     return {
-      ...new Error(`UNKNOWN: Error, ${method} ${data}`),
-      code: 'UNKNOWN',
+      ...new Error(`UNKNOWN_ERROR: Something unexpected happened , ${method} ${data}`),
+      code: 'UNKNOWN_ERROR',
       info: data,
-      errno: -10000,
+      errno: -9999,
     };
   }
 

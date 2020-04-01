@@ -1,8 +1,14 @@
 import * as child_process from 'child_process';
 import * as realFs from 'fs';
 
-const possibilities = ['node', 'node.exe', process.execPath, process.argv[0]];
+const nodeBinPossibilities = ['node', 'node.exe', process.execPath, process.argv[0]];
 
+// assureCwdOnSanitizedOptions is needed as it is reasonable
+// to declare cwd in the child_process function's options
+// for resources bundled inside the static-fs volumes
+// and in that case will not exist on the real filesystem.
+// As nodejs uses uv_spawn to launch the child_process ultimately,
+// that library would throw an error if the cwd does not exist
 function assureCwdOnSanitizedOptions(options, sfs, existsOnRealFs) {
   const cwd = options && options.cwd;
 
@@ -82,20 +88,20 @@ function indexAfterStartsWith(command, text) {
 }
 
 function isNode(path) {
-  return possibilities.indexOf(path) > -1;
+  return nodeBinPossibilities.indexOf(path) > -1;
 }
 
 function startsWithNode(command) {
   if (command.charAt(0) === '"') {
     // check includes quotes
-    for (const each of possibilities) {
+    for (const each of nodeBinPossibilities) {
       const val = indexAfterStartsWith(command, `"${each}" `);
       if (val > -1) {
         return val;
       }
     }
   } else {
-    for (const each of possibilities) {
+    for (const each of nodeBinPossibilities) {
       const val = indexAfterStartsWith(command, `${each} `);
       if (val > -1) {
         return val;
@@ -132,7 +138,6 @@ export function patchChildProcess(sfsRuntime) {
   const execFileSync = child_process.execFileSync;
   const spawnSync = child_process.spawnSync;
 
-  // hot-patch fork so we can make child processes work too.
   child_process.fork = (modulePath, args, options) => {
     const sanitizedOptions = typeof args === 'object' && args.constructor === Object ? args : options || {};
     const sanitizedArgs = Array.isArray(args) ? args : [];
@@ -150,7 +155,6 @@ export function patchChildProcess(sfsRuntime) {
     return fork(modulePath, sanitizedArgs, sanitizedOptions);
   };
 
-  // hot-patch spawn so we can patch if you're actually calling node.
   child_process.spawn = (command, args, options) => {
     const sanitizedOptions = typeof args === 'object' && args.constructor === Object ? args : options || {};
     const sanitizedArgs = Array.isArray(args) ? args : [];
@@ -161,11 +165,6 @@ export function patchChildProcess(sfsRuntime) {
       // add in the new process as the first real argument of the new process
       const builtArgs = buildStaticFsArgs(sanitizedArgs, optsEnv.STATIC_FS_MAIN_RUNTIME_PATH, sfs.loadedVolumes);
 
-      // NOTE: that  assureCwdOnSanitizedOptions is needed as it is reasonable
-      // to declare cwd for the spawn that is bundled inside the static-fs volumes
-      // and in that case will not exist on the real filesystem.
-      // As nodejs uses uv_spawn to launch the child_process ultimately,
-      // that library would throw an error if the cwd does not exist
       assureCwdOnSanitizedOptions(sanitizedOptions, sfs, realFs.existsSync);
       return spawn(command, builtArgs, { ...sanitizedOptions, env: optsEnv });
     }
@@ -238,15 +237,8 @@ export function patchChildProcess(sfsRuntime) {
     const optsEnv = getEnvFromSanitizedOptions(sanitizedOptions);
 
     if (isNode(file) && optsEnv.STATIC_FS_ENV) {
-      // Note: the mainEntry is null because that would be automatically
-      // add in the new process as the first real argument of the new process
       const builtArgs = buildStaticFsArgs(sanitizedArgs, optsEnv.STATIC_FS_MAIN_RUNTIME_PATH, sfs.loadedVolumes);
 
-      // NOTE: that  assureCwdOnSanitizedOptions is needed as it is reasonable
-      // to declare cwd for the execFile that is bundled inside the static-fs volumes
-      // and in that case will not exist on the real filesystem.
-      // As nodejs uses uv_spawn to launch the child_process ultimately,
-      // that library would throw an error if the cwd does not exist
       assureCwdOnSanitizedOptions(sanitizedOptions, sfs, realFs.existsSync);
       return execFile(file, builtArgs, { ...sanitizedOptions, env: optsEnv }, sanitizedCallback);
     }

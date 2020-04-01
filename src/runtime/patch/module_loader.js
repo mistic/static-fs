@@ -15,9 +15,9 @@ export function patchModuleLoader(staticFsRuntime) {
   const packageMainCache = {};
   const sfs = staticFsRuntime.staticfilesystem;
 
-  // Used to speed up module loading.  Returns the contents of the file as
-  // a string or undefined when the file cannot be opened.  The speedup
-  // comes from not creating Error objects on failure.
+  // Returns the contents of the file as a string
+  // or undefined when the file cannot be opened.
+  // Not creating errors makes it run faster.
   function internalModuleReadFile(path) {
     try {
       return sfs.readFileSync(path, 'utf8');
@@ -28,9 +28,10 @@ export function patchModuleLoader(staticFsRuntime) {
     return undefined;
   }
 
-  // Used to speed up module loading.  Returns 0 if the path refers to
-  // a file, 1 when it's a directory or < 0 on error (usually -ENOENT.)
-  // The speedup comes from not creating thousands of Stat and Error objects.
+  // Returns 0 if the path refers to a file,
+  // 1 when it's a directory
+  // or < 0 on error (usually -ENOENT).
+  // Not creating errors makes it run faster.
   function internalModuleStat(filename) {
     try {
       return sfs.statSync(filename).isDirectory() ? 1 : 0;
@@ -38,7 +39,8 @@ export function patchModuleLoader(staticFsRuntime) {
       /* no-op */
     }
 
-    return -2; // ENOENT
+    // ENOENT
+    return -2;
   }
 
   function stat(filename) {
@@ -81,7 +83,6 @@ export function patchModuleLoader(staticFsRuntime) {
     return stat(requestPath) === 0 ? sfs.realpathSync(requestPath) : undefined;
   }
 
-  // given a path check a the file exists with any of the set extensions
   function tryExtensions(p, exts, isMain) {
     for (let i = 0; i < exts.length; i++) {
       const filename = tryFile(p + exts[i], isMain);
@@ -108,13 +109,11 @@ export function patchModuleLoader(staticFsRuntime) {
     return undefined;
   }
 
-  // Native extension for .js
   Module._extensions['.js'] = (module, filename) => {
     const readFileFn = stat(filename) === 0 ? sfs.readFileSync.bind(sfs) : realFs.readFileSync.bind(this);
     module._compile(stripBOM(readFileFn(filename, 'utf8')), filename);
   };
 
-  // Native extension for .json
   Module._extensions['.json'] = (module, filename) => {
     const readFileFn = stat(filename) === 0 ? sfs.readFileSync.bind(sfs) : realFs.readFileSync.bind(this);
 
@@ -125,8 +124,6 @@ export function patchModuleLoader(staticFsRuntime) {
     }
   };
 
-  Module._originalFindPath = Module._findPath;
-
   Module._findPath = (request, paths, isMain) => {
     const isRelative =
       request.startsWith('./') ||
@@ -134,14 +131,14 @@ export function patchModuleLoader(staticFsRuntime) {
       (isWindows && request.startsWith('.\\')) ||
       request.startsWith('..\\');
 
-    let result = Module._alternateFindPath(request, paths, isMain);
+    let result = Module._customFindPath(request, paths, isMain);
 
     // NOTE: special use case when we have a findPath call with a relative file request where
     // the given path is in the real fs and the relative file
     // is inside the static fs
     if (isRelative && paths.length === 1) {
       const resolvedRequest = resolve(paths[0], request);
-      result = Module._alternateFindPath(resolvedRequest, paths, isMain);
+      result = Module._customFindPath(resolvedRequest, paths, isMain);
     }
 
     if (result) {
@@ -151,15 +148,17 @@ export function patchModuleLoader(staticFsRuntime) {
     // NOTE: special use case when we have a findPath call with a relative file request where
     // the given path is inside the static fs and the relative file
     // request in the real fs (for example in the native modules).
+    //
+    // moduleFindPath -> is the original Module._findPath
     if (isRelative && paths.length === 1) {
       const resolvedRequest = resolve(paths[0], request);
-      result = Module._originalFindPath(resolvedRequest, paths, isMain);
+      result = moduleFindPath(resolvedRequest, paths, isMain);
     }
 
-    return !result ? Module._originalFindPath(request, paths, isMain) : result;
+    return !result ? moduleFindPath(request, paths, isMain) : result;
   };
 
-  Module._alternateFindPath = (request, paths, isMain) => {
+  Module._customFindPath = (request, paths, isMain) => {
     if (!request) {
       return false;
     }
@@ -178,10 +177,7 @@ export function patchModuleLoader(staticFsRuntime) {
     const trailingSlash = request.charCodeAt(request.length - 1) === 47;
 
     // For each path
-    //for (var i = 0; i < paths.length; i++) {
     for (const curPath of paths) {
-      // Don't search further if path doesn't exist
-
       if (curPath && stat(curPath) < 1) {
         continue;
       }
@@ -195,7 +191,7 @@ export function patchModuleLoader(staticFsRuntime) {
         let correctedPath = unixifyPath(basePath);
         rc = stat(correctedPath);
         if (rc >= 0) {
-          // that looks pretty good, let's go with that.
+          // use it
           basePath = correctedPath;
         }
       }
@@ -231,7 +227,6 @@ export function patchModuleLoader(staticFsRuntime) {
     return false;
   };
 
-  // magic sauce to revert the patching.
   return () => {
     Module._extensions['.js'] = moduleExtensionsJS;
     Module._extensions['.json'] = moduleExtensionsJSON;
