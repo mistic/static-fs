@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.8.3](https://github.com/mistic/static-fs/compare/v1.8.2...v1.8.3) (2020-04-01)
+
+
+### Bug Fixes
+
+* memory explosion waiting for all promises when writing a volume ([#193](https://github.com/mistic/static-fs/issues/193)) ([127bb86](https://github.com/mistic/static-fs/commit/127bb8691a424b2f31768db048551aa81b9b96ee))
+
 ## [1.8.2](https://github.com/mistic/static-fs/compare/v1.8.1...v1.8.2) (2020-03-21)
 
 
