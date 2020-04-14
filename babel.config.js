@@ -3,7 +3,7 @@ module.exports = {
     [
       '@babel/preset-env',
       {
-        corejs: '3.6.4',
+        corejs: '3.6.5',
         modules: 'cjs',
         targets: {
           node: '10'
