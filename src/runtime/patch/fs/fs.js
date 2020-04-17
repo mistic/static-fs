@@ -47,6 +47,19 @@ function isOnFs(fs, path, fd = null) {
 }
 
 // Node Fs module patched methods
+function access(sfs, realFs, path, mode, callback) {
+  const sanitizedMode = typeof mode === 'function' ? realFs.constants.F_OK : mode;
+  const sanitizedCallback = typeof callback === 'function' ? callback : mode;
+  const isOnRealFs = isOnFs(realFs, path);
+  const isOnSfs = isOnFs(sfs, path);
+
+  if (isOnSfs && !isOnRealFs) {
+    return sfs.access(path, sanitizedMode, sanitizedCallback);
+  }
+
+  return realFs.access(path, sanitizedMode, sanitizedCallback);
+}
+
 function close(sfs, realFs, fd, callback) {
   if (isOnFs(sfs, null, fd)) {
     return sfs.close(fd, callback);
@@ -211,28 +224,16 @@ function stat(sfs, realFs, path, options, callback) {
   return realFs.stat(path, sanitizedOptions, sanitizedCallback);
 }
 
-function openSync(sfs, realFs, path, flags, mode) {
-  let sanitizedMode;
-  let sanitizedFlags;
+function accessSync(sfs, realFs, path, mode) {
+  const sanitizedMode = mode || realFs.constants.F_OK;
   const isOnRealFs = isOnFs(realFs, path);
   const isOnSfs = isOnFs(sfs, path);
 
-  if (!mode) {
-    sanitizedMode = 0o666;
-    sanitizedFlags = flags;
-  } else if (!flags) {
-    sanitizedMode = 0o666;
-    sanitizedFlags = 'r';
-  } else {
-    sanitizedMode = mode;
-    sanitizedFlags = flags;
-  }
-
   if (isOnSfs && !isOnRealFs) {
-    return sfs.openSync(path, sanitizedFlags);
+    return sfs.accessSync(path, sanitizedMode);
   }
 
-  return realFs.openSync(path, sanitizedFlags, sanitizedMode);
+  return realFs.accessSync(path, sanitizedMode);
 }
 
 function closeSync(sfs, realFs, fd) {
@@ -256,6 +257,30 @@ function fstatSync(sfs, realFs, fd, options) {
   }
 
   return realFs.fstatSync(fd, sanitizedOptions);
+}
+
+function openSync(sfs, realFs, path, flags, mode) {
+  let sanitizedMode;
+  let sanitizedFlags;
+  const isOnRealFs = isOnFs(realFs, path);
+  const isOnSfs = isOnFs(sfs, path);
+
+  if (!mode) {
+    sanitizedMode = 0o666;
+    sanitizedFlags = flags;
+  } else if (!flags) {
+    sanitizedMode = 0o666;
+    sanitizedFlags = 'r';
+  } else {
+    sanitizedMode = mode;
+    sanitizedFlags = flags;
+  }
+
+  if (isOnSfs && !isOnRealFs) {
+    return sfs.openSync(path, sanitizedFlags);
+  }
+
+  return realFs.openSync(path, sanitizedFlags, sanitizedMode);
 }
 
 function readSync(sfs, realFs, fd, buffer, offset, length, position) {
@@ -326,6 +351,7 @@ export function createPatchedFs(sfsRuntime, originalFs) {
   const realFs = { ...originalFs };
 
   const basePatchedFs = {
+    access: patchFn(sfs, realFs, access),
     close: patchFn(sfs, realFs, close),
     createReadStream: patchFn(sfs, realFs, createReadStream),
     exists: patchFn(sfs, realFs, exists),
@@ -336,6 +362,7 @@ export function createPatchedFs(sfsRuntime, originalFs) {
     readFile: patchFn(sfs, realFs, readFile),
     realpath: patchFn(sfs, realFs, realpath),
     stat: patchFn(sfs, realFs, stat),
+    accessSync: patchFn(sfs, realFs, accessSync),
     closeSync: patchFn(sfs, realFs, closeSync),
     existsSync: patchFn(sfs, realFs, existsSync),
     fstatSync: patchFn(sfs, realFs, fstatSync),
