@@ -1,5 +1,5 @@
 // NOTE: this is re-implementation of some core methods of
-// https://github.com/nodejs/node/blob/v10.x/lib/internal/modules/cjs/loader.js
+// https://github.com/nodejs/node/blob/v12.x/lib/internal/modules/cjs/loader.js
 
 import * as realFs from 'fs';
 import * as Module from 'module';
@@ -12,8 +12,9 @@ export function patchModuleLoader(staticFsRuntime) {
   const moduleFindPath = Module._findPath;
 
   const statCache = {};
-  const packageMainCache = {};
+  const packageJsonCache = {};
   const sfs = staticFsRuntime.staticfilesystem;
+  const pendingDeprecation = process.execArgv.includes('--pending-deprecation');
 
   // Returns the contents of the file as a string
   // or undefined when the file cannot be opened.
@@ -50,42 +51,47 @@ export function patchModuleLoader(staticFsRuntime) {
     return result !== undefined ? result : (statCache[filename] = internalModuleStat(filename));
   }
 
+  function readPackageMain(requestPath) {
+    const pkg = readPackage(requestPath);
+    return pkg ? pkg.main : undefined;
+  }
+
   function readPackage(requestPath) {
-    const entry = packageMainCache[requestPath];
-    if (entry) {
-      return entry;
-    }
-
     const jsonPath = resolve(requestPath, 'package.json');
-    const json = internalModuleReadFile(toNamespacedPath(jsonPath));
 
+    const existing = packageJsonCache[jsonPath];
+    if (existing !== undefined) return existing;
+
+    const json = internalModuleReadFile(toNamespacedPath(jsonPath));
     if (json === undefined) {
+      packageJsonCache[jsonPath] = false;
       return false;
     }
 
-    let pkg;
     try {
-      pkg = packageMainCache[requestPath] = JSON.parse(json).main;
+      const parsed = JSON.parse(json);
+      const filtered = {
+        name: parsed.name,
+        main: parsed.main,
+        exports: parsed.exports,
+        type: parsed.type,
+      };
+      packageJsonCache[jsonPath] = filtered;
+      return filtered;
     } catch (e) {
       e.path = jsonPath;
       e.message = 'Error parsing ' + jsonPath + ': ' + e.message;
       throw e;
     }
-
-    return pkg;
   }
 
-  function tryFile(requestPath, isMain) {
-    if (!isMain) {
-      return stat(requestPath) === 0 ? resolve(requestPath) : undefined;
-    }
-
+  function tryFile(requestPath) {
     return stat(requestPath) === 0 ? sfs.realpathSync(requestPath) : undefined;
   }
 
-  function tryExtensions(p, exts, isMain) {
+  function tryExtensions(p, exts) {
     for (let i = 0; i < exts.length; i++) {
-      const filename = tryFile(p + exts[i], isMain);
+      const filename = tryFile(p + exts[i]);
       if (filename) {
         return filename;
       }
@@ -94,19 +100,39 @@ export function patchModuleLoader(staticFsRuntime) {
     return undefined;
   }
 
-  function tryPackage(requestPath, exts, isMain) {
-    let pkg = readPackage(requestPath);
+  function tryPackage(requestPath, exts, originalPath) {
+    const pkg = readPackageMain(requestPath);
 
-    if (pkg) {
-      let filename = resolve(requestPath, pkg);
-      return (
-        tryFile(filename, isMain) ||
-        tryExtensions(filename, exts, isMain) ||
-        tryExtensions(resolve(filename, 'index'), exts, isMain)
-      );
+    if (!pkg) {
+      return tryExtensions(resolve(requestPath, 'index'), exts);
     }
 
-    return undefined;
+    const filename = resolve(requestPath, pkg);
+    let actual = tryFile(filename) || tryExtensions(filename, exts) || tryExtensions(resolve(filename, 'index'), exts);
+
+    if (actual === undefined) {
+      actual = tryExtensions(resolve(requestPath, 'index'), exts);
+      if (!actual) {
+        // eslint-disable-next-line no-restricted-syntax
+        const err = new Error(
+          `Cannot find module '${filename}'. ` + 'Please verify that the package.json has a valid "main" entry',
+        );
+        err.code = 'MODULE_NOT_FOUND';
+        err.path = resolve(requestPath, 'package.json');
+        err.requestPath = originalPath;
+        throw err;
+      } else if (pendingDeprecation) {
+        const jsonPath = resolve(requestPath, 'package.json');
+        process.emitWarning(
+          `Invalid 'main' field in '${jsonPath}' of '${pkg}'. ` +
+            'Please either fix that or report it to the module author',
+          'DeprecationWarning',
+          'DEP0128',
+        );
+      }
+    }
+
+    return actual;
   }
 
   Module._extensions['.js'] = (module, filename) => {
@@ -131,14 +157,14 @@ export function patchModuleLoader(staticFsRuntime) {
       (isWindows && request.startsWith('.\\')) ||
       request.startsWith('..\\');
 
-    let result = Module._customFindPath(request, paths, isMain);
+    let result = Module._customFindPath(request, paths);
 
     // NOTE: special use case when we have a findPath call with a relative file request where
     // the given path is in the real fs and the relative file
     // is inside the static fs
     if (isRelative && paths.length === 1) {
       const resolvedRequest = resolve(paths[0], request);
-      result = Module._customFindPath(resolvedRequest, paths, isMain);
+      result = Module._customFindPath(resolvedRequest, paths);
     }
 
     if (result) {
@@ -158,11 +184,9 @@ export function patchModuleLoader(staticFsRuntime) {
     return !result ? moduleFindPath(request, paths, isMain) : result;
   };
 
-  Module._customFindPath = (request, paths, isMain) => {
-    if (!request) {
-      return false;
-    }
-    if (isAbsolute(request)) {
+  Module._customFindPath = (request, paths) => {
+    const absoluteRequest = isAbsolute(request);
+    if (absoluteRequest) {
       paths = [''];
     } else if (!paths || paths.length === 0) {
       return false;
@@ -170,19 +194,24 @@ export function patchModuleLoader(staticFsRuntime) {
 
     const cacheKey = request + '\x00' + (paths.length === 1 ? paths[0] : paths.join('\x00'));
     const entry = Module._pathCache[cacheKey];
-    if (entry) {
-      return entry;
+    if (entry) return entry;
+
+    let exts;
+    let trailingSlash = request.length > 0 && request.charCodeAt(request.length - 1) === 47;
+    if (!trailingSlash) {
+      trailingSlash = /(?:^|\/)\.?\.$/.test(request);
     }
 
-    const trailingSlash = request.charCodeAt(request.length - 1) === 47;
-
     // For each path
-    for (const curPath of paths) {
-      if (curPath && stat(curPath) < 1) {
-        continue;
-      }
-
+    for (let i = 0; i < paths.length; i++) {
+      // Don't search further if path doesn't exist
+      const curPath = paths[i];
+      if (curPath && stat(curPath) < 1) continue;
+      // resolveExports is used in the node version
+      // we are simplifying it here
       let basePath = resolve(curPath, request);
+      let filename;
+
       let rc = stat(basePath);
 
       // check if this is a windows paths and if it should be corrected
@@ -196,27 +225,24 @@ export function patchModuleLoader(staticFsRuntime) {
         }
       }
 
-      let filename;
-      const exts = Object.keys(Module._extensions);
       if (!trailingSlash) {
-        switch (rc) {
-          case 0:
-            filename = !isMain ? resolve(basePath) : sfs.realpathSync(basePath);
-            break;
-          case 1:
-            filename = tryPackage(basePath, exts, isMain);
-            break;
+        if (rc === 0) {
+          // File.
+          filename = sfs.realpathSync(basePath);
         }
 
         if (!filename) {
-          // try it with each of the extensions
-          filename = tryExtensions(basePath, exts, isMain);
+          // Try it with each of the extensions
+          if (exts === undefined) exts = Object.keys(Module._extensions);
+          filename = tryExtensions(basePath, exts);
         }
       }
 
       if (!filename && rc === 1) {
         // Directory.
-        filename = tryPackage(basePath, exts, isMain) || tryExtensions(resolve(basePath, 'index'), exts, isMain);
+        // try it with each of the extensions at "index"
+        if (exts === undefined) exts = Object.keys(Module._extensions);
+        filename = tryPackage(basePath, exts, request);
       }
 
       if (filename) {
@@ -224,6 +250,7 @@ export function patchModuleLoader(staticFsRuntime) {
         return filename;
       }
     }
+
     return false;
   };
 
