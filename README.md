@@ -158,7 +158,7 @@ See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
 
 ## Thanks
 
-Our thanks can be read at [THANKS](https://github.com/mistic/blob/master/THANKS.md).
+Our thanks can be read at [THANKS](https://github.com/mistic/static-fs/blob/master/THANKS.md).
   
 [ci-build-status-image]: https://github.com/mistic/static-fs/workflows/CI.CD/badge.svg?branch=master 
 [ci-build-status-url]: https://github.com/mistic/static-fs/actions?query=workflow%3ACI.CD+branch%3Amaster
@@ -167,7 +167,7 @@ Our thanks can be read at [THANKS](https://github.com/mistic/blob/master/THANKS.
 [npm-version-image]: https://img.shields.io/npm/v/static-fs
 [npm-version-url]: https://www.npmjs.com/package/static-fs
 [node-version-image]: https://img.shields.io/node/v/static-fs
-[node-version-url]: https://nodejs.org/download/release/v10.19.0
+[node-version-url]: https://nodejs.org/download/release/v12.16.2
 [david-node-deps-manager-image]: https://img.shields.io/david/mistic/static-fs
 [david-node-deps-manager-url]: https://david-dm.org/mistic/static-fs
 [david-node-deps-manager-dev-image]: https://img.shields.io/david/dev/mistic/static-fs

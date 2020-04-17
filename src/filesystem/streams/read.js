@@ -1,4 +1,4 @@
-// NOTE: this is a raw re-implementation of https://github.com/nodejs/node/blob/v10.x/lib/internal/fs/streams.js#L45
+// NOTE: this is a raw re-implementation of https://github.com/nodejs/node/blob/v12.x/lib/internal/fs/streams.js#L64
 // that is setup to follow our needs for the static filesystem
 
 import { Readable } from 'stream';
@@ -17,7 +17,7 @@ function getOptions(options, defaultOptions) {
   }
 
   if (typeof options === 'string') {
-    defaultOptions = util._extend({}, defaultOptions);
+    defaultOptions = { ...defaultOptions };
     defaultOptions.encoding = options;
     options = defaultOptions;
   } else if (typeof options !== 'object') {
@@ -34,6 +34,9 @@ function copyObject(source) {
   return target;
 }
 
+const kIoDone = Symbol('kIoDone');
+const kIsPerformingIO = Symbol('kIsPerformingIO');
+
 const kMinPoolSpace = 128;
 
 let pool;
@@ -48,6 +51,10 @@ function allocNewPool(poolSize) {
   if (poolFragments.length > 0) pool = poolFragments.pop();
   else pool = Buffer.allocUnsafe(poolSize);
   pool.used = 0;
+}
+
+function roundUpToMultipleOf8(n) {
+  return (n + 7) & ~7; // Align to 8 byte boundary.
 }
 
 export function ReadStream(sfs, path, options) {
@@ -75,6 +82,7 @@ export function ReadStream(sfs, path, options) {
   this.pos = undefined;
   this.bytesRead = 0;
   this.closed = false;
+  this[kIsPerformingIO] = false;
 
   if (this.start !== undefined) {
     if (typeof this.start !== 'number' || Number.isNaN(this.start)) {
@@ -98,7 +106,7 @@ export function ReadStream(sfs, path, options) {
 
   if (!this.fd || !this.fd.type || this.fd.type !== 'static_fs_file_descriptor') this.open();
 
-  this.on('end', function() {
+  this.on('end', function () {
     if (this.autoClose) {
       this.destroy();
     }
@@ -106,7 +114,7 @@ export function ReadStream(sfs, path, options) {
 }
 util.inherits(ReadStream, Readable);
 
-ReadStream.prototype.open = function() {
+ReadStream.prototype.open = function () {
   this._sfs.open(this.path, (er, fd) => {
     if (er) {
       if (this.autoClose) {
@@ -124,9 +132,9 @@ ReadStream.prototype.open = function() {
   });
 };
 
-ReadStream.prototype._read = function(n) {
+ReadStream.prototype._read = function (n) {
   if (!this.fd || !this.fd.type || this.fd.type !== 'static_fs_file_descriptor') {
-    return this.once('open', function() {
+    return this.once('open', function () {
       this._read(n);
     });
   }
@@ -148,12 +156,17 @@ ReadStream.prototype._read = function(n) {
   if (this.pos !== undefined) toRead = Math.min(this.end - this.pos + 1, toRead);
   else toRead = Math.min(this.end - this.bytesRead + 1, toRead);
 
-  // already read everything we were supposed to read!
+  // Already read everything we were supposed to read!
   // treat as EOF.
   if (toRead <= 0) return this.push(null);
 
   // the actual read.
+  this[kIsPerformingIO] = true;
   this._sfs.read(this.fd, pool, pool.used, toRead, this.pos, (er, bytesRead) => {
+    this[kIsPerformingIO] = false;
+    // Tell ._destroy() that it's safe to close the fd now.
+    if (this.destroyed) return this.emit(kIoDone, er);
+
     if (er) {
       if (this.autoClose) {
         this.destroy();
@@ -164,9 +177,18 @@ ReadStream.prototype._read = function(n) {
       // Now that we know how much data we have actually read, re-wind the
       // 'used' field if we can, and otherwise allow the remainder of our
       // reservation to be used as a new pool later.
-      if (start + toRead === thisPool.used && thisPool === pool) thisPool.used += bytesRead - toRead;
-      else if (toRead - bytesRead > kMinPoolSpace)
-        poolFragments.push(thisPool.slice(start + bytesRead, start + toRead));
+      if (start + toRead === thisPool.used && thisPool === pool) {
+        const newUsed = thisPool.used + bytesRead - toRead;
+        thisPool.used = roundUpToMultipleOf8(newUsed);
+      } else {
+        // Round down to the next lowest multiple of 8 to ensure the new pool
+        // fragment start and end positions are aligned to an 8 byte boundary.
+        const alignedEnd = (start + toRead) & ~7;
+        const alignedStart = roundUpToMultipleOf8(start + bytesRead);
+        if (alignedEnd - alignedStart >= kMinPoolSpace) {
+          poolFragments.push(thisPool.slice(alignedStart, alignedEnd));
+        }
+      }
 
       if (bytesRead > 0) {
         this.bytesRead += bytesRead;
@@ -177,19 +199,24 @@ ReadStream.prototype._read = function(n) {
     }
   });
 
-  // move the pool positions, and internal position for reading.
+  // Move the pool positions, and internal position for reading.
   if (this.pos !== undefined) this.pos += toRead;
-  pool.used += toRead;
+
+  pool.used = roundUpToMultipleOf8(pool.used + toRead);
 };
 
-ReadStream.prototype._destroy = function(err, cb) {
+ReadStream.prototype._destroy = function (err, cb) {
   if (!this.fd || !this.fd.type || this.fd.type !== 'static_fs_file_descriptor') {
     this.once('open', closeFsStream.bind(null, this, cb, err));
     return;
   }
 
+  if (this[kIsPerformingIO]) {
+    this.once(kIoDone, (er) => closeFsStream(this, cb, err || er));
+    return;
+  }
+
   closeFsStream(this, cb, err);
-  this.fd = null;
 };
 
 function closeFsStream(stream, cb, err) {
@@ -197,11 +224,14 @@ function closeFsStream(stream, cb, err) {
     er = er || err;
     cb(er);
     stream.closed = true;
-    if (!er) stream.emit('close');
+    const s = stream._writableState || stream._readableState;
+    if (!er && !s.emitClose) stream.emit('close');
   });
+
+  stream.fd = null;
 }
 
-ReadStream.prototype.close = function(cb) {
+ReadStream.prototype.close = function (cb) {
   this.destroy(null, cb);
 };
 
