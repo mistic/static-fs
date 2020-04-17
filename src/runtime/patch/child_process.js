@@ -1,5 +1,6 @@
 import * as child_process from 'child_process';
 import * as realFs from 'fs';
+import * as util from 'util';
 
 const nodeBinPossibilities = ['node', 'node.exe', process.execPath, process.argv[0]];
 
@@ -261,11 +262,49 @@ export function patchChildProcess(sfsRuntime) {
     return execFileSync(file, sanitizedArgs, sanitizedOptions);
   };
 
+  // create custom NodeJs symbols for ChildProcess
+  // work with util.promisify
+  const customPromiseExecFunction = (orig) => {
+    return (...args) => {
+      let resolve;
+      let reject;
+      const promise = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+
+      promise.child = orig(...args, (err, stdout, stderr) => {
+        if (err !== null) {
+          err.stdout = stdout;
+          err.stderr = stderr;
+          reject(err);
+        } else {
+          resolve({ stdout, stderr });
+        }
+      });
+
+      return promise;
+    };
+  };
+
+  Object.defineProperty(child_process.exec, util.promisify.custom, {
+    enumerable: false,
+    value: customPromiseExecFunction(child_process.exec),
+  });
+
+  Object.defineProperty(child_process.execFile, util.promisify.custom, {
+    enumerable: false,
+    value: customPromiseExecFunction(child_process.execFile),
+  });
+  //
+
   return () => {
     child_process.fork = fork;
     child_process.spawn = spawn;
     child_process.exec = exec;
+    child_process.execFile = execFile;
     child_process.spawnSync = spawnSync;
     child_process.execSync = execSync;
+    child_process.execFileSync = execFileSync;
   };
 }

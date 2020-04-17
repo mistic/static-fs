@@ -6,6 +6,10 @@ function patchFn(asyncPatchedFsFn) {
   };
 }
 
+function access(patchedFsPromisifiedAccess, path, mode) {
+  return patchedFsPromisifiedAccess(path, mode);
+}
+
 function open(patchedFsPromisifiedOpen, path, flag, modes) {
   return patchedFsPromisifiedOpen(path, flag, modes);
 }
@@ -27,6 +31,7 @@ function stat(patchedFsPromisifiedStat, path, options) {
 }
 
 export function createPatchedFsPromises(patchedFs) {
+  const asyncPatchedFsAccess = promisify(patchedFs.access);
   const asyncPatchedFsOpen = promisify(patchedFs.open);
   const asyncPatchedFsReaddir = promisify(patchedFs.readdir);
   const asyncPatchedFsReadFile = promisify(patchedFs.readFile);
@@ -34,6 +39,7 @@ export function createPatchedFsPromises(patchedFs) {
   const asyncPatchedFsStat = promisify(patchedFs.stat);
 
   return {
+    access: patchFn(asyncPatchedFsAccess, access),
     open: patchFn(asyncPatchedFsOpen, open),
     readdir: patchFn(asyncPatchedFsReaddir, readdir),
     readFile: patchFn(asyncPatchedFsReadFile, readFile),
