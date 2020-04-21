@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+# [1.9.0](https://github.com/mistic/static-fs/compare/v1.8.3...v1.9.0) (2020-04-17)
+
+
+### Features
+
+* missing fs and child process patches ([#202](https://github.com/mistic/static-fs/issues/202)) ([74808cf](https://github.com/mistic/static-fs/commit/74808cff695d7a480f85a7a33c920d79a559889c))
+
 ## [1.8.3](https://github.com/mistic/static-fs/compare/v1.8.2...v1.8.3) (2020-04-01)
 
 

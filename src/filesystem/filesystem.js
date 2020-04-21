@@ -1,3 +1,4 @@
+import { constants as fsConstants } from 'fs';
 import { resolve } from 'path';
 import { constants } from 'os';
 import { nodePathToString, unixifyPath } from '../common';
@@ -41,6 +42,13 @@ export class StaticFilesystem {
           code: 'EROFS',
           path: data,
           errno: constants.errno.EROFS,
+        };
+      case constants.errno.EACCES:
+        return {
+          ...new Error(`EACCES: permission denied, ${method} '${data}'`),
+          code: 'EACCES',
+          path: data,
+          errno: constants.errno.EACCES,
         };
     }
     return {
@@ -140,6 +148,23 @@ export class StaticFilesystem {
         callback(err);
       }
     });
+  }
+
+  accessSync(path, mode) {
+    const filePath = nodePathToString(path);
+    const volume = this.volumeForFilepathSync(filePath);
+
+    if (!volume) {
+      throw StaticFilesystem.NewError(constants.errno.ENOENT, 'accessSync', filePath);
+    }
+
+    if (mode !== fsConstants.F_OK && mode !== fsConstants.R_OK && mode !== fsConstants.X_OK) {
+      throw StaticFilesystem.NewError(constants.errno.EACCES, 'accessSync', filePath);
+    }
+  }
+
+  access(path, mode, callback) {
+    this.wrapAsync(this.accessSync, [path, mode], callback);
   }
 
   readFileSync(path, options) {
