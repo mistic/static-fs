@@ -1,5 +1,5 @@
 <h1 align="center">
-  static-fs
+  Static-Fs
 </h1> 
 
 [![CI Build Status][ci-build-status-image]][ci-build-status-url]
@@ -20,7 +20,7 @@ There are a lot of use cases which require shipping `node_modules` along with th
 
 That was the first motivation and the main use case for the static filesystem: 
 allow to bundle all the files from the `node_modules` during the build process into a single file 
-and then, in runtime, force node to first look into that statically generated 
+and then, at runtime, force node to first look into that statically generated 
 filesystem when searching for a file and only look in the real filesystem 
 in case the file is not found on the static one.
 
@@ -49,7 +49,9 @@ a final step once your build produce the raw build artifacts.
 
 ### Install
 
-`npm install --save-dev static-fs`
+```
+npm install --save-dev static-fs
+```
 
 ### Usage
 
@@ -64,9 +66,9 @@ const { resolve } = require('path');
 const del = require('del');
 
 (async () => {
-  const mountRoot = resolve('../../'), 
-    folderToAdd = resolve('../../node_modules'),
-    entryPoint = resolve('../../index.js');
+  const mountRoot = resolve('.'), 
+    folderToAdd = resolve('node_modules'),
+    entryPoint = resolve('index.js');
   
   // Generate a static filesystem volume
   const addedFiles = await generateStaticFsVolume(
@@ -144,21 +146,25 @@ they should not be included inside the static filesystem during the generation p
 
 - While this is more a design choice than a limitation we choose to list it 
 here: any write operation is not supported against the static filesystem during runtime.
-It would mimic the file state at the time it was generated.
+It would mimic the file state at the time it was generated. In case a write operation is requested 
+using write flags through a method that supports it like `open` or `createReadStream` an 
+error will be thrown. If the write operation is requested through any other write only method the 
+file will be written at the given path and the Static-Fs will start returning the content of that file
+instead of the one inside the respective volume which previously have the file bundled.
 
 Let us know if you found other unknown limitations [opening an issue](https://github.com/mistic/static-fs/issues/new).
 
 ## Contributing
 
-If you would like to contribute, please read [CONTRIBUTING](https://github.com/mistic/static-fs/blob/master/CONTRIBUTING.md).
+If you would like to contribute, please read [CONTRIBUTING](CONTRIBUTING.md).
 
 ## License
 
-See [LICENSE](https://github.com/mistic/static-fs/blob/master/LICENSE).
+See [LICENSE](LICENSE).
 
 ## Thanks
 
-Our thanks can be read at [THANKS](https://github.com/mistic/static-fs/blob/master/THANKS.md).
+Our thanks can be read at [THANKS](THANKS.md).
   
 [ci-build-status-image]: https://github.com/mistic/static-fs/workflows/CI.CD/badge.svg?branch=master 
 [ci-build-status-url]: https://github.com/mistic/static-fs/actions?query=workflow%3ACI.CD+branch%3Amaster

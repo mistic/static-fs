@@ -1,6 +1,6 @@
-# Static-FS Volume Data Structure
+# Static-Fs Volume Data Structure
 
-Each static-fs volume stored on disk follows a really simple data structure approach. 
+Each Static-Fs volume stored on disk follows a really simple data structure approach. 
 It is composed in 2 main parts:
 
 - global header information

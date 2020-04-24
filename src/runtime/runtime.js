@@ -96,7 +96,7 @@ export function shutdown() {
     global.__STATIC_FS_RUNTIME.staticfilesystem.shutdown();
     global.__STATIC_FS_RUNTIME.staticfilesystem.undo();
 
-    // remove static-fs state control env vars
+    // remove Static-Fs state control env vars
     delete global.__STATIC_FS_RUNTIME;
     delete process.env.STATIC_FS_ENV;
     delete process.env.STATIC_FS_MAIN_RUNTIME_PATH;

@@ -2,7 +2,7 @@ import { dirname, relative, resolve } from 'path';
 import { WritableStaticVolume } from '../filesystem';
 import { copyFile, isFile, readFile, writeFile } from '../common';
 
-// Creates a static-fs runtime file in the target
+// Creates a Static-Fs runtime file in the target
 const createStaticFsRuntimeFile = async (outDir) => {
   const sourceFile = require.resolve(`../runtime`);
   const outFile = resolve(outDir, 'static_fs_runtime.js');

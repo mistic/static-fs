@@ -1,4 +1,4 @@
-Static-fs is licensed for use as follows:
+Static-Fs is licensed for use as follows:
 
 """
 MIT License
@@ -24,7 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-This license applies to parts of Static-fs originating from the
+This license applies to parts of Static-Fs originating from the
 https://github.com/nodejs/node repository:
 
 """
@@ -49,7 +49,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 """
 
-This license applies to parts of Static-fs originating from the
+This license applies to parts of Static-Fs originating from the
 https://github.com/fearthecowboy/static-link repository:
 
 """
@@ -74,7 +74,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 """
 
-This license applies to parts of Static-fs originating from the
+This license applies to parts of Static-Fs originating from the
 https://github.com/joyent/node repository:
 
 """

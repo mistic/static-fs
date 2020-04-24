@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
@@ -46,7 +47,10 @@ const nodeExternals = require('webpack-node-externals');
     await webpackPromise;
   } catch (error) {
     console.error(error);
+    console.error('Bundling failed');
+    process.exit(1);
   }
 
   console.log('Bundling end');
+  process.exit(0);
 })();
