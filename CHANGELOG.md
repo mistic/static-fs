@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.9.1](https://github.com/mistic/static-fs/compare/v1.9.0...v1.9.1) (2020-04-24)
+
+
+### Bug Fixes
+
+* undo only on exit instead of undo and shutdown ([#209](https://github.com/mistic/static-fs/issues/209)) ([6a98ebb](https://github.com/mistic/static-fs/commit/6a98ebb666e54e4b538fd5be4a17ad2386b5710d))
+
 # [1.9.0](https://github.com/mistic/static-fs/compare/v1.8.3...v1.9.0) (2020-04-17)
 
 
