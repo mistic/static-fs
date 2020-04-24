@@ -1,7 +1,7 @@
 {
   "name": "static-fs",
   "version": "1.9.0",
-  "description": "A static filesystem to bundle files and read them using NodeJS",
+  "description": "A static filesystem to bundle files and read them using Node.js",
   "main": "dist/index.js",
   "scripts": {
     "build": "node scripts/build",
@@ -26,8 +26,7 @@
     "node"
   ],
   "files": [
-    "dist/**/*.js",
-    "yarn.lock"
+    "dist/**/*.js"
   ],
   "author": "Tiago Costa",
   "license": "MIT",
@@ -67,7 +66,7 @@
     "webpack-node-externals": "^1.7.2"
   },
   "engines": {
-    "node": "^10.19.0",
+    "node": "10.19.0",
     "yarn": ">=1.21.1"
   },
   "config": {

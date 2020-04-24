@@ -1,7 +1,7 @@
 {
   "name": "mock-project",
   "version": "1.0.0",
-  "description": "A mock project to test the static-fs",
+  "description": "A mock project to test the Static-Fs",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -22,7 +22,7 @@
     "static-fs": "../../../"
   },
   "engines": {
-    "node": "^10.19.0",
-    "yarn": "^1.21.1"
+    "node": "10.19.0",
+    "yarn": ">=1.21.1"
   }
 }

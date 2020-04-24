@@ -9,9 +9,7 @@ export function patchProcess(sfsRuntime) {
     if (!exitWasCalled) {
       exitWasCalled = true;
 
-      // unlocks the files.
-      sfsRuntime.staticfilesystem.shutdown();
-
+      // unlocks the files and
       // remove and undo all the patches
       sfsRuntime.undo();
     }
@@ -21,9 +19,7 @@ export function patchProcess(sfsRuntime) {
 
   // apply patches
   // main exit patch
-  process.exit = (n) => {
-    exitFn(n);
-  };
+  process.exit = exitFn;
 
   // special patch for pm2 cluster shutdown message
   const msgListener = (msg) => {

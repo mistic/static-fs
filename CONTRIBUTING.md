@@ -11,7 +11,7 @@ Please note we have a code of conduct, please follow it in all your interactions
 ### Node
 You need the engines declared version for node installed on your machine 
 in order to setup that project.
-It is possible to check the required version in the [package.json](https://github.com/mistic/static-fs/blob/master/package.json) 
+It is possible to check the required version in the [package.json](package.json) 
 
 If you're using a node version manager tool such like [nvm](https://github.com/nvm-sh/nvm) you 
 can just run: 
@@ -25,7 +25,7 @@ We also rely on [yarn](https://yarnpkg.com) in order to manage our dependencies.
 You can install it following the [official yarn install instructions](https://yarnpkg.com/en/docs/install).
 
 Please note that you need to install the engines declared version for yarn 
-defined in the [package.json](https://github.com/mistic/static-fs/blob/master/package.json)
+defined in the [package.json](package.json)
 
 After this step you can just install our dependencies running:
 

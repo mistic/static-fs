@@ -38,7 +38,7 @@ export class StaticFilesystem {
         };
       case constants.errno.EROFS:
         return {
-          ...new Error(`EROFS: static-fs is a read-only filesystem, ${method} '${data}'`),
+          ...new Error(`EROFS: Static-Fs is a read-only filesystem, ${method} '${data}'`),
           code: 'EROFS',
           path: data,
           errno: constants.errno.EROFS,
