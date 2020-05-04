@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+# [1.10.0](https://github.com/mistic/static-fs/compare/v1.9.1...v1.10.0) (2020-05-04)
+
+
+### Features
+
+* hide static_fs folder by default ([#215](https://github.com/mistic/static-fs/issues/215)) ([76bdd8b](https://github.com/mistic/static-fs/commit/76bdd8b16a096ee603001401661400a1306e06bb))
+
 ## [1.9.1](https://github.com/mistic/static-fs/compare/v1.9.0...v1.9.1) (2020-04-24)
 
 
