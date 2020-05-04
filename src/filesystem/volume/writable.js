@@ -16,9 +16,9 @@ import {
 export class WritableStaticVolume {
   constructor(mountingRoot) {
     this.mountingRoot = mountingRoot;
-    this.indexFile = resolve(this.mountingRoot, 'static_fs/static_fs_index.json');
-    this.manifestFile = resolve(this.mountingRoot, 'static_fs/static_fs_manifest.json');
-    this.outputFile = resolve(this.mountingRoot, 'static_fs/static_fs_volume.sfsv');
+    this.indexFile = resolve(this.mountingRoot, '.static_fs/static_fs_index.json');
+    this.manifestFile = resolve(this.mountingRoot, '.static_fs/static_fs_manifest.json');
+    this.outputFile = resolve(this.mountingRoot, '.static_fs/static_fs_volume.sfsv');
     this.reset();
   }
 

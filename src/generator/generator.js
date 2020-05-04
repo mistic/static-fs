@@ -77,7 +77,7 @@ const addFoldersToStaticFsVolume = async (mountRootDir, foldersToAdd, exclusions
 
 export const generateStaticFsVolume = async (mountRootDir, foldersToAdd, appEntryPointsToPatch, exclusions = []) => {
   const sanitizedMountRootDir = resolve(mountRootDir);
-  const sanitizedOutputDir = resolve(sanitizedMountRootDir, 'static_fs');
+  const sanitizedOutputDir = resolve(sanitizedMountRootDir, '.static_fs');
   const sanitizedFoldersToAdd = foldersToAdd.map((p) => resolve(p));
   const sanitizedAppEntryPointsToPatch = appEntryPointsToPatch.map((p) => resolve(p));
   const sanitizedExclusions = exclusions.reduce((accum, val) => {
