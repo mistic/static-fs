@@ -39,7 +39,7 @@ describe('Static Fs Generator', () => {
   });
 
   test('create a valid static fs into the mounting root', async () => {
-    const baseSFSFolder = resolve(mountRoot, 'static_fs');
+    const baseSFSFolder = resolve(mountRoot, '.static_fs');
     const existsBaseSFSFolder = existsSync(baseSFSFolder);
     const sfsBaseFolderFiles = getDirContent(baseSFSFolder);
     const expectedFilesOnBaseSFSFolder = [
@@ -78,7 +78,7 @@ describe('Static Fs Generator', () => {
 
   test('if static fs manifest file have the expected keys', async () => {
     const sfsManifestFileContent = JSON.parse(
-      readFileSync(resolve(mountRoot, 'static_fs', 'static_fs_manifest.json'), 'utf8').toString()
+      readFileSync(resolve(mountRoot, '.static_fs', 'static_fs_manifest.json'), 'utf8').toString()
     );
 
     expect(sfsManifestFileContent).toHaveProperty('manifest');
@@ -91,7 +91,7 @@ describe('Static Fs Generator', () => {
 
   test('if static fs index file have the expected keys', async () => {
     const sfsIndexFileContent = JSON.parse(
-      readFileSync(resolve(mountRoot, 'static_fs', 'static_fs_index.json'), 'utf8').toString()
+      readFileSync(resolve(mountRoot, '.static_fs', 'static_fs_index.json'), 'utf8').toString()
     );
 
     expect(sfsIndexFileContent).toHaveProperty('directoriesIndex');
