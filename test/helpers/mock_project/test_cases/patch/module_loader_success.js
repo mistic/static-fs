@@ -1,6 +1,6 @@
 'use strict';
 
-const { patchModuleLoader } = require('static-fs/dist/runtime');
+const { patchFilesystem, patchModuleLoader } = require('static-fs/dist/runtime');
 const { sanitizePath } = require('../../utils');
 
 const mockFs = {
@@ -45,7 +45,9 @@ const mockStaticFsRuntime = {
   staticfilesystem: mockFs,
 };
 
+const undo_filesystem_patch = patchFilesystem(mockStaticFsRuntime);
 const undo_module_loader_patch = patchModuleLoader(mockStaticFsRuntime);
 const staticFsPatchedPathFileExport = require('./static_fs_mock/patched/path/file');
 console.log(staticFsPatchedPathFileExport);
 undo_module_loader_patch();
+undo_filesystem_patch();

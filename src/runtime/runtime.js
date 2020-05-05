@@ -63,11 +63,11 @@ export function load(staticFsVolume) {
     global.__STATIC_FS_RUNTIME = {};
     global.__STATIC_FS_RUNTIME.staticfilesystem = new StaticFilesystem();
 
-    // patch module_loader (require fn)
-    const undo_loader = patchModuleLoader(global.__STATIC_FS_RUNTIME);
-
     // patch fs
     const undo_fs = patchFilesystem(global.__STATIC_FS_RUNTIME);
+
+    // patch module_loader (require fn)
+    const undo_loader = patchModuleLoader(global.__STATIC_FS_RUNTIME);
 
     // patch process
     const undo_process = patchProcess(global.__STATIC_FS_RUNTIME);
@@ -78,8 +78,8 @@ export function load(staticFsVolume) {
     global.__STATIC_FS_RUNTIME.undo = () => {
       undo_child_process();
       undo_process();
-      undo_fs();
       undo_loader();
+      undo_fs();
     };
   }
   global.__STATIC_FS_RUNTIME.staticfilesystem.load(staticFsVolume);
