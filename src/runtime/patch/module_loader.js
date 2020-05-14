@@ -1,7 +1,7 @@
 // NOTE: this is re-implementation of some core methods of
 // https://github.com/nodejs/node/blob/v10.x/lib/internal/modules/cjs/loader.js
 
-import * as realFs from 'fs';
+import * as patchedFs from 'fs';
 import * as Module from 'module';
 import { isAbsolute, resolve, toNamespacedPath } from 'path';
 import { isWindows, isWindowsPath, stripBOM, unixifyPath } from '../../common';
@@ -110,12 +110,12 @@ export function patchModuleLoader(staticFsRuntime) {
   }
 
   Module._extensions['.js'] = (module, filename) => {
-    const readFileFn = stat(filename) === 0 ? sfs.readFileSync.bind(sfs) : realFs.readFileSync.bind(this);
+    const readFileFn = patchedFs.readFileSync.bind(this);
     module._compile(stripBOM(readFileFn(filename, 'utf8')), filename);
   };
 
   Module._extensions['.json'] = (module, filename) => {
-    const readFileFn = stat(filename) === 0 ? sfs.readFileSync.bind(sfs) : realFs.readFileSync.bind(this);
+    const readFileFn = patchedFs.readFileSync.bind(this);
 
     try {
       module.exports = JSON.parse(stripBOM(readFileFn(filename, 'utf8')));
