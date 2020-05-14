@@ -1,5 +1,12 @@
 # Static-Fs Changelog
 
+## [1.10.1](https://github.com/mistic/static-fs/compare/v1.10.0...v1.10.1) (2020-05-14)
+
+
+### Bug Fixes
+
+* use patched fs in the module loader ([#216](https://github.com/mistic/static-fs/issues/216)) ([4a4d3d1](https://github.com/mistic/static-fs/commit/4a4d3d1b89fff68c3abd8a138313a1dcf6c6a9eb))
+
 # [1.10.0](https://github.com/mistic/static-fs/compare/v1.9.1...v1.10.0) (2020-05-04)
 
 
