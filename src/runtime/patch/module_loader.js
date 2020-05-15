@@ -6,21 +6,20 @@ import * as Module from 'module';
 import { isAbsolute, resolve, toNamespacedPath } from 'path';
 import { isWindows, isWindowsPath, stripBOM, unixifyPath } from '../../common';
 
-export function patchModuleLoader(staticFsRuntime) {
+export function patchModuleLoader() {
   const moduleExtensionsJS = Module._extensions['.js'];
   const moduleExtensionsJSON = Module._extensions['.json'];
   const moduleFindPath = Module._findPath;
 
   const statCache = {};
   const packageMainCache = {};
-  const sfs = staticFsRuntime.staticfilesystem;
 
   // Returns the contents of the file as a string
   // or undefined when the file cannot be opened.
   // Not creating errors makes it run faster.
   function internalModuleReadFile(path) {
     try {
-      return sfs.readFileSync(path, 'utf8');
+      return patchedFs.readFileSync(path, 'utf8');
     } catch {
       /* no-op */
     }
@@ -34,7 +33,7 @@ export function patchModuleLoader(staticFsRuntime) {
   // Not creating errors makes it run faster.
   function internalModuleStat(filename) {
     try {
-      return sfs.statSync(filename).isDirectory() ? 1 : 0;
+      return patchedFs.statSync(filename).isDirectory() ? 1 : 0;
     } catch {
       /* no-op */
     }
@@ -80,7 +79,7 @@ export function patchModuleLoader(staticFsRuntime) {
       return stat(requestPath) === 0 ? resolve(requestPath) : undefined;
     }
 
-    return stat(requestPath) === 0 ? sfs.realpathSync(requestPath) : undefined;
+    return stat(requestPath) === 0 ? patchedFs.realpathSync(requestPath) : undefined;
   }
 
   function tryExtensions(p, exts, isMain) {
@@ -132,6 +131,10 @@ export function patchModuleLoader(staticFsRuntime) {
       request.startsWith('..\\');
 
     let result = Module._customFindPath(request, paths, isMain);
+
+    if (result) {
+      return result;
+    }
 
     // NOTE: special use case when we have a findPath call with a relative file request where
     // the given path is in the real fs and the relative file
@@ -201,7 +204,7 @@ export function patchModuleLoader(staticFsRuntime) {
       if (!trailingSlash) {
         switch (rc) {
           case 0:
-            filename = !isMain ? resolve(basePath) : sfs.realpathSync(basePath);
+            filename = !isMain ? resolve(basePath) : patchedFs.realpathSync(basePath);
             break;
           case 1:
             filename = tryPackage(basePath, exts, isMain);
