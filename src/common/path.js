@@ -1,3 +1,4 @@
+import { resolve } from 'path';
 import { isWindows } from './constants';
 
 function getPathFromURLPosix(url) {
@@ -50,7 +51,7 @@ export function nodePathToString(path) {
     throw er;
   }
 
-  return pathString;
+  return resolve(pathString);
 }
 
 export function unixifyPath(filePath) {
