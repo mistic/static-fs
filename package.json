@@ -61,7 +61,7 @@
     "lint-staged": "^10.0.8",
     "prettier": "^1.19.1",
     "rimraf": "^3.0.2",
-    "semantic-release": "^17.0.4",
+    "semantic-release": "^19.0.3",
     "webpack": "^4.41.6",
     "webpack-node-externals": "^1.7.2"
   },
